@@ -1,0 +1,47 @@
+// ============================================
+// Expense Models
+// ============================================
+
+enum ExpenseCategory {
+  LABOUR
+  MATERIAL
+  EQUIPMENT
+  TRANSPORT
+  SUBCONTRACTOR
+  MISCELLANEOUS
+}
+
+enum ExpenseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+model Expense {
+  id              String          @id @default(cuid())
+  projectId       String          @map("project_id")
+  submittedById   String          @map("submitted_by_id")
+  approvedById    String?         @map("approved_by_id")
+  category        ExpenseCategory
+  title           String
+  description     String?
+  amount          Decimal         @db.Decimal(15, 2)
+  currency        String          @default("LKR")
+  receiptUrl      String?         @map("receipt_url")
+  status          ExpenseStatus   @default(PENDING)
+  approvedAt      DateTime?       @map("approved_at")
+  rejectionReason String?         @map("rejection_reason")
+  expenseDate     DateTime        @map("expense_date") @db.Date
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  submittedBy User    @relation(fields: [submittedById], references: [id])
+  approvedBy  User?   @relation("ExpenseApprover", fields: [approvedById], references: [id])
+
+  @@index([projectId])
+  @@index([status])
+  @@index([category])
+  @@map("expenses")
+}

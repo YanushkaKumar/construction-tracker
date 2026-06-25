@@ -1,0 +1,51 @@
+# ============================================
+# BuildTrack — Development Overrides
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+# ============================================
+
+services:
+  # Disable nginx in dev (use direct ports)
+  nginx:
+    profiles:
+      - production
+
+  # Hot-reload frontend
+  web:
+    build:
+      target: development
+    volumes:
+      - ./apps/web/src:/app/src
+      - ./apps/web/public:/app/public
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
+
+  # Hot-reload backend
+  api:
+    build:
+      target: development
+    volumes:
+      - ./apps/api/src:/app/src
+      - ./apps/api/prisma:/app/prisma
+    ports:
+      - "4000:4000"
+      - "9229:9229"
+    environment:
+      - NODE_ENV=development
+    command: npm run start:dev
+
+  # Expose DB port for tools
+  postgres:
+    ports:
+      - "5432:5432"
+
+  # Disable monitoring in dev by default
+  prometheus:
+    profiles:
+      - monitoring
+
+  grafana:
+    profiles:
+      - monitoring

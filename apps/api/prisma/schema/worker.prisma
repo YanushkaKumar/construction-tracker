@@ -1,0 +1,58 @@
+// ============================================
+// Worker & Attendance Models
+// ============================================
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  LEAVE
+}
+
+model Worker {
+  id               String   @id @default(cuid())
+  companyId        String   @map("company_id")
+  firstName        String   @map("first_name")
+  lastName         String   @map("last_name")
+  nic              String?
+  phone            String?
+  address          String?
+  emergencyContact String?  @map("emergency_contact")
+  skillType        String?  @map("skill_type")
+  dailyRate        Decimal  @default(0) @map("daily_rate") @db.Decimal(10, 2)
+  isActive         Boolean  @default(true) @map("is_active")
+  photo            String?
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  company    Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  attendance Attendance[]
+
+  @@index([companyId])
+  @@map("workers")
+}
+
+model Attendance {
+  id            String           @id @default(cuid())
+  workerId      String           @map("worker_id")
+  projectId     String           @map("project_id")
+  date          DateTime         @db.Date
+  status        AttendanceStatus @default(PRESENT)
+  checkIn       DateTime?        @map("check_in")
+  checkOut      DateTime?        @map("check_out")
+  hoursWorked   Decimal?         @map("hours_worked") @db.Decimal(4, 2)
+  overtimeHours Decimal?         @map("overtime_hours") @db.Decimal(4, 2)
+  dailyWage     Decimal          @map("daily_wage") @db.Decimal(10, 2)
+  notes         String?
+  markedById    String?          @map("marked_by_id")
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  worker  Worker  @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([workerId, projectId, date])
+  @@index([workerId])
+  @@index([projectId])
+  @@index([date])
+  @@map("attendance")
+}

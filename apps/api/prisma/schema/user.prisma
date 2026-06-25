@@ -1,0 +1,70 @@
+// ============================================
+// User, Role & Auth Models
+// ============================================
+
+model User {
+  id                String    @id @default(cuid())
+  companyId         String    @map("company_id")
+  email             String
+  passwordHash      String    @map("password_hash")
+  firstName         String    @map("first_name")
+  lastName          String    @map("last_name")
+  phone             String?
+  avatar            String?
+  roleId            String    @map("role_id")
+  isActive          Boolean   @default(true) @map("is_active")
+  lastLoginAt       DateTime? @map("last_login_at")
+  notificationPrefs Json      @default("{}") @map("notification_prefs")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  company          Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role             Role            @relation(fields: [roleId], references: [id])
+  projectMembers   ProjectMember[]
+  assignedTasks    Task[]          @relation("TaskAssignee")
+  createdTasks     Task[]          @relation("TaskCreator")
+  taskComments     TaskComment[]
+  dailyReports     DailyReport[]
+  expenses         Expense[]
+  approvedExpenses Expense[]       @relation("ExpenseApprover")
+  refreshTokens    RefreshToken[]
+  notifications    Notification[]
+  auditLogs        AuditLog[]
+
+  @@unique([companyId, email])
+  @@index([companyId])
+  @@index([roleId])
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  companyId   String?  @map("company_id")
+  name        String
+  displayName String   @map("display_name")
+  permissions Json     @default("[]")
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  company Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  users   User[]
+
+  @@unique([companyId, name])
+  @@map("roles")
+}
+
+model RefreshToken {
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  token      String    @unique
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  deviceInfo String?   @map("device_info")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}

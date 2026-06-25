@@ -1,0 +1,50 @@
+// ============================================
+// Daily Report & Site Image Models
+// ============================================
+
+model DailyReport {
+  id               String   @id @default(cuid())
+  projectId        String   @map("project_id")
+  reporterId       String   @map("reporter_id")
+  reportDate       DateTime @map("report_date") @db.Date
+  weatherCondition String?  @map("weather_condition")
+  workSummary      String   @map("work_summary")
+  issues           String?
+  safetyNotes      String?  @map("safety_notes")
+  workersOnSite    Int      @default(0) @map("workers_on_site")
+  progressPercent  Int?     @map("progress_percent")
+  notes            String?
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  project  Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reporter User        @relation(fields: [reporterId], references: [id])
+  images   SiteImage[]
+
+  @@unique([projectId, reportDate, reporterId])
+  @@index([projectId])
+  @@index([reportDate])
+  @@map("daily_reports")
+}
+
+model SiteImage {
+  id            String   @id @default(cuid())
+  dailyReportId String?  @map("daily_report_id")
+  taskId        String?  @map("task_id")
+  fileKey       String   @map("file_key")
+  thumbnailKey  String?  @map("thumbnail_key")
+  fileName      String   @map("file_name")
+  fileSize      Int      @map("file_size")
+  mimeType      String   @map("mime_type")
+  caption       String?
+  geoLat        Decimal? @map("geo_lat") @db.Decimal(10, 8)
+  geoLng        Decimal? @map("geo_lng") @db.Decimal(11, 8)
+  uploadedAt    DateTime @default(now()) @map("uploaded_at")
+
+  dailyReport DailyReport? @relation(fields: [dailyReportId], references: [id], onDelete: Cascade)
+  task        Task?        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([dailyReportId])
+  @@index([taskId])
+  @@map("site_images")
+}

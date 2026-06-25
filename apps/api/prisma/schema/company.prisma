@@ -1,0 +1,39 @@
+// ============================================
+// Company & Tenant Models
+// ============================================
+
+enum PlanType {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+model Company {
+  id             String    @id @default(cuid())
+  name           String
+  slug           String    @unique
+  registrationNo String?   @map("registration_no")
+  address        String?
+  city           String?
+  phone          String?
+  email          String?
+  logo           String?
+  plan           PlanType  @default(FREE)
+  planExpiresAt  DateTime? @map("plan_expires_at")
+  isActive       Boolean   @default(true) @map("is_active")
+  settings       Json      @default("{}")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  users         User[]
+  projects      Project[]
+  suppliers     Supplier[]
+  workers       Worker[]
+  roles         Role[]
+  materials     Material[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+
+  @@map("companies")
+}

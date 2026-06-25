@@ -1,0 +1,103 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../database/prisma.service';
+import { PaginationDto } from '../../common/dto/pagination.dto';
+
+@Injectable()
+export class ProjectService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(companyId: string, data: any) {
+    const count = await this.prisma.project.count({ where: { companyId } });
+    const code = `PRJ-${String(count + 1).padStart(3, '0')}`;
+
+    const formattedData = { ...data };
+    if (formattedData.startDate) {
+      formattedData.startDate = new Date(formattedData.startDate);
+    }
+    if (formattedData.endDate) {
+      formattedData.endDate = new Date(formattedData.endDate);
+    }
+    if (formattedData.actualEndDate) {
+      formattedData.actualEndDate = new Date(formattedData.actualEndDate);
+    }
+
+    return this.prisma.project.create({
+      data: { ...formattedData, companyId, code },
+    });
+  }
+
+  async findAll(companyId: string, query: PaginationDto & { status?: string }) {
+    const where: any = { companyId };
+    if (query.status) where.status = query.status;
+
+    const [projects, total] = await Promise.all([
+      this.prisma.project.findMany({
+        where,
+        include: {
+          members: { include: { user: { select: { id: true, firstName: true, lastName: true, avatar: true } } } },
+          _count: { select: { tasks: true, expenses: true, dailyReports: true } },
+        },
+        orderBy: { [query.sort || 'createdAt']: query.order || 'desc' },
+        skip: query.skip,
+        take: query.limit,
+      }),
+      this.prisma.project.count({ where }),
+    ]);
+
+    return {
+      data: projects,
+      meta: { total, page: query.page!, limit: query.limit!, totalPages: Math.ceil(total / query.limit!) },
+    };
+  }
+
+  async findById(id: string, companyId: string) {
+    const project = await this.prisma.project.findFirst({
+      where: { id, companyId },
+      include: {
+        members: { include: { user: { select: { id: true, firstName: true, lastName: true, avatar: true, email: true } } } },
+        _count: { select: { tasks: true, expenses: true, dailyReports: true, attendance: true } },
+      },
+    });
+    if (!project) throw new NotFoundException('Project not found');
+    return project;
+  }
+
+  async update(id: string, companyId: string, data: any) {
+    await this.findById(id, companyId);
+    
+    const formattedData = { ...data };
+    if (formattedData.startDate) {
+      formattedData.startDate = new Date(formattedData.startDate);
+    }
+    if (formattedData.endDate) {
+      formattedData.endDate = new Date(formattedData.endDate);
+    }
+    if (formattedData.actualEndDate) {
+      formattedData.actualEndDate = new Date(formattedData.actualEndDate);
+    }
+
+    return this.prisma.project.update({ where: { id }, data: formattedData });
+  }
+
+  async getStats(id: string, companyId: string) {
+    await this.findById(id, companyId);
+
+    const [taskStats, expenseStats, workerCount] = await Promise.all([
+      this.prisma.task.groupBy({
+        by: ['status'],
+        where: { projectId: id },
+        _count: true,
+      }),
+      this.prisma.expense.aggregate({
+        where: { projectId: id, status: 'APPROVED' },
+        _sum: { amount: true },
+      }),
+      this.prisma.attendance.findMany({
+        where: { projectId: id, date: new Date() },
+        distinct: ['workerId'],
+      }),
+    ]);
+
+    return { taskStats, totalExpenses: expenseStats._sum.amount || 0, workersOnSiteToday: workerCount.length };
+  }
+}

@@ -1,0 +1,71 @@
+// ============================================
+// Project Models
+// ============================================
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Project {
+  id              String        @id @default(cuid())
+  companyId       String        @map("company_id")
+  name            String
+  code            String
+  description     String?
+  clientName      String?       @map("client_name")
+  clientPhone     String?       @map("client_phone")
+  clientEmail     String?       @map("client_email")
+  location        String?
+  latitude        Decimal?      @db.Decimal(10, 8)
+  longitude       Decimal?      @db.Decimal(11, 8)
+  status          ProjectStatus @default(PLANNING)
+  priority        Priority      @default(MEDIUM)
+  budgetEstimate  Decimal       @default(0) @map("budget_estimate") @db.Decimal(15, 2)
+  budgetActual    Decimal       @default(0) @map("budget_actual") @db.Decimal(15, 2)
+  currency        String        @default("LKR")
+  progressPercent Int           @default(0) @map("progress_percent")
+  startDate       DateTime?     @map("start_date")
+  endDate         DateTime?     @map("end_date")
+  actualEndDate   DateTime?     @map("actual_end_date")
+  coverImage      String?       @map("cover_image")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  company          Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  members          ProjectMember[]
+  tasks            Task[]
+  dailyReports     DailyReport[]
+  materialRequests MaterialRequest[]
+  expenses         Expense[]
+  attendance       Attendance[]
+
+  @@unique([companyId, code])
+  @@index([companyId])
+  @@index([status])
+  @@map("projects")
+}
+
+model ProjectMember {
+  id          String   @id @default(cuid())
+  projectId   String   @map("project_id")
+  userId      String   @map("user_id")
+  projectRole String   @map("project_role")
+  joinedAt    DateTime @default(now()) @map("joined_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
