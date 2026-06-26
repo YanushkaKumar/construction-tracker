@@ -69,4 +69,38 @@ export class TaskService {
       include: { user: { select: { id: true, firstName: true, lastName: true, avatar: true } } },
     });
   }
+
+  async update(id: string, data: any) {
+    const task = await this.prisma.task.findUnique({ where: { id } });
+    if (!task) throw new NotFoundException('Task not found');
+
+    const updateData: any = {};
+    if (data.title !== undefined) updateData.title = data.title;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.status !== undefined) {
+      updateData.status = data.status;
+      if (data.status === 'COMPLETED') updateData.completedAt = new Date();
+    }
+    if (data.priority !== undefined) updateData.priority = data.priority;
+    if (data.assigneeId !== undefined) updateData.assigneeId = data.assigneeId || null;
+    if (data.dueDate !== undefined) updateData.dueDate = data.dueDate ? new Date(data.dueDate) : null;
+    if (data.estimatedHours !== undefined) updateData.estimatedHours = data.estimatedHours;
+
+    return this.prisma.task.update({
+      where: { id },
+      data: updateData,
+      include: {
+        assignee: { select: { id: true, firstName: true, lastName: true, avatar: true } },
+        project: { select: { id: true, name: true, code: true } },
+      },
+    });
+  }
+
+  async delete(id: string) {
+    const task = await this.prisma.task.findUnique({ where: { id } });
+    if (!task) throw new NotFoundException('Task not found');
+
+    await this.prisma.task.delete({ where: { id } });
+    return { deleted: true, id };
+  }
 }

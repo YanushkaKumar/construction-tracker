@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { TaskService } from './task.service';
@@ -40,6 +40,18 @@ export class TaskController {
   @ApiOperation({ summary: 'Update task status' })
   updateStatus(@Param('id') id: string, @Body('status') status: string) {
     return this.taskService.updateStatus(id, status);
+  }
+
+  @Patch('tasks/:id')
+  @ApiOperation({ summary: 'Update task details' })
+  update(@Param('id') id: string, @Body() data: any) {
+    return this.taskService.update(id, data);
+  }
+
+  @Delete('tasks/:id')
+  @ApiOperation({ summary: 'Delete a task' })
+  remove(@Param('id') id: string) {
+    return this.taskService.delete(id);
   }
 
   @Post('tasks/:id/comments')
