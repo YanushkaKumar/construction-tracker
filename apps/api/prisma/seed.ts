@@ -229,6 +229,316 @@ async function main() {
   });
   console.log('✅ Expenses created');
 
+  // ══════════════════════════════════════════
+  // Finance Module Seed Data
+  // ══════════════════════════════════════════
+
+  // Create sample project advances (Money IN)
+  const advance1 = await prisma.projectAdvance.create({
+    data: {
+      projectId: project1.id,
+      companyId: company.id,
+      receivedById: owner.id,
+      amount: 5000000,
+      description: 'Initial project advance from client - Horizon Tower',
+      referenceNo: 'CHQ-2025-001',
+      receivedDate: new Date('2025-06-10'),
+      status: 'RECEIVED',
+    },
+  });
+
+  const advance2 = await prisma.projectAdvance.create({
+    data: {
+      projectId: project1.id,
+      companyId: company.id,
+      receivedById: owner.id,
+      amount: 3000000,
+      description: 'Second milestone advance - Foundation completion',
+      referenceNo: 'CHQ-2025-045',
+      receivedDate: new Date('2025-12-15'),
+      status: 'RECEIVED',
+    },
+  });
+
+  const advance3 = await prisma.projectAdvance.create({
+    data: {
+      projectId: project2.id,
+      companyId: company.id,
+      receivedById: pm.id,
+      amount: 2000000,
+      description: 'Initial advance - Palm Villa project',
+      referenceNo: 'BANK-TXN-9982',
+      receivedDate: new Date('2026-01-20'),
+      status: 'RECEIVED',
+    },
+  });
+
+  const advance4 = await prisma.projectAdvance.create({
+    data: {
+      projectId: project1.id,
+      companyId: company.id,
+      receivedById: owner.id,
+      amount: 2500000,
+      description: 'Third advance - 5th floor slab completion',
+      referenceNo: 'CHQ-2026-012',
+      receivedDate: new Date('2026-05-01'),
+      status: 'RECEIVED',
+    },
+  });
+
+  console.log('✅ Project advances created:', 4);
+
+  // Create sample purchases with multi-project allocations
+  const purchase1 = await prisma.purchase.create({
+    data: {
+      companyId: company.id,
+      purchasedById: engineer.id,
+      title: 'Nuts, Bolts & Fasteners (bulk)',
+      description: 'Purchased 500kg assorted nuts and bolts for structural work',
+      totalAmount: 45000,
+      category: 'PROJECT_MATERIAL',
+      purchaseDate: new Date('2026-03-15'),
+      vendor: 'Lanka Hardware Pvt Ltd',
+      allocations: {
+        create: [
+          { projectId: project1.id, amount: 45000, percentage: 100 },
+        ],
+      },
+    },
+  });
+
+  const purchase2 = await prisma.purchase.create({
+    data: {
+      companyId: company.id,
+      purchasedById: engineer.id,
+      title: 'Wheelbarrow (Heavy Duty)',
+      description: 'Heavy duty construction wheelbarrow - shared between sites',
+      totalAmount: 8500,
+      category: 'SHARED_TOOL',
+      purchaseDate: new Date('2026-02-10'),
+      vendor: 'Construction Tools Lanka',
+      allocations: {
+        create: [
+          { projectId: project1.id, amount: 5100, percentage: 60, notes: 'Primary use at Horizon Tower' },
+          { projectId: project2.id, amount: 3400, percentage: 40, notes: 'Secondary use at Palm Villa' },
+        ],
+      },
+    },
+  });
+
+  const purchase3 = await prisma.purchase.create({
+    data: {
+      companyId: company.id,
+      purchasedById: pm.id,
+      title: 'Hammer Set (6 pieces)',
+      description: 'Professional grade hammer set for multiple sites',
+      totalAmount: 12000,
+      category: 'SHARED_TOOL',
+      purchaseDate: new Date('2026-01-25'),
+      vendor: 'Ace Tools Colombo',
+      allocations: {
+        create: [
+          { projectId: project1.id, amount: 6000, percentage: 50 },
+          { projectId: project2.id, amount: 6000, percentage: 50 },
+        ],
+      },
+    },
+  });
+
+  const purchase4 = await prisma.purchase.create({
+    data: {
+      companyId: company.id,
+      purchasedById: engineer.id,
+      title: 'Tea, Coffee & Lunch - Week 24',
+      description: 'Daily refreshments and lunch for site workers',
+      totalAmount: 3500,
+      category: 'DAILY_EXPENSE',
+      purchaseDate: new Date('2026-06-14'),
+      allocations: {
+        create: [
+          { projectId: project1.id, amount: 3500, percentage: 100 },
+        ],
+      },
+    },
+  });
+
+  const purchase5 = await prisma.purchase.create({
+    data: {
+      companyId: company.id,
+      purchasedById: engineer.id,
+      title: 'Tea & Biscuits - Week 25',
+      description: 'Daily tea and biscuits for construction crew',
+      totalAmount: 2800,
+      category: 'DAILY_EXPENSE',
+      purchaseDate: new Date('2026-06-21'),
+      allocations: {
+        create: [
+          { projectId: project2.id, amount: 2800, percentage: 100 },
+        ],
+      },
+    },
+  });
+
+  const purchase6 = await prisma.purchase.create({
+    data: {
+      companyId: company.id,
+      purchasedById: pm.id,
+      title: 'Plumbing Service - Ground Floor',
+      description: 'Hired plumbing contractor for ground floor bathroom fittings',
+      totalAmount: 85000,
+      category: 'SERVICE',
+      purchaseDate: new Date('2026-04-20'),
+      vendor: 'ABC Plumbing Services',
+      allocations: {
+        create: [
+          { projectId: project2.id, amount: 85000, percentage: 100 },
+        ],
+      },
+    },
+  });
+
+  const purchase7 = await prisma.purchase.create({
+    data: {
+      companyId: company.id,
+      purchasedById: engineer.id,
+      title: 'Cement - 100 bags (Portland)',
+      description: 'Cement for column casting work',
+      totalAmount: 185000,
+      category: 'PROJECT_MATERIAL',
+      purchaseDate: new Date('2026-05-05'),
+      vendor: 'Tokyo Cement Lanka',
+      allocations: {
+        create: [
+          { projectId: project1.id, amount: 185000, percentage: 100 },
+        ],
+      },
+    },
+  });
+
+  const purchase8 = await prisma.purchase.create({
+    data: {
+      companyId: company.id,
+      purchasedById: pm.id,
+      title: 'Vehicle fuel & transport',
+      description: 'Fuel for material transport van for the week',
+      totalAmount: 15000,
+      category: 'TRANSPORT',
+      purchaseDate: new Date('2026-06-10'),
+      vendor: 'Shell Fuel Station',
+      allocations: {
+        create: [
+          { projectId: project1.id, amount: 9000, percentage: 60 },
+          { projectId: project2.id, amount: 6000, percentage: 40 },
+        ],
+      },
+    },
+  });
+
+  console.log('✅ Purchases with allocations created:', 8);
+
+  // Create shared assets
+  const asset1 = await prisma.asset.create({
+    data: {
+      companyId: company.id,
+      purchaseId: purchase2.id,
+      name: 'Heavy Duty Wheelbarrow',
+      category: 'Tool',
+      purchasePrice: 8500,
+      condition: 'GOOD',
+      currentProjectId: project1.id,
+      serialNumber: 'WB-001',
+    },
+  });
+
+  const asset2 = await prisma.asset.create({
+    data: {
+      companyId: company.id,
+      name: 'Concrete Mixer (Electric)',
+      category: 'Equipment',
+      purchasePrice: 185000,
+      condition: 'GOOD',
+      currentProjectId: project1.id,
+      serialNumber: 'MX-001',
+      notes: 'Purchased before this system was set up',
+    },
+  });
+
+  const asset3 = await prisma.asset.create({
+    data: {
+      companyId: company.id,
+      purchaseId: purchase3.id,
+      name: 'Professional Hammer Set',
+      category: 'Tool',
+      purchasePrice: 12000,
+      condition: 'GOOD',
+      currentProjectId: project2.id,
+      serialNumber: 'HM-SET-001',
+    },
+  });
+
+  const asset4 = await prisma.asset.create({
+    data: {
+      companyId: company.id,
+      name: 'Spirit Level (4ft)',
+      category: 'Tool',
+      purchasePrice: 3500,
+      condition: 'FAIR',
+      currentProjectId: null,
+      serialNumber: 'SL-001',
+      notes: 'Available in office storage',
+    },
+  });
+
+  console.log('✅ Assets created:', 4);
+
+  // Create asset assignment history
+  await prisma.assetAssignment.createMany({
+    data: [
+      // Wheelbarrow: started at Palm Villa, moved to Horizon Tower
+      {
+        assetId: asset1.id,
+        projectId: project2.id,
+        assignedById: pm.id,
+        startDate: new Date('2026-02-15'),
+        endDate: new Date('2026-04-01'),
+        notes: 'Initial assignment for foundation work',
+      },
+      {
+        assetId: asset1.id,
+        projectId: project1.id,
+        assignedById: pm.id,
+        startDate: new Date('2026-04-01'),
+        notes: 'Moved to Horizon Tower for slab work',
+      },
+      // Concrete mixer: always at Horizon Tower
+      {
+        assetId: asset2.id,
+        projectId: project1.id,
+        assignedById: owner.id,
+        startDate: new Date('2025-07-01'),
+        notes: 'Assigned from project start',
+      },
+      // Hammer set: started at Horizon Tower, moved to Palm Villa
+      {
+        assetId: asset3.id,
+        projectId: project1.id,
+        assignedById: pm.id,
+        startDate: new Date('2026-02-01'),
+        endDate: new Date('2026-05-15'),
+        notes: 'Used for formwork',
+      },
+      {
+        assetId: asset3.id,
+        projectId: project2.id,
+        assignedById: engineer.id,
+        startDate: new Date('2026-05-15'),
+        notes: 'Moved for wall construction',
+      },
+    ],
+  });
+
+  console.log('✅ Asset assignments created');
+
   console.log('\n🎉 Seed completed successfully!');
   console.log('\n📋 Login credentials:');
   console.log('   Owner:    owner@lankabuild.lk / BuildTrack@2026');

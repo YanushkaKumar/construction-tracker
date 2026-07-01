@@ -135,15 +135,15 @@ export default function Home() {
               <div className="flex flex-wrap gap-x-8 gap-y-4 pt-6 border-t border-zinc-200">
                 <div className="space-y-1">
                   <div className="text-2xl font-black text-zinc-900">LKR 0M</div>
-                  <div className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Financial Leakage Prevented</div>
+                  <div className="text-xs uppercase font-bold text-zinc-500 tracking-wider">Financial Leakage Prevented</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-2xl font-black text-zinc-900">100%</div>
-                  <div className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Multi-Tenant Isolation</div>
+                  <div className="text-xs uppercase font-bold text-zinc-500 tracking-wider">Multi-Tenant Isolation</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-2xl font-black text-zinc-900">4000+</div>
-                  <div className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">API Logs/Sec Handled</div>
+                  <div className="text-xs uppercase font-bold text-zinc-500 tracking-wider">API Logs/Sec Handled</div>
                 </div>
               </div>
             </div>
@@ -163,7 +163,7 @@ export default function Home() {
                     <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
                   </div>
-                  <div className="text-[9px] font-bold text-zinc-400 tracking-widest uppercase">buildtrack.lk/app/dashboard</div>
+                  <div className="text-xs font-bold text-zinc-400 tracking-widest uppercase">buildtrack.lk/app/dashboard</div>
                   <div className="w-12"></div>
                 </div>
 
@@ -173,11 +173,11 @@ export default function Home() {
                   {/* Left Mock Sidebar */}
                   <div className="col-span-3 flex flex-col gap-2.5 border-r border-zinc-200/60 pr-3 pt-1">
                     <div className="flex items-center gap-1.5 mb-2 px-1">
-                      <div className="w-5 h-5 rounded-lg bg-amber-500 flex items-center justify-center text-zinc-950 font-black text-[10px]">BT</div>
-                      <div className="text-[9px] font-black text-zinc-950 tracking-wider">BuildTrack</div>
+                      <div className="w-5 h-5 rounded-lg bg-amber-500 flex items-center justify-center text-zinc-950 font-black text-xs">BT</div>
+                      <div className="text-xs font-black text-zinc-950 tracking-wider">BuildTrack</div>
                     </div>
                     <div className="h-4.5 bg-zinc-200/60 rounded-md w-full"></div>
-                    <div className="h-4.5 bg-amber-500/10 text-amber-700 text-[9px] px-2.5 py-1 rounded-md font-extrabold uppercase tracking-wide">Dashboard</div>
+                    <div className="h-4.5 bg-amber-500/10 text-amber-700 text-xs px-2.5 py-1 rounded-md font-extrabold uppercase tracking-wide">Dashboard</div>
                     <div className="h-4.5 bg-zinc-200/40 rounded-md w-11/12"></div>
                     <div className="h-4.5 bg-zinc-200/40 rounded-md w-4/5"></div>
                     <div className="h-4.5 bg-zinc-200/40 rounded-md w-5/6"></div>
@@ -194,7 +194,7 @@ export default function Home() {
                       </div>
                       <div className="text-right flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span className="text-[9px] font-extrabold text-zinc-500">ACTIVE</span>
+                        <span className="text-xs font-extrabold text-zinc-500">ACTIVE</span>
                       </div>
                     </div>
 
@@ -228,7 +228,7 @@ export default function Home() {
                         <span className="text-amber-600">REAL-TIME</span>
                       </div>
                       
-                      <div className="space-y-1.5 text-[9px] text-zinc-600">
+                      <div className="space-y-1.5 text-xs text-zinc-600">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -299,12 +299,12 @@ export default function Home() {
               <div className="h-28 bg-white border border-zinc-200/80 rounded-2xl p-4 flex flex-col justify-between mt-4 shadow-sm">
                 <div className="flex justify-between items-center text-xs">
                   <span className="font-bold text-zinc-800">Horizon Tower</span>
-                  <span className="text-emerald-700 font-extrabold text-[10px] bg-emerald-500/10 px-2 py-0.5 rounded-full">58% Done</span>
+                  <span className="text-emerald-700 font-extrabold text-xs bg-emerald-500/10 px-2 py-0.5 rounded-full">58% Done</span>
                 </div>
                 <div className="w-full bg-zinc-100 h-2 rounded-full overflow-hidden">
                   <div className="bg-gradient-to-r from-amber-500 to-amber-600 h-full w-[58%] rounded-full"></div>
                 </div>
-                <div className="flex justify-between text-[10px] text-zinc-400">
+                <div className="flex justify-between text-xs text-zinc-400">
                   <span>Start: June 2025</span>
                   <span>End: June 2027</span>
                 </div>
@@ -325,7 +325,7 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="p-3.5 bg-white border border-zinc-200/60 rounded-xl space-y-2 mt-4 text-[10px] shadow-sm">
+              <div className="p-3.5 bg-white border border-zinc-200/60 rounded-xl space-y-2 mt-4 text-xs shadow-sm">
                 <div className="flex justify-between font-bold text-zinc-800 border-b border-zinc-100 pb-1.5">
                   <span>Cement purchase voucher</span>
                   <span className="text-amber-700 font-extrabold">LKR 145K</span>
@@ -479,11 +479,11 @@ export default function Home() {
                     className={`text-left p-4 rounded-xl border transition-all ${
                       isActive 
                         ? 'bg-stone-50 border-amber-500 text-zinc-950 shadow-md shadow-amber-500/5' 
-                        : 'bg-transparent border-transparent text-zinc-400 hover:text-zinc-650'
+                        : 'bg-transparent border-transparent text-zinc-400 hover:text-zinc-600'
                     }`}
                   >
                     <div className="font-extrabold text-sm">{tab.label}</div>
-                    <div className="text-[10px] uppercase font-bold tracking-wider mt-0.5 opacity-60">{tab.desc}</div>
+                    <div className="text-xs uppercase font-bold tracking-wider mt-0.5 opacity-60">{tab.desc}</div>
                   </button>
                 );
               })}
@@ -494,7 +494,7 @@ export default function Home() {
               <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/5 rounded-full blur-[80px] pointer-events-none"></div>
               
               <div className="space-y-4">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-600">{segmentContent[activeSegment].badge}</span>
+                <span className="text-xs font-extrabold uppercase tracking-widest text-amber-600">{segmentContent[activeSegment].badge}</span>
                 <h3 className="text-2xl font-black text-zinc-950">{segmentContent[activeSegment].title}</h3>
                 <p className="text-sm text-zinc-500 leading-relaxed max-w-xl font-medium">
                   {segmentContent[activeSegment].description}
@@ -516,7 +516,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-200 bg-white py-16 text-center text-xs text-zinc-450">
+      <footer className="border-t border-zinc-200 bg-white py-16 text-center text-xs text-zinc-500">
         <div className="container max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-8">
           
           <div className="flex items-center gap-2">
@@ -526,7 +526,7 @@ export default function Home() {
             <span className="font-extrabold text-sm tracking-tight text-zinc-950">BuildTrack</span>
           </div>
 
-          <div className="flex flex-wrap gap-6 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+          <div className="flex flex-wrap gap-6 text-xs font-bold uppercase tracking-wider text-zinc-500">
             <a href="#features" className="hover:text-amber-500 transition-colors">Features</a>
             <a href="#about" className="hover:text-amber-500 transition-colors">How it Works</a>
             <a href="#market" className="hover:text-amber-500 transition-colors">Target Industry</a>

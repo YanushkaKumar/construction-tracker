@@ -38,7 +38,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <h1 className="text-4xl font-extrabold tracking-tight leading-tight lg:text-5xl text-zinc-950 mb-6">
             Simplify construction tracking from <span className="text-amber-600">foundation</span> to finish.
           </h1>
-          <p className="text-base text-zinc-650 mb-8 leading-relaxed font-medium">
+          <p className="text-base text-zinc-600 mb-8 leading-relaxed font-medium">
             Manage worker attendance, log daily reports, request materials, track project budgets, and communicate changes instantly. The all-in-one platform built for Sri Lanka's contractor ecosystem.
           </p>
           <div className="flex gap-8 border-t border-zinc-200/80 pt-8 mt-8">

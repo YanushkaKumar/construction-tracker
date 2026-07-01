@@ -153,7 +153,7 @@ export default function NotificationsPage() {
                 <div className="flex-1 space-y-1 text-sm">
                   <div className="flex justify-between items-baseline gap-2">
                     <span className="font-bold text-zinc-800 dark:text-zinc-100">{n.title}</span>
-                    <span className="text-[10px] text-zinc-400">
+                    <span className="text-xs text-zinc-400">
                       {new Date(n.createdAt).toLocaleDateString()}
                     </span>
                   </div>

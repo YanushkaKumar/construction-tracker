@@ -1,0 +1,48 @@
+erDiagram
+    User ||--o{ Project : "manages"
+    User ||--o{ DailyLog : "submits"
+    
+    Project ||--o{ Purchase : "generates expenses"
+    Project ||--o{ BOQItem : "has budget estimates"
+    Project ||--o{ Task : "has milestones"
+    
+    BankLoan ||--o{ Purchase : "funds purchases"
+    BankLoan ||--o{ BankLoanRepayment : "receives repayments"
+    
+    User {
+        uuid id PK
+        string email
+        string passwordHash
+        enum role
+    }
+    
+    Project {
+        uuid id PK
+        string name
+        float budget
+        float progressPercent
+        enum status
+    }
+    
+    BankLoan {
+        uuid id PK
+        string bankName
+        float loanAmount
+        float outstandingDebt
+        enum status
+    }
+    
+    BankLoanRepayment {
+        uuid id PK
+        uuid bankLoanId FK
+        float amount
+        datetime paymentDate
+    }
+    
+    Purchase {
+        uuid id PK
+        uuid projectId FK
+        uuid bankLoanId FK
+        float amount
+        string category
+    }

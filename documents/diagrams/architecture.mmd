@@ -1,0 +1,32 @@
+graph TD
+    ClientWeb[Web Application - Next.js]
+    ClientMobile[Mobile App - Expo]
+    
+    subgraph Infrastructure
+        Nginx[Nginx Reverse Proxy]
+        API[NestJS API Server]
+        
+        subgraph Data Layer
+            DB[(PostgreSQL)]
+            Cache[(Redis)]
+            Storage[(MinIO S3)]
+        end
+        
+        subgraph Observability
+            Prom[Prometheus]
+            Graf[Grafana]
+        end
+    end
+    
+    ClientWeb -->|HTTPS / API Calls| Nginx
+    ClientMobile -->|HTTPS / API Calls| Nginx
+    
+    Nginx -->|/api/v1/*| API
+    Nginx -->|/*| ClientWeb
+    
+    API -->|Prisma| DB
+    API -->|TCP| Cache
+    API -->|AWS SDK| Storage
+    
+    Prom -->|Scrape /metrics| API
+    Graf -->|Query| Prom

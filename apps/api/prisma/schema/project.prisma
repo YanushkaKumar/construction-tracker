@@ -50,6 +50,19 @@ model Project {
   expenses         Expense[]
   attendance       Attendance[]
 
+  // Finance relations
+  advances              ProjectAdvance[]
+  purchaseAllocations   PurchaseAllocation[]
+  currentAssets         Asset[]              @relation("AssetCurrentProject")
+  assetAssignments      AssetAssignment[]
+
+  // BOQ relations
+  boqSections           BOQSection[]
+  boqItems              BOQItem[]
+
+  // Subcontractor relations
+  subcontractorContracts SubcontractorContract[]
+
   @@unique([companyId, code])
   @@index([companyId])
   @@index([status])

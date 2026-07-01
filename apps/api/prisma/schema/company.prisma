@@ -35,5 +35,12 @@ model Company {
   notifications Notification[]
   auditLogs     AuditLog[]
 
+  // Finance relations
+  advances      ProjectAdvance[]
+  purchases     Purchase[]
+  assets        Asset[]
+  bankLoans     BankLoan[]
+  subcontractors Subcontractor[]
+
   @@map("companies")
 }

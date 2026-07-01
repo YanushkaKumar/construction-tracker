@@ -11,6 +11,7 @@ import {
   FileText, 
   Package, 
   Landmark, 
+  Wallet,
   Users, 
   Settings, 
   LogOut, 
@@ -18,7 +19,7 @@ import {
   X,
   Bell, 
   User,
-  BarChart2
+  BarChart2,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
@@ -61,6 +62,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/daily-reports', label: 'Daily Logs', icon: FileText },
     { href: '/materials', label: 'Materials', icon: Package },
     { href: '/expenses', label: 'Expenses', icon: Landmark },
+    { href: '/finance', label: 'Finance Hub', icon: Wallet },
+    { href: '/subcontractors', label: 'Subcontractors', icon: HardHat },
     { href: '/workers', label: 'Workers & Attendance', icon: Users },
     { href: '/reports', label: 'Reports', icon: BarChart2 },
     { href: '/settings', label: 'Settings', icon: Settings },
@@ -172,7 +175,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
                 {company?.name || 'My Company'}
               </h2>
-              <span className="text-[11px] text-zinc-400 dark:text-zinc-500 uppercase tracking-wider font-semibold">
+              <span className="text-xs text-zinc-400 dark:text-zinc-500 uppercase tracking-wider font-semibold">
                 Construction Dashboard
               </span>
             </div>
@@ -196,7 +199,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
                   {user?.firstName} {user?.lastName}
                 </span>
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">
+                <span className="text-xs text-zinc-400 dark:text-zinc-500 font-medium">
                   {user?.roleDisplayName}
                 </span>
               </div>

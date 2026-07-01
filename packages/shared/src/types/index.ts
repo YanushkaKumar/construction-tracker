@@ -272,3 +272,28 @@ export interface PaginationQuery {
   sort?: string;
   order?: 'asc' | 'desc';
 }
+
+// ── Finance Enums ───────────────────────────
+
+export enum AdvanceStatus {
+  RECEIVED = 'RECEIVED',
+  RETURNED = 'RETURNED',
+  PARTIAL_RETURN = 'PARTIAL_RETURN',
+}
+
+export enum PurchaseCategory {
+  PROJECT_MATERIAL = 'PROJECT_MATERIAL',
+  SHARED_TOOL = 'SHARED_TOOL',
+  DAILY_EXPENSE = 'DAILY_EXPENSE',
+  SERVICE = 'SERVICE',
+  TRANSPORT = 'TRANSPORT',
+  OTHER = 'OTHER',
+}
+
+export enum AssetCondition {
+  NEW = 'NEW',
+  GOOD = 'GOOD',
+  FAIR = 'FAIR',
+  POOR = 'POOR',
+  RETIRED = 'RETIRED',
+}

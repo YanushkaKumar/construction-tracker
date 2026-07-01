@@ -81,11 +81,13 @@ export default function DailyReportsPage() {
   const { data: logsData, isLoading: isLogsLoading } = useQuery<{ data: DailyLog[] }>({
     queryKey: ['daily-logs', selectedProjectId],
     queryFn: async () => {
-      if (selectedProjectId === 'ALL' || selectedProjectId === '') return { data: [] };
+      if (selectedProjectId === 'ALL' || selectedProjectId === '') {
+        const response = await apiClient.get(`/daily-reports`);
+        return response.data;
+      }
       const response = await apiClient.get(`/projects/${selectedProjectId}/daily-reports`);
       return response.data;
     },
-    enabled: selectedProjectId !== 'ALL',
     retry: 1,
   });
 
@@ -123,38 +125,8 @@ export default function DailyReportsPage() {
     },
   });
 
-  // Mock logs for preview in case DB is offline/empty
-  const mockLogs: DailyLog[] = [
-    {
-      id: 'log1',
-      projectId: 'prj1',
-      reportDate: '2026-06-22',
-      weatherCondition: 'Sunny',
-      workSummary: 'Casting of 8th floor columns completed. Brick laying in progress on 4th floor.',
-      issues: 'Delayed delivery of sand by supplier Mahaweli Sand.',
-      safetyNotes: 'All workers equipped with helmets and safety harnesses. Routine checks completed.',
-      workersOnSite: 14,
-      reporter: { id: 'eng', firstName: 'Kasun', lastName: 'Silva' }
-    },
-    {
-      id: 'log2',
-      projectId: 'prj1',
-      reportDate: '2026-06-21',
-      weatherCondition: 'Rainy (Heavy)',
-      workSummary: 'Due to monsoon rains, concrete casting delayed. Indoor plastering and MEP ducting continued on floors 2-3.',
-      issues: 'Water accumulation on 6th floor cleared using emergency pumps.',
-      safetyNotes: 'Slippery scaffolding warning issued. Work suspended outdoors during lightning alert.',
-      workersOnSite: 8,
-      reporter: { id: 'eng', firstName: 'Kasun', lastName: 'Silva' }
-    }
-  ];
-
-  const projectsList = projectsData?.data || [
-    { id: 'prj1', name: 'Horizon Tower - Colombo 07', code: 'PRJ-001' },
-    { id: 'prj2', name: 'Palm Villa - Negombo', code: 'PRJ-002' }
-  ];
-
-  const dailyLogs = (selectedProjectId === 'ALL' || selectedProjectId === '') ? mockLogs : (logsData?.data || mockLogs);
+  const projectsList = projectsData?.data || [];
+  const dailyLogs = logsData?.data || [];
 
   const handleCreateLog = (values: any) => {
     if (selectedProjectId === 'ALL') {
@@ -342,7 +314,7 @@ export default function DailyReportsPage() {
               <CardContent className="pl-8 pt-4 space-y-4">
                 {/* Work summary */}
                 <div className="space-y-1">
-                  <h5 className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <h5 className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
                     <ClipboardList className="w-3.5 h-3.5 text-amber-500" />
                     Work Summary & Progress
                   </h5>
@@ -356,7 +328,7 @@ export default function DailyReportsPage() {
                   {/* Bottlenecks/Issues */}
                   {log.issues && (
                     <div className="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl space-y-1 border border-zinc-100 dark:border-zinc-900">
-                      <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <div className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
                         <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
                         Bottlenecks / Issues
                       </div>
@@ -369,7 +341,7 @@ export default function DailyReportsPage() {
                   {/* Safety logs */}
                   {log.safetyNotes && (
                     <div className="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl space-y-1 border border-zinc-100 dark:border-zinc-900">
-                      <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <div className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
                         <ClipboardList className="w-3.5 h-3.5 text-emerald-500" />
                         Safety Observations
                       </div>
@@ -380,7 +352,7 @@ export default function DailyReportsPage() {
                   )}
                 </div>
 
-                <div className="text-[10px] text-zinc-400 flex items-center gap-1.5 pt-2">
+                <div className="text-xs text-zinc-400 flex items-center gap-1.5 pt-2">
                   <span>Logged by: <strong className="text-zinc-600 dark:text-zinc-400">{log.reporter?.firstName} {log.reporter?.lastName}</strong></span>
                 </div>
               </CardContent>

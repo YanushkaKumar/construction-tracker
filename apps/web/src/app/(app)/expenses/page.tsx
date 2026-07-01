@@ -448,7 +448,7 @@ export default function ExpensesPage() {
                             <td className="py-3.5">
                               <div>
                                 <div className="font-semibold text-zinc-800 dark:text-zinc-200">{exp.title}</div>
-                                {exp.description && <span className="text-[10px] text-zinc-400 font-medium">{exp.description}</span>}
+                                {exp.description && <span className="text-xs text-zinc-400 font-medium">{exp.description}</span>}
                               </div>
                             </td>
                             <td className="py-3.5 text-zinc-500 text-xs">{exp.category}</td>
@@ -456,7 +456,7 @@ export default function ExpensesPage() {
                             <td className="py-3.5 text-zinc-500 text-xs">{new Date(exp.expenseDate).toLocaleDateString()}</td>
                             <td className="py-3.5 text-zinc-500 text-xs">{exp.submittedBy?.firstName} {exp.submittedBy?.lastName}</td>
                             <td className="py-3.5">
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${getStatusBadgeColor(exp.status)}`}>
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full uppercase ${getStatusBadgeColor(exp.status)}`}>
                                 {exp.status}
                               </span>
                             </td>
@@ -498,7 +498,7 @@ export default function ExpensesPage() {
                     <div className="absolute top-0 left-0 w-1.5 h-full bg-amber-500" />
                     <CardHeader className="pb-2 pl-6">
                       <div className="flex justify-between items-baseline gap-2 mb-1">
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                        <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
                           {exp.project?.code} • {exp.category}
                         </span>
                         <span className="text-xs text-zinc-500">

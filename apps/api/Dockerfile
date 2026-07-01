@@ -1,16 +1,16 @@
 # ── Stage 1: Dependencies ────────────────────
 FROM node:20-alpine AS dependencies
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci --only=production && cp -R node_modules /prod_modules
-RUN npm ci
+COPY package.json ./
+RUN npm install --omit=dev --legacy-peer-deps && cp -R node_modules /prod_modules
+RUN npm install --legacy-peer-deps
 
 # ── Stage 2: Build ───────────────────────────
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
-RUN npx prisma generate
+RUN npm run db:generate
 RUN npm run build
 
 # ── Stage 3: Development ─────────────────────
@@ -18,7 +18,7 @@ FROM node:20-alpine AS development
 WORKDIR /app
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
-RUN npx prisma generate
+RUN npm run db:generate
 EXPOSE 4000 9229
 CMD ["npm", "run", "start:dev"]
 
@@ -32,4 +32,4 @@ COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY package.json ./
 EXPOSE 4000
-CMD ["node", "dist/main"]
+CMD ["node", "dist/src/main"]

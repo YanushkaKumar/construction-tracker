@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
 
       {isSuccess ? (
         <div className="space-y-4">
-          <Alert className="border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300">
+          <Alert className="border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300">
             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
             <AlertTitle>Email Sent</AlertTitle>
             <AlertDescription>

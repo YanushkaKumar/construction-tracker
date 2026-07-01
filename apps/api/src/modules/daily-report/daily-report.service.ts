@@ -26,6 +26,24 @@ export class DailyReportService {
     return { data: reports, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
   }
 
+  async findByCompany(companyId: string, page = 1, limit = 20) {
+    const [reports, total] = await Promise.all([
+      this.prisma.dailyReport.findMany({
+        where: { project: { companyId } },
+        include: { 
+          reporter: { select: { id: true, firstName: true, lastName: true } }, 
+          images: true,
+          project: { select: { id: true, name: true, code: true } }
+        },
+        orderBy: { reportDate: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.dailyReport.count({ where: { project: { companyId } } }),
+    ]);
+    return { data: reports, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+  }
+
   async findById(id: string) {
     return this.prisma.dailyReport.findUnique({
       where: { id },

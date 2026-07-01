@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "BuildTrack",
+    "slug": "buildtrack-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true
+    }
+  }
+}

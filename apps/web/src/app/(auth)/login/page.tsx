@@ -155,7 +155,7 @@ export default function LoginPage() {
           size="sm"
           type="button"
           onClick={() => fillDemoCredentials('owner@lankabuild.lk')}
-          className="justify-start text-xs border-zinc-200 hover:border-amber-500 dark:border-zinc-800 hover:bg-amber-50/50 dark:hover:bg-amber-950/20"
+          className="justify-start text-xs border-zinc-200 hover:border-amber-500 dark:border-zinc-800 hover:bg-amber-50/50 dark:hover:bg-amber-900/20"
         >
           <User className="mr-2 h-3.5 w-3.5 text-amber-500" />
           <span>Owner: <strong className="text-zinc-700 dark:text-zinc-300">owner@lankabuild.lk</strong></span>
@@ -165,7 +165,7 @@ export default function LoginPage() {
           size="sm"
           type="button"
           onClick={() => fillDemoCredentials('pm@lankabuild.lk')}
-          className="justify-start text-xs border-zinc-200 hover:border-amber-500 dark:border-zinc-800 hover:bg-amber-50/50 dark:hover:bg-amber-950/20"
+          className="justify-start text-xs border-zinc-200 hover:border-amber-500 dark:border-zinc-800 hover:bg-amber-50/50 dark:hover:bg-amber-900/20"
         >
           <User className="mr-2 h-3.5 w-3.5 text-amber-500" />
           <span>Manager: <strong className="text-zinc-700 dark:text-zinc-300">pm@lankabuild.lk</strong></span>
@@ -175,7 +175,7 @@ export default function LoginPage() {
           size="sm"
           type="button"
           onClick={() => fillDemoCredentials('engineer@lankabuild.lk')}
-          className="justify-start text-xs border-zinc-200 hover:border-amber-500 dark:border-zinc-800 hover:bg-amber-50/50 dark:hover:bg-amber-950/20"
+          className="justify-start text-xs border-zinc-200 hover:border-amber-500 dark:border-zinc-800 hover:bg-amber-50/50 dark:hover:bg-amber-900/20"
         >
           <User className="mr-2 h-3.5 w-3.5 text-amber-500" />
           <span>Engineer: <strong className="text-zinc-700 dark:text-zinc-300">engineer@lankabuild.lk</strong></span>

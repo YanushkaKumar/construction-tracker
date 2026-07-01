@@ -1,0 +1,201 @@
+// ============================================
+// Finance & Advance Tracking Models
+// ============================================
+
+enum AdvanceStatus {
+  RECEIVED
+  RETURNED
+  PARTIAL_RETURN
+}
+
+enum PurchaseCategory {
+  PROJECT_MATERIAL
+  SHARED_TOOL
+  DAILY_EXPENSE
+  SERVICE
+  TRANSPORT
+  OTHER
+}
+
+enum AssetCondition {
+  NEW
+  GOOD
+  FAIR
+  POOR
+  RETIRED
+}
+
+enum BankLoanStatus {
+  ACTIVE
+  PAID_OFF
+  DEFAULTED
+}
+
+// ── Project Advance (Money IN) ──────────────
+
+model ProjectAdvance {
+  id            String        @id @default(cuid())
+  projectId     String        @map("project_id")
+  companyId     String        @map("company_id")
+  receivedById  String        @map("received_by_id")
+  amount        Decimal       @db.Decimal(15, 2)
+  description   String
+  referenceNo   String?       @map("reference_no")
+  receivedDate  DateTime      @map("received_date") @db.Date
+  status        AdvanceStatus @default(RECEIVED)
+  notes         String?
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  bankLoanId    String?       @map("bank_loan_id")
+
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  receivedBy User      @relation("AdvanceReceiver", fields: [receivedById], references: [id])
+  bankLoan   BankLoan? @relation(fields: [bankLoanId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([companyId])
+  @@index([bankLoanId])
+  @@index([receivedDate])
+  @@map("project_advances")
+}
+
+// ── Purchase (Money OUT) ────────────────────
+
+model Purchase {
+  id            String           @id @default(cuid())
+  companyId     String           @map("company_id")
+  purchasedById String           @map("purchased_by_id")
+  title         String
+  description   String?
+  totalAmount   Decimal          @map("total_amount") @db.Decimal(15, 2)
+  category      PurchaseCategory
+  purchaseDate  DateTime         @map("purchase_date") @db.Date
+  receiptUrl    String?          @map("receipt_url")
+  vendor        String?
+  notes         String?
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  bankLoanId    String?          @map("bank_loan_id")
+
+  company     Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  purchasedBy User                 @relation("PurchaseBuyer", fields: [purchasedById], references: [id])
+  allocations PurchaseAllocation[]
+  asset       Asset?
+  bankLoan    BankLoan?            @relation(fields: [bankLoanId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([category])
+  @@index([purchaseDate])
+  @@index([bankLoanId])
+  @@map("purchases")
+}
+
+// ── Purchase Allocation (Split across projects) ─
+
+model PurchaseAllocation {
+  id         String  @id @default(cuid())
+  purchaseId String  @map("purchase_id")
+  projectId  String  @map("project_id")
+  amount     Decimal @db.Decimal(15, 2)
+  percentage Decimal @db.Decimal(5, 2)
+  notes      String?
+
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  project  Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([purchaseId])
+  @@index([projectId])
+  @@map("purchase_allocations")
+}
+
+// ── Asset (Shared Tools & Equipment) ────────
+
+model Asset {
+  id               String         @id @default(cuid())
+  companyId        String         @map("company_id")
+  purchaseId       String?        @unique @map("purchase_id")
+  name             String
+  category         String
+  purchasePrice    Decimal        @default(0) @map("purchase_price") @db.Decimal(12, 2)
+  condition        AssetCondition @default(NEW)
+  currentProjectId String?        @map("current_project_id")
+  serialNumber     String?        @map("serial_number")
+  notes            String?
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  company        Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  purchase       Purchase?         @relation(fields: [purchaseId], references: [id])
+  currentProject Project?          @relation("AssetCurrentProject", fields: [currentProjectId], references: [id])
+  assignments    AssetAssignment[]
+
+  @@index([companyId])
+  @@index([currentProjectId])
+  @@index([category])
+  @@map("assets")
+}
+
+// ── Asset Assignment History ────────────────
+
+model AssetAssignment {
+  id           String    @id @default(cuid())
+  assetId      String    @map("asset_id")
+  projectId    String    @map("project_id")
+  assignedById String    @map("assigned_by_id")
+  startDate    DateTime  @map("start_date") @db.Date
+  endDate      DateTime? @map("end_date") @db.Date
+  notes        String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  asset      Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignedBy User    @relation("AssetAssigner", fields: [assignedById], references: [id])
+
+  @@index([assetId])
+  @@index([projectId])
+  @@map("asset_assignments")
+}
+
+// ── Bank Loan ─────────────────────────────────
+
+model BankLoan {
+  id           String         @id @default(cuid())
+  companyId    String         @map("company_id")
+  bankName     String         @map("bank_name")
+  loanAmount   Decimal        @map("loan_amount") @db.Decimal(15, 2)
+  interestRate Decimal        @map("interest_rate") @db.Decimal(5, 2)
+  receivedDate DateTime       @map("received_date") @db.Date
+  status       BankLoanStatus @default(ACTIVE)
+  notes        String?
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  company    Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  advances   ProjectAdvance[]
+  purchases  Purchase[]
+  repayments BankLoanRepayment[]
+
+  @@index([companyId])
+  @@index([status])
+  @@map("bank_loans")
+}
+
+// ── Bank Loan Repayment ───────────────────────
+
+model BankLoanRepayment {
+  id          String   @id @default(cuid())
+  bankLoanId  String   @map("bank_loan_id")
+  amount      Decimal  @db.Decimal(15, 2)
+  paymentDate DateTime @map("payment_date") @db.Date
+  referenceNo String?  @map("reference_no")
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  bankLoan BankLoan @relation(fields: [bankLoanId], references: [id], onDelete: Cascade)
+
+  @@index([bankLoanId])
+  @@map("bank_loan_repayments")
+}

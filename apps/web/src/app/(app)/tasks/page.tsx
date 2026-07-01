@@ -175,7 +175,7 @@ function TaskForm({
           <select
             id="taskPriority"
             value={priority}
-            onChange={(e) => setPriority(e.target.value)}
+            onChange={(e) => setPriority(e.target.value as any)}
             className="w-full h-9 rounded-lg border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-800 dark:bg-zinc-950 focus:outline-none focus:ring-1 focus:ring-amber-500"
           >
             {PRIORITIES.map((p) => (
@@ -188,7 +188,7 @@ function TaskForm({
           <select
             id="taskStatus"
             value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            onChange={(e) => setStatus(e.target.value as any)}
             className="w-full h-9 rounded-lg border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-800 dark:bg-zinc-950 focus:outline-none focus:ring-1 focus:ring-amber-500"
           >
             {STATUSES.map((s) => (
@@ -367,12 +367,17 @@ export default function TasksPage() {
   // ── Render ───────────────────────────────────────
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="p-6 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">Site Tasks</h1>
-          <p className="text-zinc-500 dark:text-zinc-400">Create, assign, and track tasks across all your projects.</p>
+          <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 to-zinc-500 dark:from-white dark:to-zinc-400 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-lg shadow-amber-500/20">
+              <CheckSquare className="w-5 h-5" />
+            </div>
+            Site Tasks
+          </h1>
+          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mt-2 ml-1">Create, assign, and track tasks across all your projects.</p>
         </div>
         <div className="flex items-center gap-2">
           {/* View toggles */}
@@ -380,7 +385,7 @@ export default function TasksPage() {
             variant={activeView === 'all-tasks' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setActiveView('all-tasks')}
-            className={`text-xs rounded-lg ${activeView === 'all-tasks' ? 'bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-950' : 'border-zinc-200 dark:border-zinc-800'}`}
+            className={`text-xs rounded-xl ${activeView === 'all-tasks' ? 'bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-950' : 'border-zinc-200 dark:border-zinc-800'}`}
           >
             <ListTodo className="w-4 h-4 mr-1.5" />
             List View
@@ -392,7 +397,7 @@ export default function TasksPage() {
               setActiveView('kanban');
               if (!selectedProjectId && projectsList.length > 0) setSelectedProjectId(projectsList[0].id);
             }}
-            className={`text-xs rounded-lg ${activeView === 'kanban' ? 'bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-950' : 'border-zinc-200 dark:border-zinc-800'}`}
+            className={`text-xs rounded-xl ${activeView === 'kanban' ? 'bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-950' : 'border-zinc-200 dark:border-zinc-800'}`}
           >
             <KanbanSquare className="w-4 h-4 mr-1.5" />
             Kanban
@@ -400,11 +405,11 @@ export default function TasksPage() {
 
           {/* Add Task button */}
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-            <DialogTrigger render={
-              <Button size="sm" className="bg-amber-500 text-zinc-950 hover:bg-amber-600 text-xs font-semibold rounded-lg" />
-            }>
-              <Plus className="w-4 h-4 mr-1" />
-              Add Task
+            <DialogTrigger asChild>
+              <Button size="sm" className="bg-amber-500 text-zinc-950 hover:bg-amber-600 text-xs font-semibold rounded-xl">
+                <Plus className="w-4 h-4 mr-1" />
+                Add Task
+              </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
               <DialogHeader>
@@ -468,13 +473,13 @@ export default function TasksPage() {
                     {/* Task Info */}
                     <div className="space-y-1.5 flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase">
+                        <span className="text-xs font-bold text-zinc-400 uppercase">
                           {task.project?.code || '—'} • {task.project?.name || 'Unknown'}
                         </span>
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${getPriorityColor(task.priority)}`}>
+                        <span className={`text-xs font-bold px-1.5 py-0.5 rounded-md ${getPriorityColor(task.priority)}`}>
                           {task.priority}
                         </span>
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${getStatusBadge(task.status)}`}>
+                        <span className={`text-xs font-bold px-1.5 py-0.5 rounded-md ${getStatusBadge(task.status)}`}>
                           {task.status.replace(/_/g, ' ')}
                         </span>
                       </div>
@@ -482,7 +487,7 @@ export default function TasksPage() {
                       {task.description && (
                         <p className="text-xs text-zinc-500 line-clamp-1">{task.description}</p>
                       )}
-                      <div className="flex items-center gap-3 text-[10px] text-zinc-400">
+                      <div className="flex items-center gap-3 text-xs text-zinc-400">
                         {task.assignee && (
                           <span className="flex items-center gap-1">
                             <User className="w-3 h-3 text-amber-500" />
@@ -504,7 +509,7 @@ export default function TasksPage() {
                         value={task.status}
                         disabled={statusMutation.isPending}
                         onChange={(e) => statusMutation.mutate({ taskId: task.id, status: e.target.value })}
-                        className="w-32 h-8 rounded-lg border border-zinc-200 bg-white px-2 text-[10px] font-semibold dark:border-zinc-800 dark:bg-zinc-950 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                        className="w-32 h-8 rounded-lg border border-zinc-200 bg-white px-2 text-xs font-semibold dark:border-zinc-800 dark:bg-zinc-950 focus:outline-none focus:ring-1 focus:ring-amber-500"
                       >
                         {STATUSES.map((s) => (
                           <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
@@ -558,7 +563,7 @@ export default function TasksPage() {
                       <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
                         {colKey.replace(/_/g, ' ')}
                       </span>
-                      <span className="text-[10px] font-bold bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-bold bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-2 py-0.5 rounded-full">
                         {columnTasks.length}
                       </span>
                     </div>
@@ -581,7 +586,7 @@ export default function TasksPage() {
                               </div>
                             </div>
                             <h5 className="text-xs font-bold text-zinc-800 dark:text-zinc-100 line-clamp-2">{task.title}</h5>
-                            <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-zinc-100 dark:border-zinc-900 text-[10px] text-zinc-500">
+                            <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-zinc-100 dark:border-zinc-900 text-xs text-zinc-500">
                               {task.assignee ? (
                                 <span className="flex items-center gap-1">
                                   <User className="w-3 h-3 text-amber-500" />
@@ -600,7 +605,7 @@ export default function TasksPage() {
                             <select
                               value={task.status}
                               onChange={(e) => statusMutation.mutate({ taskId: task.id, status: e.target.value })}
-                              className="w-full h-7 mt-1 rounded border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 px-1.5 text-[10px] focus:outline-none focus:ring-1 focus:ring-amber-500"
+                              className="w-full h-7 mt-1 rounded border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 px-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
                             >
                               {STATUSES.map((s) => (
                                 <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>

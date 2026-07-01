@@ -1,8 +1,8 @@
 # ── Stage 1: Dependencies ────────────────────
 FROM node:20-alpine AS dependencies
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY package.json ./
+RUN npm install --legacy-peer-deps
 
 # ── Stage 2: Build ───────────────────────────
 FROM node:20-alpine AS build

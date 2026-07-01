@@ -1,0 +1,24 @@
+graph TD
+    Developer[Developer] -->|Git Push| GitHub[GitHub Repository]
+    
+    subgraph GitHub Actions
+        CI[CI Pipeline: Lint & Test]
+        CD[CD Pipeline: Build Docker Images]
+    end
+    
+    GitHub --> CI
+    CI --> CD
+    
+    CD -->|Push Images| Registry[(Private Docker Registry)]
+    CD -->|Trigger Webhook| Server[Production Linux Server]
+    
+    subgraph Server [Production Server]
+        Docker[Docker Engine]
+        Compose[docker-compose.yml]
+        
+        Compose --> Pull[docker compose pull]
+        Pull --> Up[docker compose up -d]
+        Up --> Containers[Running Containers: Web, API, DB...]
+    end
+    
+    Server -->|Pull Images| Registry

@@ -2,7 +2,7 @@ import { Controller, Get, Post, Param, Body, Query, UseGuards } from '@nestjs/co
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { DailyReportService } from './daily-report.service';
-import { CurrentUser } from '../../common/decorators';
+import { CurrentUser, CompanyId } from '../../common/decorators';
 import { JwtPayload } from '../../common/types/jwt-payload.type';
 
 @ApiTags('Daily Reports')
@@ -22,6 +22,12 @@ export class DailyReportController {
   @ApiOperation({ summary: 'List project daily reports' })
   findByProject(@Param('projectId') projectId: string, @Query('page') page?: number, @Query('limit') limit?: number) {
     return this.dailyReportService.findByProject(projectId, page, limit);
+  }
+
+  @Get('daily-reports')
+  @ApiOperation({ summary: 'List all daily reports for the company' })
+  findByCompany(@CompanyId() companyId: string, @Query('page') page?: number, @Query('limit') limit?: number) {
+    return this.dailyReportService.findByCompany(companyId, page, limit);
   }
 
   @Get('daily-reports/:id')

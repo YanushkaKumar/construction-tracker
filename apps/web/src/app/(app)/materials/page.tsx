@@ -433,7 +433,7 @@ export default function MaterialsPage() {
                               <select 
                                 value={req.status}
                                 onChange={(e) => handleStatusChange(req.id, e.target.value)}
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded border focus:outline-none ${getRequestBadgeColor(req.status)}`}
+                                className={`text-xs font-bold px-2 py-0.5 rounded border focus:outline-none ${getRequestBadgeColor(req.status)}`}
                               >
                                 <option value="PENDING">Pending</option>
                                 <option value="APPROVED">Approved</option>
@@ -464,12 +464,12 @@ export default function MaterialsPage() {
                 {materials.map((m) => {
                   const isLow = m.currentStock <= m.minimumStock;
                   return (
-                    <Card key={m.id} className={`border-zinc-200 dark:border-zinc-800 relative ${isLow ? 'ring-1 ring-amber-500/35 bg-amber-50/5 dark:bg-amber-950/5' : ''}`}>
+                    <Card key={m.id} className={`border-zinc-200 dark:border-zinc-800 relative ${isLow ? 'ring-1 ring-amber-500/35 bg-amber-50/5 dark:bg-amber-900/5' : ''}`}>
                       <CardHeader className="pb-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-zinc-400 uppercase">{m.category}</span>
+                          <span className="text-xs font-bold text-zinc-400 uppercase">{m.category}</span>
                           {isLow && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full uppercase">
+                            <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full uppercase">
                               <AlertTriangle className="w-3 h-3" />
                               Low Stock
                             </span>
@@ -516,7 +516,7 @@ export default function MaterialsPage() {
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-amber-500 font-bold">★ {s.rating || 5}.0 Rating</span>
-                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase">Active</span>
+                        <span className="text-xs font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase">Active</span>
                       </div>
                       <CardTitle className="text-lg">{s.name}</CardTitle>
                     </CardHeader>
@@ -534,7 +534,7 @@ export default function MaterialsPage() {
                       )}
                       <div className="pt-2 flex flex-wrap gap-1 border-t border-zinc-100 dark:border-zinc-900">
                         {s.materialTypes.map((cat, idx) => (
-                          <span key={idx} className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">
+                          <span key={idx} className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-2 py-0.5 rounded text-xs font-semibold uppercase">
                             {cat}
                           </span>
                         ))}

@@ -190,22 +190,27 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Header Panel */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="p-6 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
+          <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 to-zinc-500 dark:from-white dark:to-zinc-400 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-lg shadow-amber-500/20">
+              <Building2 className="w-5 h-5" />
+            </div>
             Projects
           </h1>
-          <p className="text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mt-2 ml-1">
             Create, track, and monitor active constructions.
           </p>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger render={<Button className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold shadow-md shadow-amber-500/10" />}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Project
+          <DialogTrigger asChild>
+            <Button className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold shadow-lg shadow-amber-500/10 rounded-xl">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Project
+            </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -358,7 +363,7 @@ export default function ProjectsPage() {
                   <span className="text-xs font-semibold text-zinc-400">
                     {project.code}
                   </span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${getStatusBadgeColor(project.status)}`}>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full uppercase ${getStatusBadgeColor(project.status)}`}>
                     {project.status.replace('_', ' ')}
                   </span>
                 </div>
@@ -432,15 +437,15 @@ export default function ProjectsPage() {
                 <div className="grid grid-cols-3 gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-900 text-center">
                   <div className="p-2 bg-zinc-50 dark:bg-zinc-950 rounded-xl">
                     <div className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{project._count.tasks}</div>
-                    <div className="text-[9px] text-zinc-400 font-semibold uppercase">Tasks</div>
+                    <div className="text-xs text-zinc-400 font-semibold uppercase">Tasks</div>
                   </div>
                   <div className="p-2 bg-zinc-50 dark:bg-zinc-950 rounded-xl">
                     <div className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{project._count.dailyReports}</div>
-                    <div className="text-[9px] text-zinc-400 font-semibold uppercase">Logs</div>
+                    <div className="text-xs text-zinc-400 font-semibold uppercase">Logs</div>
                   </div>
                   <div className="p-2 bg-zinc-50 dark:bg-zinc-950 rounded-xl">
                     <div className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{project._count.expenses}</div>
-                    <div className="text-[9px] text-zinc-400 font-semibold uppercase">Expenses</div>
+                    <div className="text-xs text-zinc-400 font-semibold uppercase">Expenses</div>
                   </div>
                 </div>
               </CardContent>

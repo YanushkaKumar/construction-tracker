@@ -213,14 +213,17 @@ export default function WorkersPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Header Panel */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="p-6 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
+          <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 to-zinc-500 dark:from-white dark:to-zinc-400 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-lg shadow-amber-500/20">
+              <Users className="w-5 h-5" />
+            </div>
             Workforce & Attendance
           </h1>
-          <p className="text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mt-2 ml-1">
             Manage worker rosters, log daily site attendance, and aggregate payrolls.
           </p>
         </div>
@@ -228,9 +231,11 @@ export default function WorkersPage() {
         {/* Create Dialog Trigger (Only active on Roster Tab) */}
         {activeTab === 'roster' && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger render={<Button className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold shadow-md shadow-amber-500/10" />}>
-              <Plus className="w-4 h-4 mr-2" />
-              Register Worker
+            <DialogTrigger asChild>
+              <Button className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold shadow-lg shadow-amber-500/10 rounded-xl">
+                <Plus className="w-4 h-4 mr-2" />
+                Register Worker
+              </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
@@ -380,13 +385,13 @@ export default function WorkersPage() {
                             <td className="py-3.5 text-zinc-500 text-xs">{w.nic || 'N/A'}</td>
                             <td className="py-3.5 text-zinc-500 text-xs">{w.phone || 'N/A'}</td>
                             <td className="py-3.5">
-                              <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+                              <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider">
                                 {w.skillType}
                               </span>
                             </td>
                             <td className="py-3.5 font-bold text-zinc-900 dark:text-white">LKR {w.dailyRate.toLocaleString()}</td>
                             <td className="py-3.5">
-                              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase">Active</span>
+                              <span className="text-xs font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase">Active</span>
                             </td>
                           </tr>
                         ))}
@@ -449,7 +454,7 @@ export default function WorkersPage() {
                     >
                       <div>
                         <div className="font-bold text-sm text-zinc-800 dark:text-zinc-100">{w.firstName} {w.lastName}</div>
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase">{w.skillType} • LKR {w.dailyRate.toLocaleString()}/day</span>
+                        <span className="text-xs font-bold text-zinc-400 uppercase">{w.skillType} • LKR {w.dailyRate.toLocaleString()}/day</span>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
@@ -460,7 +465,7 @@ export default function WorkersPage() {
                               key={status}
                               type="button"
                               onClick={() => handleAttendanceChange(w.id, status)}
-                              className={`px-3 py-1 text-[10px] font-bold uppercase rounded-md transition-colors ${
+                              className={`px-3 py-1 text-xs font-bold uppercase rounded-md transition-colors ${
                                 record.status === status
                                   ? status === 'PRESENT' ? 'bg-emerald-500 text-white shadow-sm' :
                                     status === 'HALF_DAY' ? 'bg-amber-500 text-zinc-950 shadow-sm' :
@@ -476,7 +481,7 @@ export default function WorkersPage() {
                         {/* Overtime input */}
                         {record.status !== 'ABSENT' && (
                           <div className="flex items-center gap-2">
-                            <Label htmlFor={`ot-${w.id}`} className="text-[10px] font-bold text-zinc-400 uppercase">OT Hours</Label>
+                            <Label htmlFor={`ot-${w.id}`} className="text-xs font-bold text-zinc-400 uppercase">OT Hours</Label>
                             <Input
                               id={`ot-${w.id}`}
                               type="number"

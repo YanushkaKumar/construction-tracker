@@ -1,0 +1,28 @@
+sequenceDiagram
+    participant PM as Project Manager
+    participant Sys as BuildTrack System
+    participant FM as Finance Manager
+    participant Sup as Site Supervisor
+
+    PM->>Sys: 1. Create New Project (Set Budget)
+    Sys-->>PM: Project Created (Status: PLANNING)
+    
+    PM->>Sys: 2. Add BOQ Estimates (Concrete, Steel)
+    
+    FM->>Sys: 3. Create Bank Loan Facility ($1M)
+    Sys-->>FM: Loan Created (Active)
+    
+    PM->>Sys: 4. Change Project Status to ACTIVE
+    
+    Sup->>Sys: 5. Submit Daily Log from Mobile App
+    Sys-->>Sup: Log Saved (Photos sent to MinIO)
+    
+    PM->>Sys: 6. Purchase Concrete ($50k)
+    PM->>Sys: Link Purchase to Bank Loan
+    Sys-->>PM: Purchase Logged, BOQ Updated
+    Sys-->>FM: Loan Outstanding Debt unchanged (purchase funded by loan, not repaid)
+    
+    FM->>Sys: 7. Record Loan Repayment ($10k)
+    Sys->>Sys: Verify Repayment <= Outstanding Debt
+    Sys->>Sys: Deduct $10k from Outstanding Debt
+    Sys-->>FM: Repayment Logged

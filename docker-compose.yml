@@ -24,9 +24,7 @@ services:
 
   # ── Frontend (Next.js) ──────────────────────
   web:
-    build:
-      context: ./apps/web
-      dockerfile: Dockerfile
+    image: yanushka101/build-rack:web
     container_name: buildtrack-web
     restart: unless-stopped
     environment:
@@ -40,9 +38,7 @@ services:
 
   # ── Backend (NestJS) ────────────────────────
   api:
-    build:
-      context: ./apps/api
-      dockerfile: Dockerfile
+    image: yanushka101/build-rack:api
     container_name: buildtrack-api
     restart: unless-stopped
     environment:

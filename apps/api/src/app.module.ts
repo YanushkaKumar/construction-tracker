@@ -28,6 +28,15 @@ import { AttendanceModule } from './modules/attendance/attendance.module';
 import { ReportModule } from './modules/report/report.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 
+// Finance Modules
+import { AdvanceModule } from './modules/advance/advance.module';
+import { PurchaseModule } from './modules/purchase/purchase.module';
+import { AssetModule } from './modules/asset/asset.module';
+import { FinanceDashboardModule } from './modules/finance-dashboard/finance-dashboard.module';
+import { BankLoanModule } from './modules/bank-loan/bank-loan.module';
+import { BOQModule } from './modules/boq/boq.module';
+import { SubcontractorModule } from './modules/subcontractor/subcontractor.module';
+
 import { AppController } from './app.controller';
 
 // Configuration
@@ -78,6 +87,15 @@ import { notificationConfig } from './config/notification.config';
     AttendanceModule,
     ReportModule,
     DashboardModule,
+
+    // ── Finance Modules ────────────────────
+    AdvanceModule,
+    PurchaseModule,
+    AssetModule,
+    FinanceDashboardModule,
+    BankLoanModule,
+    BOQModule,
+    SubcontractorModule,
   ],
 })
 export class AppModule {}
