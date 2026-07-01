@@ -24,7 +24,7 @@ services:
 
   # ── Frontend (Next.js) ──────────────────────
   web:
-    image: yanushka101/build-rack:web
+    image: yanushka101/build-rack:web-${IMAGE_TAG:-latest}
     container_name: buildtrack-web
     restart: unless-stopped
     environment:
@@ -38,7 +38,7 @@ services:
 
   # ── Backend (NestJS) ────────────────────────
   api:
-    image: yanushka101/build-rack:api
+    image: yanushka101/build-rack:api-${IMAGE_TAG:-latest}
     container_name: buildtrack-api
     restart: unless-stopped
     environment:

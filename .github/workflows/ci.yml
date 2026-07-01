@@ -121,7 +121,9 @@ jobs:
           context: ./apps/api
           file: ./apps/api/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/build-rack:api
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/build-rack:api-${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/build-rack:api-latest
 
       - name: Build and push Web
         uses: docker/build-push-action@v5
@@ -129,7 +131,9 @@ jobs:
           context: ./apps/web
           file: ./apps/web/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/build-rack:web
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/build-rack:web-${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/build-rack:web-latest
 
   deploy:
     name: Deploy to Oracle Cloud
@@ -146,6 +150,6 @@ jobs:
           script: |
             cd ~/buildtrack
             docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p "${{ secrets.DOCKERHUB_TOKEN }}"
-            docker compose pull
-            docker compose up -d
-            docker compose exec -T api npx prisma@6.14.0 migrate deploy --schema=prisma/schema
+            IMAGE_TAG=${{ github.sha }} docker compose pull
+            IMAGE_TAG=${{ github.sha }} docker compose up -d
+            IMAGE_TAG=${{ github.sha }} docker compose exec -T api npx prisma@6.14.0 migrate deploy --schema=prisma/schema
