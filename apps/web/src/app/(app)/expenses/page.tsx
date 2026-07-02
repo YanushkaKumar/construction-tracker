@@ -85,13 +85,24 @@ export default function ExpensesPage() {
 
   // Fetch ledger expenses
   const { data: ledgerData, isLoading: isLedgerLoading } = useQuery<Expense[]>({
-    queryKey: ['project-expenses', selectedProjectId],
+    queryKey: ['project-expenses', selectedProjectId, projectsData?.data],
     queryFn: async () => {
-      if (selectedProjectId === 'ALL' || selectedProjectId === '') return [];
-      const response = await apiClient.get(`/projects/${selectedProjectId}/expenses`);
-      return response.data;
+      const pList = projectsData?.data || [];
+      if (selectedProjectId && selectedProjectId !== 'ALL') {
+        const response = await apiClient.get(`/projects/${selectedProjectId}/expenses`);
+        return response.data;
+      }
+      // Load across all projects
+      const allExps: Expense[] = [];
+      for (const p of pList) {
+        try {
+          const res = await apiClient.get(`/projects/${p.id}/expenses`);
+          const mapped = (res.data || []).map((e: any) => ({ ...e, project: { id: p.id, name: p.name, code: p.code } }));
+          allExps.push(...mapped);
+        } catch { /* skip */ }
+      }
+      return allExps;
     },
-    enabled: selectedProjectId !== 'ALL',
     retry: 1,
   });
 
@@ -167,80 +178,9 @@ export default function ExpensesPage() {
     },
   });
 
-  // Mock data fallbacks for preview
-  const mockLedger: Expense[] = [
-    {
-      id: 'exp1',
-      projectId: 'prj1',
-      submittedById: 'eng',
-      category: 'MATERIAL',
-      title: 'Cement purchase - 200 bags',
-      description: 'Acquired 200 bags from Tokyo Cement for slab casting.',
-      amount: 370000,
-      currency: 'LKR',
-      status: 'APPROVED',
-      expenseDate: '2026-06-15',
-      createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-      submittedBy: { firstName: 'Kasun', lastName: 'Silva' },
-      project: { name: 'Horizon Tower - Colombo 07', code: 'PRJ-001' }
-    },
-    {
-      id: 'exp2',
-      projectId: 'prj1',
-      submittedById: 'eng',
-      category: 'LABOUR',
-      title: 'Overtime wages - week 24',
-      description: 'Additional hours logged by masons for column work.',
-      amount: 85000,
-      currency: 'LKR',
-      status: 'PENDING',
-      expenseDate: '2026-06-20',
-      createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-      submittedBy: { firstName: 'Kasun', lastName: 'Silva' },
-      project: { name: 'Horizon Tower - Colombo 07', code: 'PRJ-001' }
-    }
-  ];
-
-  const mockPending: Expense[] = [
-    {
-      id: 'exp2',
-      projectId: 'prj1',
-      submittedById: 'eng',
-      category: 'LABOUR',
-      title: 'Overtime wages - week 24',
-      description: 'Additional hours logged by masons for column work.',
-      amount: 85000,
-      currency: 'LKR',
-      status: 'PENDING',
-      expenseDate: '2026-06-20',
-      createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-      submittedBy: { firstName: 'Kasun', lastName: 'Silva' },
-      project: { name: 'Horizon Tower - Colombo 07', code: 'PRJ-001' }
-    },
-    {
-      id: 'exp4',
-      projectId: 'prj2',
-      submittedById: 'eng',
-      category: 'MATERIAL',
-      title: 'Steel reinforcement bars',
-      description: 'Required reinforcement bars for villa column structure.',
-      amount: 1425000,
-      currency: 'LKR',
-      status: 'PENDING',
-      expenseDate: '2026-06-10',
-      createdAt: new Date(Date.now() - 86400000 * 4).toISOString(),
-      submittedBy: { firstName: 'Kasun', lastName: 'Silva' },
-      project: { name: 'Palm Villa - Negombo', code: 'PRJ-002' }
-    }
-  ];
-
-  const projectsList = projectsData?.data || [
-    { id: 'prj1', name: 'Horizon Tower - Colombo 07', code: 'PRJ-001' },
-    { id: 'prj2', name: 'Palm Villa - Negombo', code: 'PRJ-002' }
-  ];
-
-  const expenses = (selectedProjectId === 'ALL' || selectedProjectId === '') ? mockLedger : (ledgerData || mockLedger);
-  const pendingApprovals = pendingData || mockPending;
+  const projectsList = projectsData?.data || [];
+  const expenses = ledgerData || [];
+  const pendingApprovals = pendingData || [];
 
   const handleCreateExpense = (values: any) => {
     if (selectedProjectId === 'ALL') {

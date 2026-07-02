@@ -167,25 +167,9 @@ export default function WorkersPage() {
     },
   });
 
-  // Mock fallbacks
-  const mockWorkers: Worker[] = [
-    { id: 'w1', firstName: 'Saman', lastName: 'Kumara', nic: '881234567V', phone: '+94781234567', skillType: 'Mason', dailyRate: 3500, isActive: true },
-    { id: 'w2', firstName: 'Ruwan', lastName: 'Bandara', nic: '901234567V', phone: '+94782345678', skillType: 'Carpenter', dailyRate: 3200, isActive: true },
-    { id: 'w3', firstName: 'Pradeep', lastName: 'Wijesinghe', nic: '921234567V', phone: '+94784567890', skillType: 'Labourer', dailyRate: 2500, isActive: true },
-  ];
-
-  const mockPayroll: PayrollRecord[] = [
-    { workerId: 'w1', firstName: 'Saman', lastName: 'Kumara', skillType: 'Mason', dailyRate: 3500, daysPresent: 5, halfDays: 0, totalOvertimeHours: 4, totalEarnings: 19250 },
-    { workerId: 'w2', firstName: 'Ruwan', lastName: 'Bandara', skillType: 'Carpenter', dailyRate: 3200, daysPresent: 4, halfDays: 1, totalOvertimeHours: 0, totalEarnings: 14400 },
-    { workerId: 'w3', firstName: 'Pradeep', lastName: 'Wijesinghe', skillType: 'Labourer', dailyRate: 2500, daysPresent: 5, halfDays: 0, totalOvertimeHours: 2, totalEarnings: 13125 }
-  ];
-
-  const workers = workersData || mockWorkers;
-  const projectsList = projectsData?.data || [
-    { id: 'prj1', name: 'Horizon Tower - Colombo 07', code: 'PRJ-001' },
-    { id: 'prj2', name: 'Palm Villa - Negombo', code: 'PRJ-002' }
-  ];
-  const payroll = payrollData || mockPayroll;
+  const workers = workersData || [];
+  const projectsList = projectsData?.data || [];
+  const payroll = payrollData || [];
 
   const handleRegisterWorker = (values: any) => {
     setMutateError(null);

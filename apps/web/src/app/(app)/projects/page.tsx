@@ -167,7 +167,7 @@ export default function ProjectsPage() {
     }
   ];
 
-  const projects = data?.data || mockProjects;
+  const projects = data?.data || [];
 
   const handleCreateProject = (values: any) => {
     setMutateError(null);
@@ -350,15 +350,22 @@ export default function ProjectsPage() {
       )}
 
       {/* Projects Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.map((project) => {
-          const budgetPercent = project.budgetEstimate > 0 
-            ? Math.round((project.budgetActual / project.budgetEstimate) * 100)
-            : 0;
+      {projects.length === 0 && !isLoading ? (
+        <div className="py-16 text-center text-zinc-500 flex flex-col items-center border-2 border-dashed border-zinc-200 dark:border-zinc-850 rounded-3xl bg-zinc-500/5">
+          <FolderDot className="w-10 h-10 text-zinc-300 dark:text-zinc-700 mb-3" />
+          <p className="font-semibold text-sm text-zinc-700 dark:text-zinc-300">No projects yet.</p>
+          <p className="text-xs text-zinc-500 mt-1">Initialize a construction project to start tracking logs and budgets.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {projects.map((project) => {
+            const budgetPercent = project.budgetEstimate > 0 
+              ? Math.round((project.budgetActual / project.budgetEstimate) * 100)
+              : 0;
 
-          return (
-            <Card key={project.id} className="glass-panel flex flex-col hover:-translate-y-0.5 transition-all duration-300 group">
-              <CardHeader className="pb-3 text-left">
+            return (
+              <Card key={project.id} className="glass-panel flex flex-col hover:-translate-y-0.5 transition-all duration-300 group">
+                <CardHeader className="pb-3 text-left">
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 tracking-wider uppercase">
                     {project.code}
@@ -457,6 +464,7 @@ export default function ProjectsPage() {
           );
         })}
       </div>
+      )}
     </div>
   );
 }

@@ -122,13 +122,23 @@ export default function MaterialsPage() {
 
   // Fetch material requests for project
   const { data: requestsData, isLoading: isRequestsLoading } = useQuery<MaterialRequest[]>({
-    queryKey: ['material-requests', selectedProjectId],
+    queryKey: ['material-requests', selectedProjectId, projectsData?.data],
     queryFn: async () => {
-      if (selectedProjectId === 'ALL' || selectedProjectId === '') return [];
-      const response = await apiClient.get(`/projects/${selectedProjectId}/material-requests`);
-      return response.data;
+      const pList = projectsData?.data || [];
+      if (selectedProjectId && selectedProjectId !== 'ALL') {
+        const response = await apiClient.get(`/projects/${selectedProjectId}/material-requests`);
+        return response.data;
+      }
+      const allReqs: MaterialRequest[] = [];
+      for (const p of pList) {
+        try {
+          const res = await apiClient.get(`/projects/${p.id}/material-requests`);
+          const mapped = (res.data || []).map((r: any) => ({ ...r, project: { id: p.id, name: p.name, code: p.code } }));
+          allReqs.push(...mapped);
+        } catch { /* skip */ }
+      }
+      return allReqs;
     },
-    enabled: selectedProjectId !== 'ALL',
     retry: 1,
   });
 
@@ -176,52 +186,10 @@ export default function MaterialsPage() {
     },
   });
 
-  // Mock fallbacks for preview
-  const mockMaterials: Material[] = [
-    { id: 'mat1', name: 'Portland Cement (50kg)', unit: 'bags', unitPrice: 1850, category: 'Cement', minimumStock: 50, currentStock: 250 },
-    { id: 'mat2', name: 'TMT Steel Bar 12mm', unit: 'tons', unitPrice: 285000, category: 'Steel', minimumStock: 2, currentStock: 1.5 },
-    { id: 'mat3', name: 'River Sand', unit: 'cu.m', unitPrice: 22000, category: 'Sand', minimumStock: 10, currentStock: 30 },
-  ];
-
-  const mockSuppliers: Supplier[] = [
-    { id: 'sup1', name: 'Tokyo Cement Lanka', contactPerson: 'Mr. Senanayake', phone: '+94112223344', email: 'sales@tokyocement.lk', materialTypes: ['Cement'], rating: 5, isActive: true },
-    { id: 'sup2', name: 'Lanka Steel Corporation', contactPerson: 'Mr. Gunawardena', phone: '+94112334455', email: 'info@lankasteel.lk', materialTypes: ['Steel'], rating: 4, isActive: true },
-  ];
-
-  const mockRequests: MaterialRequest[] = [
-    {
-      id: 'req1',
-      projectId: 'prj1',
-      materialId: 'mat1',
-      supplierId: 'sup1',
-      quantity: 100,
-      unitPrice: 1850,
-      totalPrice: 185000,
-      status: 'DELIVERED',
-      createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-      material: { name: 'Portland Cement (50kg)', unit: 'bags' },
-      project: { name: 'Horizon Tower - Colombo 07', code: 'PRJ-001' },
-      supplier: { name: 'Tokyo Cement Lanka' }
-    },
-    {
-      id: 'req2',
-      projectId: 'prj1',
-      materialId: 'mat2',
-      quantity: 5,
-      status: 'PENDING',
-      createdAt: new Date(Date.now() - 3600000 * 4).toISOString(),
-      material: { name: 'TMT Steel Bar 12mm', unit: 'tons' },
-      project: { name: 'Horizon Tower - Colombo 07', code: 'PRJ-001' }
-    }
-  ];
-
-  const materials = materialsData || mockMaterials;
-  const suppliers = suppliersData || mockSuppliers;
-  const requests = (selectedProjectId === 'ALL' || selectedProjectId === '') ? mockRequests : (requestsData || mockRequests);
-  const projectsList = projectsData?.data || [
-    { id: 'prj1', name: 'Horizon Tower - Colombo 07', code: 'PRJ-001' },
-    { id: 'prj2', name: 'Palm Villa - Negombo', code: 'PRJ-002' }
-  ];
+  const materials = materialsData || [];
+  const suppliers = suppliersData || [];
+  const requests = requestsData || [];
+  const projectsList = projectsData?.data || [];
 
   const handleCreateRequest = (values: any) => {
     if (selectedProjectId === 'ALL') {

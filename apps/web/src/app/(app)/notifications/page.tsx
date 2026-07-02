@@ -56,35 +56,7 @@ export default function NotificationsPage() {
     },
   });
 
-  // Mock fallbacks
-  const mockNotifications: AppNotification[] = [
-    {
-      id: 'n1',
-      type: 'TASK_ASSIGNED',
-      title: 'New Task Assigned',
-      message: 'You have been assigned to: Complete 8th floor slab casting.',
-      isRead: false,
-      createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-    },
-    {
-      id: 'n2',
-      type: 'EXPENSE_APPROVED',
-      title: 'Expense Voucher Approved',
-      message: 'Your expense for Cement purchase - 200 bags (LKR 370,000) was approved.',
-      isRead: true,
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-    },
-    {
-      id: 'n3',
-      type: 'DAILY_LOG_SUBMITTED',
-      title: 'Daily Report Submitted',
-      message: ' Kasun Silva submitted the Daily Site Log for Horizon Tower today.',
-      isRead: false,
-      createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-    }
-  ];
-
-  const notifications = data || mockNotifications;
+  const notifications = data || [];
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const getNotificationIcon = (type: string) => {

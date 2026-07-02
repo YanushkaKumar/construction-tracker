@@ -43,7 +43,7 @@ export function BankLoansTab() {
   const [repayErr, setRepayErr] = useState<string | null>(null);
   const [expandedLoanId, setExpandedLoanId] = useState<string | null>(null);
 
-  const { data: loans, isLoading } = useQuery<any[]>({
+  const { data: loans, isLoading, isFetching } = useQuery<any[]>({
     queryKey: ['bank-loans'],
     queryFn: async () => (await apiClient.get('/bank-loans')).data,
   });
@@ -103,7 +103,11 @@ export function BankLoansTab() {
       <div className="flex justify-between items-center bg-white dark:bg-zinc-950 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
         <div>
           <h2 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-            <Landmark className="w-5 h-5 text-indigo-500 animate-pulse" /> Company Bank Loans
+            <Landmark className="w-5 h-5 text-indigo-500" />
+            Company Bank Loans
+            {(isFetching || createLoan.isPending || createRepayment.isPending || delLoan.isPending || deleteRepayment.isPending) && (
+              <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
+            )}
           </h2>
           <p className="text-xs text-zinc-500 mt-1">Manage external financing, track loan drawdowns, and record repayments.</p>
         </div>
@@ -241,7 +245,7 @@ export function BankLoansTab() {
                   </div>
 
                   {/* Financial Grid */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
                     <div>
                       <p className="text-xs uppercase font-black text-zinc-400 mb-1 tracking-wider">Total Loan Facility</p>
                       <p className="font-extrabold text-sm text-zinc-800 dark:text-zinc-200">{fmt(loan.loanAmount)}</p>
@@ -249,6 +253,10 @@ export function BankLoansTab() {
                     <div>
                       <p className="text-xs uppercase font-black text-amber-500 mb-1 tracking-wider">Total Spent (Drawn)</p>
                       <p className="font-extrabold text-sm text-amber-600">{fmt(loan.spent)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase font-black text-indigo-500 mb-1 tracking-wider">Remaining Balance</p>
+                      <p className="font-extrabold text-sm text-indigo-650">{fmt(loan.balance)}</p>
                     </div>
                     <div>
                       <p className="text-xs uppercase font-black text-emerald-500 mb-1 tracking-wider">Total Repaid</p>

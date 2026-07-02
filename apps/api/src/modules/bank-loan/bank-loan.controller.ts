@@ -41,7 +41,7 @@ export class BankLoanController {
     return this.bankLoanService.delete(id, companyId);
   }
 
-  @Post('bank-loans/:id/repayments')
+  @Post(':id/repayments')
   @ApiOperation({ summary: 'Record a bank loan repayment' })
   createRepayment(
     @Param('id') id: string,
@@ -51,7 +51,7 @@ export class BankLoanController {
     return this.bankLoanService.createRepayment(id, companyId, data);
   }
 
-  @Delete('bank-loans/repayments/:repaymentId')
+  @Delete('repayments/:repaymentId')
   @ApiOperation({ summary: 'Delete a bank loan repayment' })
   deleteRepayment(
     @Param('repaymentId') repaymentId: string,
