@@ -20,6 +20,9 @@ import {
   Bell, 
   User,
   BarChart2,
+  Search,
+  ChevronRight,
+  MoreHorizontal,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
@@ -30,8 +33,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, company, isAuthenticated, clearAuth } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
 
-  // Authentication Guard: Redirect if not authenticated
   useEffect(() => {
     setIsMounted(true);
     if (!isAuthenticated) {
@@ -39,12 +43,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, router]);
 
+  // Keyboard shortcut for search
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchFocused(f => !f);
+      }
+      if (e.key === 'Escape') {
+        setSearchFocused(false);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   if (!isMounted || !isAuthenticated) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950">
-        <div className="flex flex-col items-center gap-2">
-          <HardHat className="h-10 w-10 animate-bounce text-amber-500" />
-          <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Loading BuildTrack...</span>
+      <div className="flex h-screen w-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-foreground/5 flex items-center justify-center">
+            <HardHat className="w-5 h-5 text-foreground/40 animate-pulse-soft" />
+          </div>
+          <span className="text-caption">Loading BuildTrack…</span>
         </div>
       </div>
     );
@@ -55,126 +76,208 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     router.push('/login');
   };
 
-  const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/projects', label: 'Projects', icon: Building2 },
-    { href: '/tasks', label: 'Tasks', icon: CheckSquare },
-    { href: '/daily-reports', label: 'Daily Logs', icon: FileText },
-    { href: '/materials', label: 'Materials', icon: Package },
-    { href: '/expenses', label: 'Expenses', icon: Landmark },
-    { href: '/finance', label: 'Finance Hub', icon: Wallet },
-    { href: '/subcontractors', label: 'Subcontractors', icon: HardHat },
-    { href: '/workers', label: 'Workers & Attendance', icon: Users },
-    { href: '/reports', label: 'Reports', icon: BarChart2 },
-    { href: '/settings', label: 'Settings', icon: Settings },
+  const navGroups = [
+    {
+      label: 'Overview',
+      items: [
+        { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { href: '/projects', label: 'Projects', icon: Building2 },
+      ],
+    },
+    {
+      label: 'Operations',
+      items: [
+        { href: '/tasks', label: 'Tasks', icon: CheckSquare },
+        { href: '/daily-reports', label: 'Daily Logs', icon: FileText },
+        { href: '/workers', label: 'Workforce', icon: Users },
+        { href: '/materials', label: 'Materials', icon: Package },
+      ],
+    },
+    {
+      label: 'Finance',
+      items: [
+        { href: '/expenses', label: 'Expenses', icon: Landmark },
+        { href: '/finance', label: 'Treasury', icon: Wallet },
+        { href: '/subcontractors', label: 'Contracts', icon: HardHat },
+      ],
+    },
+    {
+      label: 'System',
+      items: [
+        { href: '/reports', label: 'Reports', icon: BarChart2 },
+        { href: '/settings', label: 'Settings', icon: Settings },
+      ],
+    },
   ];
 
+  // Flatten for mobile
+  const allNavItems = navGroups.flatMap(g => g.items);
+
+  // Mobile bottom bar items (5 primary)
+  const mobileBottomItems = [
+    allNavItems.find(i => i.href === '/dashboard')!,
+    allNavItems.find(i => i.href === '/projects')!,
+    allNavItems.find(i => i.href === '/tasks')!,
+    allNavItems.find(i => i.href === '/finance')!,
+  ];
+
+  const getPageTitle = () => {
+    const item = allNavItems.find(i => pathname === i.href || pathname.startsWith(i.href + '/'));
+    return item?.label || 'BuildTrack';
+  };
+
   return (
-    <div className="flex h-screen overflow-hidden bg-zinc-50/50 dark:bg-zinc-950/50">
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 m-4 mr-0 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 bg-white dark:bg-zinc-900/60 backdrop-blur-md shadow-premium">
-        {/* Workspace Selector */}
-        <div className="flex items-center gap-3 px-5 h-16 border-b border-zinc-200/40 dark:border-zinc-800/40">
-          <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-orange-500 text-white shadow-[0_2px_10px_rgba(249,115,22,0.2)]">
-            <HardHat className="w-3.5 h-3.5" />
+    <div className="flex h-screen overflow-hidden bg-background">
+      {/* ═══ Desktop Sidebar — Collapsible Icon Rail ═══ */}
+      <aside
+        className="hidden lg:flex lg:flex-col flex-shrink-0 border-r border-border/50 bg-card/50 transition-all duration-300 ease-out relative z-20"
+        style={{ width: sidebarExpanded ? 220 : 64 }}
+        onMouseEnter={() => setSidebarExpanded(true)}
+        onMouseLeave={() => setSidebarExpanded(false)}
+      >
+        {/* Logo */}
+        <div className="flex items-center h-14 px-4 border-b border-border/40">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-foreground text-background flex-shrink-0">
+            <HardHat className="w-4 h-4" />
           </div>
-          <div className="flex flex-col text-left">
-            <span className="font-semibold text-xs tracking-tight text-zinc-900 dark:text-white leading-tight">BuildTrack</span>
-            <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-medium tracking-wider uppercase leading-none">v3.0 Enterprise</span>
+          <div
+            className="ml-3 flex flex-col overflow-hidden transition-all duration-300"
+            style={{ opacity: sidebarExpanded ? 1 : 0, width: sidebarExpanded ? 'auto' : 0 }}
+          >
+            <span className="text-sm font-semibold text-foreground tracking-tight whitespace-nowrap leading-tight">BuildTrack</span>
+            <span className="text-[9px] text-muted-foreground font-medium tracking-wider uppercase whitespace-nowrap">Enterprise</span>
           </div>
-        </div>
-        
-        {/* Navigation Items */}
-        <div className="flex-1 overflow-y-auto px-3 py-6 space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-            return (
-              <Link key={item.href} href={item.href}>
-                <span className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 relative ${
-                  isActive 
-                    ? 'bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 font-semibold shadow-sm' 
-                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/40 hover:text-zinc-900 dark:hover:text-zinc-100'
-                }`}>
-                  <Icon className={`w-4 h-4 transition-transform duration-200 group-hover:scale-105 ${
-                    isActive ? 'text-orange-500' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-800 dark:group-hover:text-zinc-300'
-                  }`} />
-                  {item.label}
-                  {isActive && (
-                    <span className="absolute left-1 top-1/4 bottom-1/4 w-0.5 rounded-full bg-orange-500" />
-                  )}
-                </span>
-              </Link>
-            );
-          })}
         </div>
 
-        {/* User Footer settings & Switcher */}
-        <div className="p-3 border-t border-zinc-200/40 dark:border-zinc-800/40 flex flex-col gap-2">
-          <div className="flex items-center gap-3 p-2 rounded-xl bg-zinc-100/50 dark:bg-zinc-800/25">
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
-              <User className="w-4 h-4" />
+        {/* Navigation Groups */}
+        <div className="flex-1 overflow-y-auto scrollbar-thin py-3 px-2 space-y-4">
+          {navGroups.map((group) => (
+            <div key={group.label}>
+              {/* Group label — only visible when expanded */}
+              <div
+                className="px-2 mb-1 transition-all duration-300 overflow-hidden"
+                style={{ opacity: sidebarExpanded ? 1 : 0, height: sidebarExpanded ? 'auto' : 0 }}
+              >
+                <span className="text-label text-muted-foreground/50 text-[9px]">{group.label}</span>
+              </div>
+              <div className="space-y-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                  return (
+                    <Link key={item.href} href={item.href}>
+                      <span
+                        className={`group flex items-center gap-3 rounded-lg transition-all duration-200 relative ${
+                          sidebarExpanded ? 'px-2.5 py-2' : 'px-0 py-2 justify-center'
+                        } ${
+                          isActive
+                            ? 'bg-accent text-foreground'
+                            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                        }`}
+                      >
+                        {/* Active indicator */}
+                        {isActive && (
+                          <span className="absolute left-0 top-1/4 bottom-1/4 w-[2px] rounded-full bg-foreground" />
+                        )}
+                        <Icon className={`w-4 h-4 flex-shrink-0 transition-colors ${
+                          isActive ? 'text-foreground' : 'text-muted-foreground/60 group-hover:text-foreground/70'
+                        }`} />
+                        <span
+                          className={`text-[13px] font-medium whitespace-nowrap transition-all duration-300 overflow-hidden ${
+                            isActive ? 'font-semibold' : ''
+                          }`}
+                          style={{ opacity: sidebarExpanded ? 1 : 0, width: sidebarExpanded ? 'auto' : 0 }}
+                        >
+                          {item.label}
+                        </span>
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-            <div className="flex flex-col text-left overflow-hidden">
-              <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate">
+          ))}
+        </div>
+
+        {/* User footer */}
+        <div className="border-t border-border/40 p-2">
+          <div
+            className={`flex items-center gap-2.5 p-2 rounded-lg hover:bg-accent/50 transition-all cursor-pointer ${
+              sidebarExpanded ? '' : 'justify-center'
+            }`}
+          >
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-accent text-foreground/60 flex-shrink-0">
+              <User className="w-3.5 h-3.5" />
+            </div>
+            <div
+              className="flex flex-col overflow-hidden transition-all duration-300"
+              style={{ opacity: sidebarExpanded ? 1 : 0, width: sidebarExpanded ? 'auto' : 0 }}
+            >
+              <span className="text-xs font-semibold text-foreground truncate leading-tight">
                 {user?.firstName} {user?.lastName}
               </span>
-              <span className="text-[9px] text-zinc-400 dark:text-zinc-500 truncate uppercase font-medium">
+              <span className="text-[9px] text-muted-foreground truncate uppercase font-medium">
                 {user?.roleDisplayName}
               </span>
             </div>
           </div>
-          <button 
+          <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-rose-500 hover:bg-rose-500/10 transition-colors"
+            className={`flex w-full items-center gap-2.5 p-2 rounded-lg text-xs font-medium text-destructive/80 hover:bg-destructive/5 transition-colors ${
+              sidebarExpanded ? '' : 'justify-center'
+            }`}
           >
-            <LogOut className="w-4 h-4" />
-            Sign out
+            <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
+            <span
+              className="transition-all duration-300 overflow-hidden whitespace-nowrap"
+              style={{ opacity: sidebarExpanded ? 1 : 0, width: sidebarExpanded ? 'auto' : 0 }}
+            >
+              Sign out
+            </span>
           </button>
         </div>
       </aside>
 
-      {/* Mobile Drawer */}
+      {/* ═══ Mobile Bottom Sheet Nav ═══ */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden bg-zinc-950/40 backdrop-blur-sm">
-          <div className="relative flex flex-col w-64 max-w-xs bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 p-4">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-orange-500 text-white">
-                  <HardHat className="w-4 h-4" />
-                </div>
-                <span className="font-bold text-base tracking-tight">BuildTrack</span>
-              </div>
-              <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)}>
-                <X className="w-5 h-5" />
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
+          <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl shadow-elevated border-t border-border/50 animate-slide-up max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-border/40">
+              <span className="text-title text-foreground">Navigation</span>
+              <Button variant="ghost" size="icon-sm" onClick={() => setIsMobileMenuOpen(false)}>
+                <X className="w-4 h-4" />
               </Button>
             </div>
-
-            <div className="flex-1 space-y-1.5 overflow-y-auto">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-                return (
-                  <Link key={item.href} href={item.href} onClick={() => setIsMobileMenuOpen(false)}>
-                    <span className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                      isActive 
-                        ? 'bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-950 font-semibold' 
-                        : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                    }`}>
-                      <Icon className="w-4.5 h-4.5" />
-                      {item.label}
-                    </span>
-                  </Link>
-                );
-              })}
+            <div className="p-3 space-y-1">
+              {navGroups.map(group => (
+                <div key={group.label}>
+                  <p className="text-label text-muted-foreground/50 px-3 pt-3 pb-1 text-[9px]">{group.label}</p>
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                    return (
+                      <Link key={item.href} href={item.href} onClick={() => setIsMobileMenuOpen(false)}>
+                        <span className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                          isActive
+                            ? 'bg-accent text-foreground font-semibold'
+                            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                        }`}>
+                          <Icon className="w-4 h-4" />
+                          {item.label}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
-
-            <div className="mt-auto pt-4 border-t border-zinc-200 dark:border-zinc-800">
-              <button 
+            <div className="p-3 border-t border-border/40">
+              <button
                 onClick={handleLogout}
-                className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-rose-500 hover:bg-rose-500/10"
+                className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-destructive/80 hover:bg-destructive/5"
               >
-                <LogOut className="w-4.5 h-4.5" />
+                <LogOut className="w-4 h-4" />
                 Sign out
               </button>
             </div>
@@ -182,52 +285,92 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {/* Main Viewport */}
+      {/* ═══ Main Content Area ═══ */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Command Header */}
-        <header className="flex h-16 items-center justify-between px-8 bg-transparent border-b border-zinc-200/40 dark:border-zinc-800/40 backdrop-blur-md">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="lg:hidden text-zinc-500" 
+        {/* Header */}
+        <header className="flex h-14 items-center justify-between px-4 md:px-6 bg-card/50 border-b border-border/40 backdrop-blur-md flex-shrink-0 z-10">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="lg:hidden text-muted-foreground"
               onClick={() => setIsMobileMenuOpen(true)}
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-4.5 h-4.5" />
             </Button>
-            <div className="hidden lg:flex flex-col text-left">
-              <h2 className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider">
-                {company?.name || 'Enterprise'}
+            <div className="flex flex-col text-left">
+              <h2 className="text-sm font-semibold text-foreground tracking-tight">
+                {getPageTitle()}
               </h2>
-              <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">
-                SaaS Dashboard Workspace
+              <span className="text-[10px] text-muted-foreground/60 font-medium hidden md:block">
+                {company?.name || 'Enterprise'}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            {/* Global Search Button with Short-cut label */}
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-zinc-200/60 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors">
-              <span className="text-xs text-zinc-400 dark:text-zinc-500">Quick search...</span>
-              <kbd className="text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700">⌘K</kbd>
+          <div className="flex items-center gap-2">
+            {/* Search */}
+            <div
+              className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all duration-200 cursor-pointer ${
+                searchFocused
+                  ? 'border-foreground/20 bg-card ring-2 ring-ring/20 w-72'
+                  : 'border-border/50 bg-accent/30 hover:bg-accent/50 w-48'
+              }`}
+              onClick={() => setSearchFocused(true)}
+            >
+              <Search className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
+              {searchFocused ? (
+                <input
+                  autoFocus
+                  className="bg-transparent border-none outline-none text-xs text-foreground placeholder:text-muted-foreground/40 w-full"
+                  placeholder="Search projects, tasks, workers…"
+                  onBlur={() => setSearchFocused(false)}
+                />
+              ) : (
+                <span className="text-xs text-muted-foreground/50">Search…</span>
+              )}
+              <kbd className="text-[9px] bg-accent text-muted-foreground/50 px-1.5 py-0.5 rounded font-mono flex-shrink-0">⌘K</kbd>
             </div>
 
-            <span className="h-4 w-px bg-zinc-200 dark:bg-zinc-800" />
+            <span className="h-4 w-px bg-border/50 hidden md:block" />
 
-            {/* Notification Bell */}
-            <Button variant="ghost" size="icon" className="relative text-zinc-400 hover:text-zinc-800 dark:text-zinc-500 dark:hover:text-zinc-200 transition-colors">
-              <Bell className="w-4.5 h-4.5" />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-orange-500" />
-            </Button>
+            {/* Notifications */}
+            <Link href="/notifications">
+              <Button variant="ghost" size="icon-sm" className="relative text-muted-foreground hover:text-foreground">
+                <Bell className="w-4 h-4" />
+                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-destructive" />
+              </Button>
+            </Link>
           </div>
         </header>
 
-        {/* Core Body Container */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-zinc-50/50 dark:bg-zinc-950/25">
-          <div className="max-w-7xl mx-auto space-y-6">
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto scrollbar-thin">
+          <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8">
             {children}
           </div>
         </main>
+
+        {/* Mobile Bottom Tab Bar */}
+        <div className="lg:hidden flex items-center justify-around h-14 bg-card/90 backdrop-blur-md border-t border-border/40 flex-shrink-0">
+          {mobileBottomItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+            return (
+              <Link key={item.href} href={item.href} className="flex flex-col items-center gap-0.5 py-1">
+                <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-foreground' : 'text-muted-foreground/50'}`} />
+                <span className={`text-[9px] font-medium ${isActive ? 'text-foreground' : 'text-muted-foreground/40'}`}>{item.label}</span>
+              </Link>
+            );
+          })}
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="flex flex-col items-center gap-0.5 py-1"
+          >
+            <MoreHorizontal className="w-5 h-5 text-muted-foreground/50" />
+            <span className="text-[9px] font-medium text-muted-foreground/40">More</span>
+          </button>
+        </div>
       </div>
     </div>
   );

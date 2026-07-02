@@ -3,21 +3,13 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
-  FileSpreadsheet, 
-  Loader2, 
-  TrendingUp, 
-  Landmark, 
-  Users, 
-  Building2, 
-  SlidersHorizontal,
-  Calendar,
-  Layers,
-  ArrowUpRight
+  FileSpreadsheet, Loader2, TrendingUp, Landmark, Users, 
+  Building2, SlidersHorizontal, Calendar, Layers, ArrowUpRight
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { DonutChart, ResponsiveBarChart } from '@/components/ui/custom-charts';
+import { DonutChart, ResponsiveBarChart, ProgressBar } from '@/components/ui/custom-charts';
 
 interface BudgetVsActualData {
   id: string;
@@ -41,6 +33,36 @@ interface ProgressData {
   endDate?: string;
 }
 
+const statusMeta: Record<string, { label: string; bgClass: string; textClass: string }> = {
+  PENDING: { label: 'Pending', bgClass: 'bg-warning-subtle', textClass: 'text-warning' },
+  APPROVED: { label: 'Approved', bgClass: 'bg-info-subtle', textClass: 'text-info' },
+  DELIVERED: { label: 'Delivered', bgClass: 'bg-success-subtle', textClass: 'text-success' },
+};
+
+const categoryColors: Record<string, string> = {
+  MATERIAL: 'oklch(0.72 0.14 55)',
+  LABOUR: 'oklch(0.62 0.12 250)',
+  EQUIPMENT: 'oklch(0.65 0.15 145)',
+  PROJECT_MATERIAL: 'oklch(0.70 0.13 60)',
+  SHARED_TOOL: 'oklch(0.60 0.16 310)',
+  DAILY_EXPENSE: 'oklch(0.65 0.18 25)',
+  SERVICE: 'oklch(0.68 0.10 200)',
+  TRANSPORT: 'oklch(0.62 0.14 340)',
+  OTHER: 'oklch(0.50 0.05 60)',
+};
+
+const categoryLabels: Record<string, string> = {
+  MATERIAL: 'Material',
+  LABOUR: 'Labour',
+  EQUIPMENT: 'Equipment',
+  PROJECT_MATERIAL: 'Project Materials',
+  SHARED_TOOL: 'Shared Tools',
+  DAILY_EXPENSE: 'Daily Expenses',
+  SERVICE: 'Services',
+  TRANSPORT: 'Transport',
+  OTHER: 'Miscellaneous',
+};
+
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState<'financials' | 'expenses' | 'progress'>('financials');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('ALL');
@@ -48,10 +70,7 @@ export default function ReportsPage() {
   // Fetch budget vs actual report
   const { data: budgetData, isLoading: isBudgetLoading } = useQuery<BudgetVsActualData[]>({
     queryKey: ['report-budget'],
-    queryFn: async () => {
-      const response = await apiClient.get('/reports/budget-vs-actual');
-      return response.data;
-    },
+    queryFn: async () => (await apiClient.get('/reports/budget-vs-actual')).data,
     retry: 1,
   });
 
@@ -59,7 +78,7 @@ export default function ReportsPage() {
   const { data: expenseData, isLoading: isExpenseLoading } = useQuery<ExpenseBreakdownData[]>({
     queryKey: ['report-expenses', selectedProjectId],
     queryFn: async () => {
-      const url = selectedProjectId === 'ALL' ? '/reports/expenses' : `/reports/expenses?projectId=${selectedProjectId}`;
+      const url = selectedProjectId === 'ALL' ? '/reports/expenses' : `/reports/reports/expenses?projectId=${selectedProjectId}`;
       const response = await apiClient.get(url);
       return response.data;
     },
@@ -69,59 +88,33 @@ export default function ReportsPage() {
   // Fetch progress report
   const { data: progressDataQueryResult, isLoading: isProgressLoading } = useQuery<ProgressData[]>({
     queryKey: ['report-progress'],
-    queryFn: async () => {
-      const response = await apiClient.get('/reports/progress');
-      return response.data;
-    },
+    queryFn: async () => (await apiClient.get('/reports/progress')).data,
     retry: 1,
   });
 
-  // Mock fallbacks
-  const mockBudget: BudgetVsActualData[] = [
-    { id: 'prj1', name: 'Horizon Tower - Colombo 07', code: 'PRJ-001', budgetEstimate: 150000000, budgetActual: 85000000 },
-    { id: 'prj2', name: 'Palm Villa - Negombo', code: 'PRJ-002', budgetEstimate: 45000000, budgetActual: 18000000 },
-    { id: 'prj3', name: 'Office Renovation - World Trade Center', code: 'PRJ-003', budgetEstimate: 25000000, budgetActual: 0 },
-  ];
-
-  const mockExpenses: ExpenseBreakdownData[] = [
-    { category: 'MATERIAL', total: 1795000 },
-    { category: 'LABOUR', total: 85000 },
-    { category: 'EQUIPMENT', total: 120000 },
-  ];
-
-  const mockProgress: ProgressData[] = [
-    { id: 'prj1', name: 'Horizon Tower - Colombo 07', code: 'PRJ-001', progressPercent: 58, startDate: '2025-06-01', endDate: '2027-06-01' },
-    { id: 'prj2', name: 'Palm Villa - Negombo', code: 'PRJ-002', progressPercent: 35, startDate: '2026-01-15', endDate: '2026-12-31' },
-    { id: 'prj3', name: 'Office Renovation - World Trade Center', code: 'PRJ-003', progressPercent: 0, startDate: '2026-08-01', endDate: '2026-11-30' },
-  ];
-
-  const budgets = budgetData || mockBudget;
-  const expenses = expenseData || mockExpenses;
-  const progressList = progressDataQueryResult || mockProgress;
+  const budgets = budgetData || [];
+  const expenses = expenseData || [];
+  const progressList = progressDataQueryResult || [];
 
   // Totals calculations
   const totalEstimate = budgets.reduce((acc, curr) => acc + curr.budgetEstimate, 0);
   const totalActual = budgets.reduce((acc, curr) => acc + curr.budgetActual, 0);
   const overallUtilization = totalEstimate > 0 ? Math.round((totalActual / totalEstimate) * 100) : 0;
 
-  const totalExpenseSum = expenses.reduce((acc, curr) => acc + curr.total, 0);
+  const selectStyle = "h-8 rounded-lg border border-border/60 bg-transparent px-3 py-1 text-xs outline-none focus-visible:border-foreground/30 font-semibold";
 
   return (
-    <div className="space-y-6">
-      {/* Header Panel */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-sm">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 text-left stagger-children">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 to-zinc-500 dark:from-white dark:to-zinc-400">
-            Analytics & Reports
-          </h1>
-          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mt-2">
-            View financial summaries, expense distributions, and construction timelines.
-          </p>
+          <h1 className="text-headline text-foreground">Analytics</h1>
+          <p className="text-caption mt-1">Audit company operations, budget metrics, and project progression trends.</p>
         </div>
       </div>
 
-      {/* Tabs navigation */}
-      <div className="flex items-center gap-1.5 p-1.5 bg-zinc-100 dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 w-max overflow-x-auto">
+      {/* Segmented Switcher */}
+      <div className="flex bg-accent/40 p-1 rounded-xl border border-border/40 overflow-x-auto gap-1 w-max">
         {[
           { id: 'financials', label: 'Financial Health', icon: Landmark },
           { id: 'expenses', label: 'Expense Distribution', icon: TrendingUp },
@@ -133,124 +126,108 @@ export default function ReportsPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl whitespace-nowrap transition-all duration-300 ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
                 isActive 
-                  ? 'bg-white dark:bg-zinc-800 text-amber-600 dark:text-amber-400 shadow-sm' 
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50'
+                  ? 'bg-card text-foreground border border-border/40 shadow-sm' 
+                  : 'text-muted-foreground hover:text-foreground border border-transparent'
               }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? 'scale-110 transition-transform' : ''}`} />
+              <Icon className="w-3.5 h-3.5" />
               <span>{tab.label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Panels content */}
+      {/* Tab Panels */}
       <div className="pt-2">
         {activeTab === 'financials' && (
           <div className="space-y-6">
             {isBudgetLoading ? (
-              <div className="flex h-32 items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-28 rounded-xl bg-accent/20 shimmer-bg" />
+                ))}
               </div>
             ) : (
               <>
-                {/* Financial KPI stats */}
+                {/* Financial KPI Stats */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <Card className="border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md transition-all duration-300">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-xs text-zinc-400 dark:text-zinc-500 uppercase tracking-wider font-extrabold">Total Budget Estimate</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">
+                  <Card>
+                    <CardContent className="p-5 text-left">
+                      <span className="text-label text-muted-foreground/50 text-[9px] uppercase">Total Budget Estimate</span>
+                      <p className="text-2xl font-semibold text-foreground mt-2 tracking-tight text-financial">
                         LKR {(totalEstimate / 1000000).toFixed(1)}M
-                      </div>
-                      <p className="text-xs font-medium text-zinc-500 mt-1.5">Across all planned and active sites</p>
+                      </p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-1">Planned capital investment targets</p>
                     </CardContent>
                   </Card>
 
-                  <Card className="border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md transition-all duration-300">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-xs text-zinc-400 dark:text-zinc-500 uppercase tracking-wider font-extrabold">Total Expenses Logged</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-black text-amber-500 tracking-tight">
+                  <Card>
+                    <CardContent className="p-5 text-left">
+                      <span className="text-label text-muted-foreground/50 text-[9px] uppercase">Total Outflow Logged</span>
+                      <p className="text-2xl font-semibold text-danger mt-2 tracking-tight text-financial">
                         LKR {(totalActual / 1000000).toFixed(1)}M
-                      </div>
-                      <p className="text-xs font-medium text-zinc-500 mt-1.5">Sum of approved and paid vouchers</p>
+                      </p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-1">Paid raw material & worker payouts</p>
                     </CardContent>
                   </Card>
 
-                  <Card className="border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md transition-all duration-300">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-xs text-zinc-400 dark:text-zinc-500 uppercase tracking-wider font-extrabold">Total Budget Used</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">{overallUtilization}%</div>
-                      <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full mt-2.5 overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full ${overallUtilization > 90 ? 'bg-rose-550' : 'bg-emerald-550'}`} 
-                          style={{ width: `${Math.min(overallUtilization, 100)}%` }} 
-                        />
+                  <Card>
+                    <CardContent className="p-5 text-left">
+                      <span className="text-label text-muted-foreground/50 text-[9px] uppercase">Total Budget Used</span>
+                      <p className="text-2xl font-semibold text-foreground mt-2 tracking-tight text-financial">{overallUtilization}%</p>
+                      <div className="mt-2.5">
+                        <ProgressBar value={overallUtilization} height={4} color={overallUtilization > 90 ? 'oklch(0.63 0.22 25)' : undefined} />
                       </div>
                     </CardContent>
                   </Card>
                 </div>
 
-                {/* Graphical Comparison */}
-                <Card className="border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl bg-white/60 dark:bg-zinc-900/60 backdrop-blur-lg shadow-sm hover:shadow-md transition-all duration-300">
-                  <CardHeader>
-                    <CardTitle className="text-base font-bold">Budget vs Actual Comparison</CardTitle>
-                    <CardDescription>Visual comparison of estimates versus actual spent amounts per project</CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-2">
+                {/* Graphical Comparison Bar Chart */}
+                <Card>
+                  <CardContent className="p-6 space-y-4">
+                    <h3 className="text-label text-muted-foreground/60">Budget vs Actual Comparison</h3>
                     <ResponsiveBarChart
                       data={budgets}
                       xAxisKey="code"
                       series={[
-                        { key: 'budgetEstimate', name: 'Budget Estimate', color: '#3b82f6' }, // Blue
-                        { key: 'budgetActual', name: 'Actual Spent', color: '#f59e0b' } // Amber
+                        { key: 'budgetEstimate', name: 'Budget Estimate', color: 'oklch(0.62 0.12 250)' },
+                        { key: 'budgetActual', name: 'Actual Spent', color: 'oklch(0.65 0.18 25)' }
                       ]}
                     />
                   </CardContent>
                 </Card>
 
-                {/* Ledger Comparison */}
-                <Card className="border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl bg-white/60 dark:bg-zinc-900/60 backdrop-blur-lg shadow-sm hover:shadow-md transition-all duration-300">
-                  <CardHeader>
-                    <CardTitle className="text-base font-bold">Project Budget Health Ledger</CardTitle>
-                    <CardDescription>Side by side allocation vs logged actual expenditures</CardDescription>
-                  </CardHeader>
-                  <CardContent>
+                {/* Detailed Table Ledger */}
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-label text-muted-foreground/60 mb-4">Project Budget Health Ledger</h3>
                     <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-left">
+                      <table className="w-full text-xs text-left">
                         <thead>
-                          <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 text-xs font-bold uppercase tracking-wider">
-                            <th className="pb-3 font-bold">Project</th>
-                            <th className="pb-3 font-bold">Project Code</th>
-                            <th className="pb-3 font-bold">Estimated Budget</th>
-                            <th className="pb-3 font-bold">Actual Expenses</th>
-                            <th className="pb-3 font-bold">Utilization</th>
+                          <tr className="border-b border-border/40 text-muted-foreground/60 font-semibold uppercase tracking-wider">
+                            <th className="pb-3 pl-2">Project</th>
+                            <th className="pb-3">Project Code</th>
+                            <th className="pb-3 text-right">Estimated Budget</th>
+                            <th className="pb-3 text-right">Actual Expenses</th>
+                            <th className="pb-3 pr-2">Utilization</th>
                           </tr>
                         </thead>
                         <tbody>
                           {budgets.map((b) => {
                             const percent = b.budgetEstimate > 0 ? Math.round((b.budgetActual / b.budgetEstimate) * 100) : 0;
                             return (
-                              <tr key={b.id} className="border-b border-zinc-100 dark:border-zinc-900 last:border-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/10">
-                                <td className="py-3.5 font-bold text-zinc-800 dark:text-zinc-200">{b.name}</td>
-                                <td className="py-3.5 text-zinc-555 font-mono text-xs">{b.code}</td>
-                                <td className="py-3.5 text-zinc-850 dark:text-zinc-200 font-semibold">LKR {b.budgetEstimate.toLocaleString()}</td>
-                                <td className="py-3.5 text-amber-500 font-bold">LKR {b.budgetActual.toLocaleString()}</td>
-                                <td className="py-3.5">
+                              <tr key={b.id} className="border-b border-border/20 last:border-0 hover:bg-accent/20 transition-colors">
+                                <td className="py-3.5 pl-2 font-medium text-foreground">{b.name}</td>
+                                <td className="py-3.5 text-muted-foreground text-financial">{b.code}</td>
+                                <td className="py-3.5 text-right font-medium text-foreground text-financial">LKR {b.budgetEstimate.toLocaleString()}</td>
+                                <td className="py-3.5 text-right font-bold text-danger text-financial">LKR {b.budgetActual.toLocaleString()}</td>
+                                <td className="py-3.5 pr-2">
                                   <div className="flex items-center gap-2">
-                                    <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 w-8">{percent}%</span>
-                                    <div className="w-24 bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-                                      <div 
-                                        className={`h-full rounded-full ${percent > 90 ? 'bg-rose-500' : 'bg-amber-500'}`} 
-                                        style={{ width: `${Math.min(percent, 100)}%` }} 
-                                      />
+                                    <span className="text-xs font-semibold text-foreground w-8 text-financial">{percent}%</span>
+                                    <div className="w-24">
+                                      <ProgressBar value={percent} height={3} color={percent > 90 ? 'oklch(0.63 0.22 25)' : undefined} />
                                     </div>
                                   </div>
                                 </td>
@@ -270,14 +247,14 @@ export default function ReportsPage() {
         {activeTab === 'expenses' && (
           <div className="space-y-4">
             {/* Filter controls */}
-            <div className="flex items-center gap-3 p-4 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm">
-              <SlidersHorizontal className="w-4 h-4 text-zinc-400 flex-shrink-0" />
-              <Label htmlFor="projectSelect" className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Select Project</Label>
+            <div className="flex items-center gap-3 p-4 bg-accent/20 border border-border/30 rounded-2xl">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
+              <Label htmlFor="projectSelect" className="text-label text-muted-foreground/60 whitespace-nowrap">Select Project</Label>
               <select
                 id="projectSelect"
                 value={selectedProjectId}
                 onChange={(e) => setSelectedProjectId(e.target.value)}
-                className="max-w-xs h-9 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-350"
+                className="max-w-xs h-8 rounded-lg border border-border/60 bg-transparent px-3 py-1 text-xs outline-none focus-visible:border-foreground/30 font-semibold"
               >
                 <option value="ALL">All Company Sites</option>
                 {budgets.map((p) => (
@@ -289,63 +266,47 @@ export default function ReportsPage() {
             </div>
 
             {isExpenseLoading ? (
-              <div className="flex h-32 items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+              <div className="space-y-3">
+                {[...Array(2)].map((_, i) => (
+                  <div key={i} className="h-32 rounded-xl bg-accent/20 shimmer-bg" />
+                ))}
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Custom chart visualization */}
-                <Card className="border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md transition-all duration-300 lg:col-span-8">
-                  <CardHeader>
-                    <CardTitle className="text-base font-bold">Category Distribution</CardTitle>
-                    <CardDescription>Graphical visual distribution of costs in LKR</CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-0">
+                {/* Donut Chart Category breakdown */}
+                <Card className="lg:col-span-8">
+                  <CardContent className="p-6 space-y-4">
+                    <h3 className="text-label text-muted-foreground/60">Category Distribution</h3>
                     {expenses.length > 0 ? (
                       <DonutChart
-                        data={expenses.map(exp => {
-                          const categoryColors: Record<string, string> = {
-                            'MATERIAL': '#f59e0b',
-                            'LABOUR': '#3b82f6',
-                            'EQUIPMENT': '#10b981',
-                            'PROJECT_MATERIAL': '#d97706',
-                            'SHARED_TOOL': '#8b5cf6',
-                            'DAILY_EXPENSE': '#f43f5e',
-                            'SERVICE': '#06b6d4',
-                            'TRANSPORT': '#ec4899',
-                            'OTHER': '#6b7280',
-                          };
-                          return {
-                            label: exp.category,
-                            value: exp.total,
-                            color: categoryColors[exp.category.toUpperCase()] || '#6b7280'
-                          };
-                        })}
+                        data={expenses.map(exp => ({
+                          label: categoryLabels[exp.category.toUpperCase()] || exp.category,
+                          value: exp.total,
+                          color: categoryColors[exp.category.toUpperCase()] || 'oklch(0.50 0.05 60)'
+                        }))}
                         subtitle="Total Spent"
                       />
                     ) : (
-                      <div className="flex h-48 items-center justify-center text-xs text-zinc-405">
-                        No expenses logged for this filter.
+                      <div className="flex h-48 items-center justify-center text-xs text-muted-foreground italic">
+                        No expenses logged for this project filter.
                       </div>
                     )}
                   </CardContent>
                 </Card>
 
-                {/* Table details */}
-                <Card className="border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md transition-all duration-300 lg:col-span-4">
-                  <CardHeader>
-                    <CardTitle className="text-base font-bold">Details Breakdown</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3.5">
+                {/* Table details breakdown */}
+                <Card className="lg:col-span-4">
+                  <CardContent className="p-6">
+                    <h3 className="text-label text-muted-foreground/60 mb-5">Details Breakdown</h3>
+                    <div className="space-y-3">
                       {expenses.map((exp, idx) => (
-                        <div key={idx} className="flex justify-between items-center text-xs pb-3 border-b border-zinc-100 dark:border-zinc-900 last:border-0 last:pb-0">
-                          <span className="font-bold text-zinc-600 dark:text-zinc-400">{exp.category}</span>
-                          <span className="font-extrabold text-zinc-900 dark:text-zinc-50">LKR {exp.total.toLocaleString()}</span>
+                        <div key={idx} className="flex justify-between items-center text-xs pb-3 border-b border-border/20 last:border-0 last:pb-0">
+                          <span className="font-semibold text-muted-foreground/80">{categoryLabels[exp.category.toUpperCase()] || exp.category}</span>
+                          <span className="font-bold text-foreground text-financial">LKR {exp.total.toLocaleString()}</span>
                         </div>
                       ))}
                       {expenses.length === 0 && (
-                        <p className="text-xs text-zinc-400 text-center py-4">No categories found</p>
+                        <p className="text-xs text-muted-foreground/50 text-center py-4 italic">No categories found</p>
                       )}
                     </div>
                   </CardContent>
@@ -358,79 +319,64 @@ export default function ReportsPage() {
         {activeTab === 'progress' && (
           <div className="space-y-6">
             {isProgressLoading ? (
-              <div className="flex h-32 items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[...Array(2)].map((_, i) => (
+                  <div key={i} className="h-44 rounded-xl bg-accent/20 shimmer-bg" />
+                ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {progressList.map((p) => {
-                  // Circumference calculations for the circular progress ring
                   const ringRadius = 24;
                   const ringCircumference = 2 * Math.PI * ringRadius;
                   const ringOffset = ringCircumference - (p.progressPercent / 100) * ringCircumference;
 
                   return (
-                    <Card key={p.id} className="border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between text-xs text-zinc-400 mb-1">
-                          <span className="font-mono font-bold text-amber-600">{p.code}</span>
-                          <span className="font-bold text-zinc-500">{p.progressPercent}% completed</span>
+                    <Card key={p.id} className="hover:shadow-panel transition-all duration-200">
+                      <CardContent className="p-5 space-y-4">
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="font-semibold text-muted-foreground/50">{p.code}</span>
+                          <span className="font-semibold text-foreground/80">{p.progressPercent}% Completed</span>
                         </div>
-                        <CardTitle className="text-lg font-bold">{p.name}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {/* Progress Layout with Circular Progress */}
-                        <div className="flex items-center gap-4">
-                          {/* Circular progress SVG */}
+                        <h4 className="text-xs font-semibold text-foreground">{p.name}</h4>
+                        
+                        <div className="flex items-center gap-4 border-t border-border/10 pt-3">
                           <div className="relative w-14 h-14 flex-shrink-0 select-none">
                             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 60 60">
-                              {/* Background Circle */}
                               <circle
-                                cx="30"
-                                cy="30"
-                                r={ringRadius}
-                                className="text-zinc-100 dark:text-zinc-800"
-                                strokeWidth="5.5"
-                                stroke="currentColor"
-                                fill="transparent"
+                                cx="30" cy="30" r={ringRadius}
+                                className="text-border/40"
+                                strokeWidth="5" stroke="currentColor" fill="transparent"
                               />
-                              {/* Foreground Circle */}
                               <circle
-                                cx="30"
-                                cy="30"
-                                r={ringRadius}
-                                className="text-amber-500"
-                                strokeWidth="5.5"
+                                cx="30" cy="30" r={ringRadius}
+                                className="text-foreground"
+                                strokeWidth="5"
                                 strokeDasharray={ringCircumference}
                                 strokeDashoffset={ringOffset}
                                 strokeLinecap="round"
-                                stroke="currentColor"
-                                fill="transparent"
-                                style={{ transition: 'stroke-dashoffset 0.5s ease-in-out' }}
+                                stroke="currentColor" fill="transparent"
+                                style={{ transition: 'stroke-dashoffset 0.6s ease-in-out' }}
                               />
                             </svg>
-                            <div className="absolute inset-0 flex items-center justify-center text-xs font-black text-zinc-800 dark:text-white">
+                            <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-foreground text-financial">
                               {p.progressPercent}%
                             </div>
                           </div>
 
-                          {/* Horizontal details */}
-                          <div className="flex-1 space-y-1.5">
-                            <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-                              <div className="bg-amber-500 h-full rounded-full" style={{ width: `${p.progressPercent}%` }} />
-                            </div>
-                            <p className="text-xs font-semibold text-zinc-500">Linear Track View</p>
+                          <div className="flex-1">
+                            <ProgressBar value={p.progressPercent} height={4} />
+                            <p className="text-[10px] font-semibold text-muted-foreground mt-2">Linear Track View</p>
                           </div>
                         </div>
 
-                        {/* Dates */}
-                        <div className="grid grid-cols-2 gap-2 text-xs pt-3.5 border-t border-zinc-100 dark:border-zinc-850">
-                          <div className="flex items-center gap-1.5 font-bold text-zinc-500">
-                            <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+                        <div className="grid grid-cols-2 gap-2 text-caption pt-3 border-t border-border/10">
+                          <div className="flex items-center gap-1.5 font-medium">
+                            <Calendar className="w-3.5 h-3.5 text-muted-foreground/40" />
                             <span>Started: {p.startDate ? new Date(p.startDate).toLocaleDateString() : 'N/A'}</span>
                           </div>
-                          <div className="flex items-center gap-1.5 font-bold text-zinc-500">
-                            <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+                          <div className="flex items-center gap-1.5 font-medium">
+                            <Calendar className="w-3.5 h-3.5 text-muted-foreground/40" />
                             <span>Target: {p.endDate ? new Date(p.endDate).toLocaleDateString() : 'N/A'}</span>
                           </div>
                         </div>
@@ -446,4 +392,3 @@ export default function ReportsPage() {
     </div>
   );
 }
-

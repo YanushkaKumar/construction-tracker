@@ -3,32 +3,12 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import {
-  HardHat,
-  FileText,
-  Landmark,
-  Users,
-  ClipboardCheck,
-  LayoutGrid,
-  CheckCircle,
-  ArrowRight,
-  TrendingUp,
-  MapPin,
-  Calendar,
-  Layers,
-  Coins,
-  ShieldCheck,
-  Briefcase,
-  Sparkles,
-  Database,
-  Lock,
-  ChevronRight,
-  Map,
-  Activity,
-  Check,
-  Clock
+  HardHat, FileText, Landmark, Users, ClipboardCheck, LayoutGrid,
+  CheckCircle, ArrowRight, TrendingUp, MapPin, Calendar, Layers,
+  Coins, ShieldCheck, Briefcase, Sparkles, Database, Lock,
+  ChevronRight, Map, Activity, Check, Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
 
 export default function Home() {
   const [activeSegment, setActiveSegment] = useState<'contractor' | 'engineer' | 'owner' | 'qs'>('contractor');
@@ -61,33 +41,32 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-stone-50/50 text-zinc-800 scroll-smooth selection:bg-amber-500 selection:text-zinc-950 font-sans">
+    <div className="flex flex-col min-h-screen bg-background text-foreground scroll-smooth selection:bg-foreground selection:text-background font-sans">
+      {/* Structural grid overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,oklch(var(--border)/0.2)_1px,transparent_1px),linear-gradient(to_bottom,oklch(var(--border)/0.2)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none -z-10" />
 
-      {/* Soft warm-grey Grid Background Layer */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e4e4e780_1px,transparent_1px),linear-gradient(to_bottom,#e4e4e780_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none -z-10" />
-
-      {/* Floating Header */}
-      <header className="sticky top-4 z-40 w-[95%] max-w-7xl mx-auto border border-zinc-200/80 bg-white/80 backdrop-blur-xl rounded-2xl shadow-md mt-4">
+      {/* Header Panel */}
+      <header className="sticky top-4 z-40 w-[95%] max-w-7xl mx-auto border border-border/40 bg-card/65 backdrop-blur-xl rounded-2xl shadow-sm mt-4 text-left">
         <div className="container mx-auto flex h-14 items-center justify-between px-6">
-          <div className="flex items-center gap-2 group cursor-pointer">
-            <div className="flex items-center justify-center w-8.5 h-8.5 rounded-lg bg-amber-500 text-zinc-955 shadow-md shadow-amber-500/25 group-hover:scale-105 transition-all duration-300">
-              <HardHat className="w-4.5 h-4.5" />
+          <div className="flex items-center gap-2.5 cursor-pointer">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-foreground text-background shadow-sm">
+              <HardHat className="w-4 h-4" />
             </div>
-            <span className="font-extrabold text-base tracking-tight text-zinc-950">Build<span className="text-amber-500">Track</span></span>
+            <span className="font-semibold text-sm tracking-tight">BuildTrack</span>
           </div>
 
-          <nav className="hidden md:flex gap-8 text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-900 transition-colors">
-            <a href="#features" className="hover:text-amber-500 transition-colors">Features</a>
-            <a href="#about" className="hover:text-amber-500 transition-colors">How it Works</a>
-            <a href="#market" className="hover:text-amber-500 transition-colors">Target Industry</a>
+          <nav className="hidden md:flex gap-8 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
+            <a href="#about" className="hover:text-foreground transition-colors">How it Works</a>
+            <a href="#market" className="hover:text-foreground transition-colors">Target Industry</a>
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Link href="/login">
-              <Button variant="ghost" size="sm" className="font-semibold text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/50">Log in</Button>
+              <Button variant="ghost" size="sm" className="text-xs font-semibold">Log in</Button>
             </Link>
             <Link href="/register">
-              <Button size="sm" className="bg-amber-500 text-zinc-950 hover:bg-amber-600 font-bold shadow-md shadow-amber-500/10">Register Company</Button>
+              <Button size="sm">Register Company</Button>
             </Link>
           </div>
         </div>
@@ -95,377 +74,314 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="relative py-24 lg:py-36 overflow-hidden">
-        {/* Soft glowing auroras */}
-        <div className="absolute top-1/3 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
-        <div className="absolute top-1/2 right-1/4 translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-orange-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
-
         <div className="container max-w-7xl mx-auto px-6 relative z-10">
           <div className="grid grid-cols-1 gap-16 lg:grid-cols-12 lg:gap-8 items-center">
-
             {/* Left Content */}
-            <div className="space-y-8 lg:col-span-6 text-left">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white border border-zinc-200/80 px-4 py-1.5 text-xs font-bold text-amber-600 shadow-sm">
-                <Sparkles className="w-3.5 h-3.5 animate-pulse text-amber-500" />
-                Next-Gen Construction Management Platform
+            <div className="space-y-6 lg:col-span-6 text-left stagger-children">
+              <div className="inline-flex items-center gap-2 rounded-full bg-accent/40 border border-border/30 px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-foreground">
+                <Sparkles className="w-3 h-3 text-warning" />
+                Next-Gen Construction Operating System
               </div>
 
-              <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-tight text-zinc-950">
-                Operate sites <br />
-                with <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-600 to-amber-700">absolute precision.</span>
+              <h1 className="text-4xl sm:text-6xl font-semibold tracking-tight leading-[1.1] text-foreground">
+                Operate sites with <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground to-muted-foreground/60">absolute precision.</span>
               </h1>
 
-              <p className="text-base sm:text-lg text-zinc-600 leading-relaxed max-w-lg font-medium">
-                Unify site logs, worker attendance registers, material supply pipelines, and financial expense approvals in a single, high-fidelity SaaS dashboard built for Sri Lankan contractors.
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-lg font-medium">
+                Unify daily site logbooks, worker attendance registers, materials catalogs, and financial approvals into a clean, high-fidelity dashboard built for modern constructors.
               </p>
 
-              <div className="flex flex-wrap gap-4 pt-2">
+              <div className="flex flex-wrap gap-3 pt-2">
                 <Link href="/register">
-                  <Button size="lg" className="bg-amber-500 text-zinc-950 hover:bg-amber-600 font-extrabold px-8 py-6 rounded-xl shadow-xl shadow-amber-500/10 group">
+                  <Button size="lg" className="h-11 px-6 text-xs font-semibold">
                     Get Started Free
-                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                   </Button>
                 </Link>
                 <Link href="/login">
-                  <Button variant="outline" size="lg" className="border-zinc-200 bg-white text-zinc-700 font-semibold px-8 py-6 rounded-xl hover:bg-zinc-50 hover:text-zinc-950 transition-all shadow-sm">
-                    Explore Demo Logins
+                  <Button variant="outline" size="lg" className="h-11 px-6 text-xs font-semibold">
+                    Explore Demo Workspace
                   </Button>
                 </Link>
               </div>
 
-              {/* Dynamic Telemetry tags */}
-              <div className="flex flex-wrap gap-x-8 gap-y-4 pt-6 border-t border-zinc-200">
+              {/* Dynamic metrics */}
+              <div className="flex flex-wrap gap-x-12 gap-y-4 pt-8 border-t border-border/20">
                 <div className="space-y-1">
-                  <div className="text-2xl font-black text-zinc-900">LKR 0M</div>
-                  <div className="text-xs uppercase font-bold text-zinc-500 tracking-wider">Financial Leakage Prevented</div>
+                  <div className="text-xl font-bold text-foreground text-financial">LKR 0M</div>
+                  <div className="text-[9px] uppercase font-bold text-muted-foreground/60 tracking-wider">leakage prevented</div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-2xl font-black text-zinc-900">100%</div>
-                  <div className="text-xs uppercase font-bold text-zinc-500 tracking-wider">Multi-Tenant Isolation</div>
+                  <div className="text-xl font-bold text-foreground">100%</div>
+                  <div className="text-[9px] uppercase font-bold text-muted-foreground/60 tracking-wider">tenant isolation</div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-2xl font-black text-zinc-900">4000+</div>
-                  <div className="text-xs uppercase font-bold text-zinc-500 tracking-wider">API Logs/Sec Handled</div>
+                  <div className="text-xl font-bold text-foreground">4000+</div>
+                  <div className="text-[9px] uppercase font-bold text-muted-foreground/60 tracking-wider">api requests/sec</div>
                 </div>
               </div>
             </div>
 
-            {/* Right Interactive Mockup App (3D Mockup Perspective) */}
+            {/* Right App Mockup Frame */}
             <div className="lg:col-span-6 w-full flex items-center justify-center relative select-none">
-
-              {/* Backlight glow behind the app frame */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/5 via-transparent to-orange-500/5 rounded-[2rem] blur-3xl -z-10 translate-y-6"></div>
-
-              <div className="w-full max-w-[560px] bg-white border border-zinc-250/80 rounded-2xl shadow-[0_20px_50px_-15px_rgba(24,24,27,0.15)] p-1.5 flex flex-col justify-between group hover:border-zinc-300 transition-colors duration-500">
-
+              <div className="w-full max-w-[560px] bg-card border border-border/40 rounded-2xl shadow-panel p-1.5 flex flex-col justify-between hover:border-border/60 transition-colors duration-300">
                 {/* macOS style Window Header */}
-                <div className="flex items-center justify-between px-4 py-2.5 bg-zinc-50 border-b border-zinc-200/80 rounded-t-xl">
+                <div className="flex items-center justify-between px-4 py-2.5 bg-accent/20 border-b border-border/20 rounded-t-xl">
                   <div className="flex gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-danger/70"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-warning/70"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-success/70"></span>
                   </div>
-                  <div className="text-xs font-bold text-zinc-400 tracking-widest uppercase">buildtrack.lk/app/dashboard</div>
+                  <div className="text-[9px] font-bold text-muted-foreground/60 tracking-widest uppercase">buildtrack.lk/app/dashboard</div>
                   <div className="w-12"></div>
                 </div>
 
-                {/* Dashboard Inner Container */}
-                <div className="flex-1 bg-zinc-50/50 p-4 grid grid-cols-12 gap-3.5 text-zinc-700 rounded-b-xl">
-
+                {/* Dashboard Inner Frame */}
+                <div className="flex-1 bg-accent/10 p-4 grid grid-cols-12 gap-3 text-muted-foreground rounded-b-xl">
                   {/* Left Mock Sidebar */}
-                  <div className="col-span-3 flex flex-col gap-2.5 border-r border-zinc-200/60 pr-3 pt-1">
+                  <div className="col-span-3 flex flex-col gap-2.5 border-r border-border/20 pr-3 pt-1 text-left">
                     <div className="flex items-center gap-1.5 mb-2 px-1">
-                      <div className="w-5 h-5 rounded-lg bg-amber-500 flex items-center justify-center text-zinc-950 font-black text-xs">BT</div>
-                      <div className="text-xs font-black text-zinc-950 tracking-wider">BuildTrack</div>
+                      <div className="w-5 h-5 rounded bg-foreground flex items-center justify-center text-background font-bold text-[10px]">BT</div>
+                      <div className="text-[10px] font-bold text-foreground tracking-wider">BuildTrack</div>
                     </div>
-                    <div className="h-4.5 bg-zinc-200/60 rounded-md w-full"></div>
-                    <div className="h-4.5 bg-amber-500/10 text-amber-700 text-xs px-2.5 py-1 rounded-md font-extrabold uppercase tracking-wide">Dashboard</div>
-                    <div className="h-4.5 bg-zinc-200/40 rounded-md w-11/12"></div>
-                    <div className="h-4.5 bg-zinc-200/40 rounded-md w-4/5"></div>
-                    <div className="h-4.5 bg-zinc-200/40 rounded-md w-5/6"></div>
+                    <div className="h-4.5 bg-border/20 rounded w-full"></div>
+                    <div className="h-4.5 bg-foreground/5 text-foreground text-[10px] px-2.5 py-1 rounded font-bold uppercase tracking-wide">Dashboard</div>
+                    <div className="h-4.5 bg-border/20 rounded w-11/12"></div>
+                    <div className="h-4.5 bg-border/20 rounded w-4/5"></div>
                   </div>
 
-                  {/* Right Dashboard Mock Panel */}
-                  <div className="col-span-9 space-y-3 pl-1 pt-1">
-
-                    {/* Project Header Widget */}
-                    <div className="flex justify-between items-center bg-white p-2.5 rounded-xl border border-zinc-200/60 shadow-sm">
+                  {/* Right Dashboard Mock Content */}
+                  <div className="col-span-9 space-y-3 pl-1 pt-1 text-left">
+                    {/* Project Header */}
+                    <div className="flex justify-between items-center bg-card p-2.5 rounded-xl border border-border/20 shadow-sm">
                       <div>
-                        <div className="text-[8px] font-extrabold text-amber-600 tracking-wider">PROJECT SELECT</div>
-                        <h4 className="text-xs font-bold mt-0.5 text-zinc-950">Horizon Tower Apartment</h4>
+                        <div className="text-[8px] font-bold text-muted-foreground/40 tracking-wider">ACTIVE PROJECT</div>
+                        <h4 className="text-[11px] font-bold mt-0.5 text-foreground">Horizon Apartments</h4>
                       </div>
-                      <div className="text-right flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span className="text-xs font-extrabold text-zinc-500">ACTIVE</span>
+                      <div className="text-right flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-success"></span>
+                        <span className="text-[9px] font-bold text-muted-foreground uppercase">ACTIVE</span>
                       </div>
                     </div>
 
-                    {/* Cost Metrics Widget */}
+                    {/* Cost Metrics */}
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="p-3 bg-white border border-zinc-200/60 rounded-xl shadow-sm">
-                        <div className="text-[8px] text-zinc-400 font-bold uppercase tracking-wider">Budget Spent</div>
-                        <div className="text-xs font-extrabold text-zinc-950 mt-1">LKR 85,000,000</div>
-                        <div className="w-full bg-zinc-100 h-1.5 rounded-full mt-2 overflow-hidden">
-                          <div className="bg-emerald-500 h-full w-[56%] rounded-full"></div>
-                        </div>
-                        <div className="flex justify-between text-[7px] text-zinc-400 mt-1">
-                          <span>Usage: 56.7%</span>
-                          <span>Cap: 150M</span>
+                      <div className="p-3 bg-card border border-border/20 rounded-xl shadow-sm">
+                        <div className="text-[8px] text-muted-foreground/60 font-bold uppercase tracking-wider">Budget Spent</div>
+                        <div className="text-xs font-bold text-foreground mt-1 text-financial">LKR 85,000,000</div>
+                        <div className="w-full bg-accent/20 h-1 rounded-full mt-2 overflow-hidden">
+                          <div className="bg-success h-full w-[56%] rounded-full"></div>
                         </div>
                       </div>
 
-                      <div className="p-3 bg-white border border-zinc-200/60 rounded-xl shadow-sm">
-                        <div className="text-[8px] text-zinc-400 font-bold uppercase tracking-wider">Labour Strength</div>
-                        <div className="text-xs font-extrabold text-zinc-950 mt-1">42 Workers</div>
-                        <div className="text-[8.5px] font-bold text-amber-600 mt-1 flex items-center gap-1">
-                          <Check className="w-3.5 h-3.5 text-amber-500" /> Attendance Completed
+                      <div className="p-3 bg-card border border-border/20 rounded-xl shadow-sm">
+                        <div className="text-[8px] text-muted-foreground/60 font-bold uppercase tracking-wider">Labour Strength</div>
+                        <div className="text-xs font-bold text-foreground mt-1">42 Workers</div>
+                        <div className="text-[9px] font-bold text-success mt-1 flex items-center gap-1">
+                          <Check className="w-3 h-3" /> Roster Marked
                         </div>
                       </div>
                     </div>
-
-                    {/* Real-time Logger Grid */}
-                    <div className="p-3 bg-white border border-zinc-200/60 rounded-xl shadow-sm space-y-2">
-                      <div className="flex justify-between items-center text-[8.5px] font-bold uppercase tracking-wider text-zinc-400">
-                        <span>LIVE REPORT LOGS</span>
-                        <span className="text-amber-600">REAL-TIME</span>
-                      </div>
-
-                      <div className="space-y-1.5 text-xs text-zinc-600">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                            <span>Task completed: Concrete Slab Pouring</span>
-                          </div>
-                          <span className="text-zinc-400 font-semibold">Just Now</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                            <span>Material Request: 50T reinforcement steel</span>
-                          </div>
-                          <span className="text-zinc-400 font-semibold">10m ago</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
-                            <span>Shift Attendance checked by PM</span>
-                          </div>
-                          <span className="text-zinc-400 font-semibold">1h ago</span>
-                        </div>
-                      </div>
-                    </div>
-
                   </div>
                 </div>
 
               </div>
             </div>
-
           </div>
         </div>
       </section>
 
-      {/* Features Section (Bento Grid) */}
-      <section id="features" className="py-32 bg-white border-y border-zinc-200/80 relative scroll-mt-12">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[1px] bg-gradient-to-r from-transparent via-zinc-200 to-transparent"></div>
-
+      {/* Bento Grid Features Section */}
+      <section id="features" className="py-24 bg-card border-y border-border/40 relative scroll-mt-12 text-left">
         <div className="container max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-3xl mx-auto space-y-4 mb-20">
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-zinc-950 leading-tight">
+          <div className="max-w-3xl space-y-3 mb-16">
+            <h2 className="text-3xl sm:text-5xl font-semibold tracking-tight text-foreground leading-tight">
               Designed for performance. <br />
-              Built for <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-600 to-amber-700">construction scale.</span>
+              Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground to-muted-foreground/50">construction scale.</span>
             </h2>
-            <p className="text-zinc-500 text-base sm:text-lg">
-              Unlock modular site telemetry. Replace chaotic communications and paper receipts with structured databases.
+            <p className="text-muted-foreground text-sm sm:text-base font-medium">
+              Eliminate paper workflows. Consolidate your project logs and ledgers into unified databases.
             </p>
           </div>
 
           {/* Bento Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[220px]">
-
-            {/* Bento 1: Large (Real-Time Command) */}
-            <div className="md:col-span-8 md:row-span-2 p-8 bg-stone-50 border border-zinc-200/80 rounded-3xl flex flex-col justify-between relative overflow-hidden group hover:shadow-lg hover:border-zinc-300 transition-all duration-300">
-              <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/5 rounded-full blur-[70px] pointer-events-none"></div>
-
-              <div className="max-w-md space-y-3 z-10">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-700 flex items-center justify-center">
-                  <LayoutGrid className="w-5.5 h-5.5" />
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 auto-rows-[220px]">
+            {/* Bento 1: Command Center */}
+            <div className="md:col-span-8 md:row-span-2 p-8 bg-accent/10 border border-border/25 rounded-3xl flex flex-col justify-between relative overflow-hidden group hover:shadow-panel hover:border-border/40 transition-all duration-300">
+              <div className="max-w-md space-y-2 z-10">
+                <div className="w-9 h-9 rounded-lg bg-accent border border-border/30 text-foreground flex items-center justify-center">
+                  <LayoutGrid className="w-5 h-5" />
                 </div>
-                <h3 className="text-2xl font-bold text-zinc-950">Project Portfolios Command</h3>
-                <p className="text-sm text-zinc-500 leading-relaxed font-medium">
-                  Organize multiple active job sites under one centralized portal. Assign distinct company user roles, monitor project progress bars, and check client schedules in real time.
+                <h3 className="text-xl font-bold text-foreground">Project Command Center</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed font-medium">
+                  Organize multiple active job sites under one centralized platform. Define company user roles, monitor project progress bars, and check client schedules in real time.
                 </p>
               </div>
 
-              {/* Graphical element inside Bento */}
-              <div className="h-28 bg-white border border-zinc-200/80 rounded-2xl p-4 flex flex-col justify-between mt-4 shadow-sm">
+              {/* Progress visual */}
+              <div className="h-24 bg-card border border-border/20 rounded-2xl p-4 flex flex-col justify-between shadow-sm mt-4">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold text-zinc-800">Horizon Tower</span>
-                  <span className="text-emerald-700 font-extrabold text-xs bg-emerald-500/10 px-2 py-0.5 rounded-full">58% Done</span>
+                  <span className="font-semibold text-foreground">Horizon Tower Phase I</span>
+                  <span className="text-success font-bold bg-success-subtle px-2 py-0.5 rounded-full text-[10px]">58% Done</span>
                 </div>
-                <div className="w-full bg-zinc-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-gradient-to-r from-amber-500 to-amber-600 h-full w-[58%] rounded-full"></div>
+                <div className="w-full bg-accent/20 h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-foreground h-full w-[58%] rounded-full"></div>
                 </div>
-                <div className="flex justify-between text-xs text-zinc-400">
+                <div className="flex justify-between text-[10px] text-muted-foreground">
                   <span>Start: June 2025</span>
-                  <span>End: June 2027</span>
+                  <span>Target: June 2027</span>
                 </div>
               </div>
             </div>
 
-            {/* Bento 2: Medium (Expense tracking) */}
-            <div className="md:col-span-4 md:row-span-2 p-8 bg-stone-50 border border-zinc-200/80 rounded-3xl flex flex-col justify-between hover:shadow-lg hover:border-zinc-300 transition-all duration-300 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-60 h-60 bg-blue-500/5 rounded-full blur-[60px] pointer-events-none"></div>
-
-              <div className="space-y-3 z-10">
-                <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-700 flex items-center justify-center">
-                  <Landmark className="w-5.5 h-5.5" />
+            {/* Bento 2: Expense Approvals */}
+            <div className="md:col-span-4 md:row-span-2 p-8 bg-accent/10 border border-border/25 rounded-3xl flex flex-col justify-between hover:shadow-panel hover:border-border/40 transition-all duration-300 relative overflow-hidden group">
+              <div className="space-y-2 z-10">
+                <div className="w-9 h-9 rounded-lg bg-accent border border-border/30 text-foreground flex items-center justify-center">
+                  <Landmark className="w-5 h-5" />
                 </div>
-                <h3 className="text-xl font-bold text-zinc-950">Automated Expense approvals</h3>
-                <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-                  Log field expenses on-site, upload transaction receipts securely, and process multi-level management approvals dynamically.
+                <h3 className="text-lg font-bold text-foreground">Automated Approvals</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed font-medium">
+                  Log purchase logs on-site, upload receipts, and authorize payments with customizable multi-level filters.
                 </p>
               </div>
 
-              <div className="p-3.5 bg-white border border-zinc-200/60 rounded-xl space-y-2 mt-4 text-xs shadow-sm">
-                <div className="flex justify-between font-bold text-zinc-800 border-b border-zinc-100 pb-1.5">
-                  <span>Cement purchase voucher</span>
-                  <span className="text-amber-700 font-extrabold">LKR 145K</span>
+              <div className="p-3.5 bg-card border border-border/20 rounded-xl space-y-2 mt-4 text-xs shadow-sm">
+                <div className="flex justify-between font-bold text-foreground border-b border-border/10 pb-1.5">
+                  <span>Reinforcement Steel</span>
+                  <span className="text-foreground text-financial">LKR 145K</span>
                 </div>
-                <div className="flex justify-between text-zinc-400">
-                  <span>Submitted by Engineer</span>
-                  <span className="text-emerald-700 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded">APPROVED</span>
+                <div className="flex justify-between text-[10px]">
+                  <span className="text-muted-foreground">Logged by Engineer</span>
+                  <span className="text-success font-bold bg-success-subtle px-1.5 py-0.5 rounded uppercase">Approved</span>
                 </div>
               </div>
             </div>
 
-            {/* Bento 3: Medium (Daily reports) */}
-            <div className="md:col-span-4 md:row-span-1 p-6 bg-stone-50 border border-zinc-200/80 rounded-3xl flex flex-col justify-between hover:shadow-lg hover:border-zinc-300 transition-all duration-300">
+            {/* Bento 3: Daily Logs */}
+            <div className="md:col-span-4 md:row-span-1 p-6 bg-accent/10 border border-border/25 rounded-3xl flex flex-col justify-between hover:shadow-panel hover:border-border/40 transition-all duration-300">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-700 flex items-center justify-center">
-                  <FileText className="w-5 h-5" />
+                <div className="w-8 h-8 rounded-lg bg-accent border border-border/30 text-foreground flex items-center justify-center">
+                  <FileText className="w-4 h-4" />
                 </div>
-                <h4 className="text-base font-bold text-zinc-950">Daily Site Logs</h4>
+                <h4 className="text-xs font-semibold text-foreground">Daily Site Logs</h4>
               </div>
-              <p className="text-xs text-zinc-500 leading-relaxed">
+              <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
                 Log daily summary sheets, document safety observations, track local weather reports, and attach site photos instantly.
               </p>
             </div>
 
-            {/* Bento 4: Medium (Labour Attendance) */}
-            <div className="md:col-span-4 md:row-span-1 p-6 bg-stone-50 border border-zinc-200/80 rounded-3xl flex flex-col justify-between hover:shadow-lg hover:border-zinc-300 transition-all duration-300">
+            {/* Bento 4: Attendance */}
+            <div className="md:col-span-4 md:row-span-1 p-6 bg-accent/10 border border-border/25 rounded-3xl flex flex-col justify-between hover:shadow-panel hover:border-border/40 transition-all duration-300">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-orange-500/10 text-orange-700 flex items-center justify-center">
-                  <ClipboardCheck className="w-5 h-5" />
+                <div className="w-8 h-8 rounded-lg bg-accent border border-border/30 text-foreground flex items-center justify-center">
+                  <ClipboardCheck className="w-4 h-4" />
                 </div>
-                <h4 className="text-base font-bold text-zinc-950">Labour Attendance</h4>
+                <h4 className="text-xs font-semibold text-foreground">Labour Attendance</h4>
               </div>
-              <p className="text-xs text-zinc-500 leading-relaxed">
-                Mark daily worker attendance in grids, save custom daily rates, and calculate weekly/monthly payouts automatically.
+              <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
+                Mark daily worker attendance in grids, save custom daily rates, and calculate payrolls automatically.
               </p>
             </div>
 
-            {/* Bento 5: Medium (Material Procurement) */}
-            <div className="md:col-span-4 md:row-span-1 p-6 bg-stone-50 border border-zinc-200/80 rounded-3xl flex flex-col justify-between hover:shadow-lg hover:border-zinc-300 transition-all duration-300">
+            {/* Bento 5: Materials Requisition */}
+            <div className="md:col-span-4 md:row-span-1 p-6 bg-accent/10 border border-border/25 rounded-3xl flex flex-col justify-between hover:shadow-panel hover:border-border/40 transition-all duration-300">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-purple-500/10 text-purple-700 flex items-center justify-center">
-                  <Coins className="w-5 h-5" />
+                <div className="w-8 h-8 rounded-lg bg-accent border border-border/30 text-foreground flex items-center justify-center">
+                  <Coins className="w-4 h-4" />
                 </div>
-                <h4 className="text-base font-bold text-zinc-950">Material Requisitions</h4>
+                <h4 className="text-xs font-semibold text-foreground">Procurement Logs</h4>
               </div>
-              <p className="text-xs text-zinc-500 leading-relaxed">
+              <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
                 Request aggregates, cement, and steel reinforcement. Manage supplier rate catalogs and monitor deliveries.
               </p>
             </div>
-
           </div>
         </div>
       </section>
 
       {/* How it Works Section (#about) */}
-      <section id="about" className="py-32 bg-stone-50/50 border-b border-zinc-200 scroll-mt-16 relative">
+      <section id="about" className="py-24 bg-background border-b border-border/40 scroll-mt-16 relative text-left">
         <div className="container max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto space-y-4 mb-24">
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-zinc-950">How BuildTrack Works</h2>
-            <p className="text-zinc-550 text-base sm:text-lg">
-              Get your site commands up and running in a few simple steps.
+          <div className="text-center max-w-2xl mx-auto space-y-3 mb-20">
+            <h2 className="text-3xl sm:text-5xl font-semibold tracking-tight text-foreground">How BuildTrack Works</h2>
+            <p className="text-muted-foreground text-sm sm:text-base font-medium">
+              Start coordinating your operations in four simple steps.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
-
-            {/* Timeline connector line for wide screens */}
-            <div className="hidden md:block absolute top-[28px] left-[12%] right-[12%] h-[1px] bg-gradient-to-r from-amber-500/10 via-zinc-250 to-amber-500/10 -z-10"></div>
+            <div className="hidden md:block absolute top-[28px] left-[12%] right-[12%] h-[1px] bg-border/25 -z-10"></div>
 
             {/* Step 1 */}
             <div className="space-y-4 group">
-              <div className="w-14 h-14 rounded-2xl bg-white border border-zinc-200 text-amber-600 font-extrabold flex items-center justify-center text-lg group-hover:border-amber-500/50 transition-colors shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-card border border-border/30 text-foreground font-bold flex items-center justify-center text-lg group-hover:border-foreground/40 transition-colors shadow-sm">
                 01
               </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold text-zinc-900">Scaffold Workspace</h3>
-                <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-                  Register your construction company and invite site engineers, project managers, and quantity surveyors with role settings.
+              <div className="space-y-1.5">
+                <h3 className="text-sm font-semibold text-foreground">Scaffold Workspace</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed font-medium">
+                  Register your construction company and invite site engineers, project managers, and surveyors with custom roles.
                 </p>
               </div>
             </div>
 
             {/* Step 2 */}
             <div className="space-y-4 group">
-              <div className="w-14 h-14 rounded-2xl bg-white border border-zinc-200 text-zinc-500 font-extrabold flex items-center justify-center text-lg group-hover:border-amber-500/50 transition-colors shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-card border border-border/30 text-muted-foreground font-bold flex items-center justify-center text-lg group-hover:border-foreground/40 transition-colors shadow-sm">
                 02
               </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold text-zinc-900">Define Job Sites</h3>
-                <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-                  Add projects, specify total budget estimates, outline deadlines, and allocate management teams to specific sites.
+              <div className="space-y-1.5">
+                <h3 className="text-sm font-semibold text-foreground">Define Job Sites</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed font-medium">
+                  Add projects, specify total budget estimates, outline target dates, and allocate management teams.
                 </p>
               </div>
             </div>
 
             {/* Step 3 */}
             <div className="space-y-4 group">
-              <div className="w-14 h-14 rounded-2xl bg-white border border-zinc-200 text-zinc-500 font-extrabold flex items-center justify-center text-lg group-hover:border-amber-500/50 transition-colors shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-card border border-border/30 text-muted-foreground font-bold flex items-center justify-center text-lg group-hover:border-foreground/40 transition-colors shadow-sm">
                 03
               </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold text-zinc-900">Capture Daily Data</h3>
-                <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-                  Site supervisors submit daily reports, register worker check-ins, record materials used, and log raw field expenses.
+              <div className="space-y-1.5">
+                <h3 className="text-sm font-semibold text-foreground">Capture Daily Data</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed font-medium">
+                  Site supervisors submit daily logs, register worker check-ins, record materials used, and log raw field expenses.
                 </p>
               </div>
             </div>
 
             {/* Step 4 */}
             <div className="space-y-4 group">
-              <div className="w-14 h-14 rounded-2xl bg-white border border-zinc-200 text-zinc-500 font-extrabold flex items-center justify-center text-lg group-hover:border-amber-500/50 transition-colors shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-card border border-border/30 text-muted-foreground font-bold flex items-center justify-center text-lg group-hover:border-foreground/40 transition-colors shadow-sm">
                 04
               </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold text-zinc-900">Analyze Health</h3>
-                <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-                  Track budget variance details, analyze category cost distributions, and download print-ready project reports.
+              <div className="space-y-1.5">
+                <h3 className="text-sm font-semibold text-foreground">Analyze Health</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed font-medium">
+                  Track budget variance details, analyze category cost distributions, and download print-ready reports.
                 </p>
               </div>
             </div>
-
           </div>
         </div>
       </section>
 
       {/* Target Industry Section (#market) */}
-      <section id="market" className="py-32 bg-white scroll-mt-16 relative">
+      <section id="market" className="py-24 bg-card scroll-mt-16 relative text-left">
         <div className="container max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto space-y-4 mb-20">
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-zinc-950">Calibrated for your Role</h2>
-            <p className="text-zinc-500 text-base sm:text-lg">
-              Tailored workspaces specifically designed for stakeholders in the Sri Lankan construction industry.
+          <div className="text-center max-w-2xl mx-auto space-y-3 mb-16">
+            <h2 className="text-3xl sm:text-5xl font-semibold tracking-tight text-foreground">Calibrated for your Role</h2>
+            <p className="text-muted-foreground text-sm sm:text-base font-medium">
+              Tailored workspaces specifically designed for stakeholders in the construction industry.
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-
             {/* Left Nav Tabs */}
-            <div className="lg:col-span-4 flex flex-col gap-2">
+            <div className="lg:col-span-4 flex flex-col gap-1.5">
               {[
                 { id: 'contractor', label: 'SME Contractors', desc: 'Command multiple locations' },
                 { id: 'engineer', label: 'Site Engineers', desc: 'Frictionless log capture' },
@@ -478,66 +394,61 @@ export default function Home() {
                     key={tab.id}
                     onClick={() => setActiveSegment(tab.id as any)}
                     className={`text-left p-4 rounded-xl border transition-all ${isActive
-                        ? 'bg-stone-50 border-amber-500 text-zinc-950 shadow-md shadow-amber-500/5'
-                        : 'bg-transparent border-transparent text-zinc-400 hover:text-zinc-600'
+                        ? 'bg-accent/30 border-foreground/30 text-foreground shadow-sm'
+                        : 'bg-transparent border-transparent text-muted-foreground/60 hover:text-foreground'
                       }`}
                   >
-                    <div className="font-extrabold text-sm">{tab.label}</div>
-                    <div className="text-xs uppercase font-bold tracking-wider mt-0.5 opacity-60">{tab.desc}</div>
+                    <div className="font-semibold text-xs">{tab.label}</div>
+                    <div className="text-[9px] uppercase font-bold tracking-wider mt-0.5 opacity-60">{tab.desc}</div>
                   </button>
                 );
               })}
             </div>
 
             {/* Right Segment Panel Detail */}
-            <div className="lg:col-span-8 bg-stone-50 border border-zinc-200/80 p-8 rounded-3xl relative overflow-hidden min-h-[320px] flex flex-col justify-between shadow-sm">
-              <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/5 rounded-full blur-[80px] pointer-events-none"></div>
-
-              <div className="space-y-4">
-                <span className="text-xs font-extrabold uppercase tracking-widest text-amber-600">{segmentContent[activeSegment].badge}</span>
-                <h3 className="text-2xl font-black text-zinc-950">{segmentContent[activeSegment].title}</h3>
-                <p className="text-sm text-zinc-500 leading-relaxed max-w-xl font-medium">
+            <div className="lg:col-span-8 bg-accent/10 border border-border/25 p-8 rounded-3xl relative overflow-hidden min-h-[300px] flex flex-col justify-between shadow-sm">
+              <div className="space-y-3">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/60">{segmentContent[activeSegment].badge}</span>
+                <h3 className="text-xl font-bold text-foreground">{segmentContent[activeSegment].title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed max-w-xl font-medium">
                   {segmentContent[activeSegment].description}
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-6 mt-6 border-t border-zinc-200">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-6 mt-6 border-t border-border/10">
                 {segmentContent[activeSegment].features.map((feat, index) => (
-                  <div key={index} className="flex items-center gap-2 text-xs font-bold text-zinc-700">
-                    <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <div key={index} className="flex items-center gap-2 text-xs font-bold text-foreground/80">
+                    <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
                     <span>{feat}</span>
                   </div>
                 ))}
               </div>
             </div>
-
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-200 bg-white py-16 text-center text-xs text-zinc-500">
+      <footer className="border-t border-border/40 bg-card py-16 text-center text-xs text-muted-foreground/60">
         <div className="container max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-8">
-
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500 text-zinc-950">
-              <HardHat className="w-4.5 h-4.5" />
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-foreground text-background">
+              <HardHat className="w-4 h-4" />
             </div>
-            <span className="font-extrabold text-sm tracking-tight text-zinc-950">BuildTrack</span>
+            <span className="font-semibold text-sm tracking-tight text-foreground">BuildTrack</span>
           </div>
 
-          <div className="flex flex-wrap gap-6 text-xs font-bold uppercase tracking-wider text-zinc-500">
-            <a href="#features" className="hover:text-amber-500 transition-colors">Features</a>
-            <a href="#about" className="hover:text-amber-500 transition-colors">How it Works</a>
-            <a href="#market" className="hover:text-amber-500 transition-colors">Target Industry</a>
+          <div className="flex flex-wrap gap-6 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
+            <a href="#about" className="hover:text-foreground transition-colors">How it Works</a>
+            <a href="#market" className="hover:text-foreground transition-colors">Target Industry</a>
           </div>
 
-          <div>
-            &copy; {new Date().getFullYear()} BuildTrack. Designed for Sri Lankan SME Contractors.
+          <div className="text-[10px] font-semibold tracking-wide">
+            &copy; {new Date().getFullYear()} BuildTrack. Designed for SME Contractors.
           </div>
         </div>
       </footer>
-
     </div>
   );
 }

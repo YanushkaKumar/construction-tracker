@@ -6,21 +6,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { 
-  FileSpreadsheet, 
-  Plus, 
-  Loader2, 
-  AlertCircle,
-  CloudSun,
-  Users,
-  ClipboardList,
-  ShieldAlert,
-  Calendar,
-  SlidersHorizontal,
-  FolderOpen
+  FileSpreadsheet, Plus, Loader2, AlertCircle, CloudSun, Users,
+  ClipboardList, ShieldAlert, Calendar, SlidersHorizontal, FolderOpen
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -67,38 +58,29 @@ export default function DailyReportsPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>('ALL');
   const [mutateError, setMutateError] = useState<string | null>(null);
 
-  // Fetch projects list
   const { data: projectsData } = useQuery<{ data: Project[] }>({
     queryKey: ['projects'],
-    queryFn: async () => {
-      const response = await apiClient.get('/projects');
-      return response.data;
-    },
+    queryFn: async () => (await apiClient.get('/projects')).data,
     retry: 1,
   });
 
-  // Fetch daily logs
   const { data: logsData, isLoading: isLogsLoading } = useQuery<{ data: DailyLog[] }>({
     queryKey: ['daily-logs', selectedProjectId],
     queryFn: async () => {
       if (selectedProjectId === 'ALL' || selectedProjectId === '') {
-        const response = await apiClient.get(`/daily-reports`);
-        return response.data;
+        return (await apiClient.get(`/daily-reports`)).data;
       }
-      const response = await apiClient.get(`/projects/${selectedProjectId}/daily-reports`);
-      return response.data;
+      return (await apiClient.get(`/projects/${selectedProjectId}/daily-reports`)).data;
     },
     retry: 1,
   });
 
   const createLogMutation = useMutation({
     mutationFn: async (values: LogFormValues) => {
-      const response = await apiClient.post(`/projects/${selectedProjectId}/daily-reports`, values);
-      return response.data;
+      return (await apiClient.post(`/projects/${selectedProjectId}/daily-reports`, values)).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['daily-logs'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       setIsDialogOpen(false);
       resetForm();
     },
@@ -138,30 +120,25 @@ export default function DailyReportsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header Panel */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 text-left stagger-children">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
-            Daily Site Logs
-          </h1>
-          <p className="text-zinc-500 dark:text-zinc-400">
-            Log workforce registers, weather conditions, and progress logs daily.
-          </p>
+          <h1 className="text-headline text-foreground">Daily Logs</h1>
+          <p className="text-caption mt-1">Record site registers, weather briefings, and work summaries daily.</p>
         </div>
 
-        {/* Create Dialog Trigger */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger render={<Button className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold shadow-md shadow-amber-500/10" />}>
-            <Plus className="w-4 h-4 mr-2" />
-            Submit Daily Log
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="w-4 h-4 mr-1.5" />
+              Submit Daily Log
+            </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Submit Daily Site Log</DialogTitle>
-              <DialogDescription>
-                Provide key summaries of operations logged on site today.
-              </DialogDescription>
+              <DialogTitle>Submit Site Log</DialogTitle>
+              <DialogDescription>Provide key details of operations logged on site today.</DialogDescription>
             </DialogHeader>
 
             {mutateError && (
@@ -173,24 +150,24 @@ export default function DailyReportsPage() {
             )}
 
             <form onSubmit={handleSubmit(handleCreateLog)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="reportDate">Report Date *</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="reportDate" className="text-caption">Report Date *</Label>
                   <Input id="reportDate" type="date" {...register('reportDate')} />
-                  {errors.reportDate && <p className="text-xs text-destructive font-medium">{errors.reportDate.message}</p>}
+                  {errors.reportDate && <p className="text-[10px] text-destructive font-medium">{errors.reportDate.message}</p>}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="workersOnSite">Workers On Site *</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="workersOnSite" className="text-caption">Workers On Site *</Label>
                   <Input id="workersOnSite" type="number" {...register('workersOnSite')} />
-                  {errors.workersOnSite && <p className="text-xs text-destructive font-medium">{errors.workersOnSite.message}</p>}
+                  {errors.workersOnSite && <p className="text-[10px] text-destructive font-medium">{errors.workersOnSite.message}</p>}
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="weatherCondition">Weather Condition *</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="weatherCondition" className="text-caption">Weather Condition *</Label>
                 <select 
                   id="weatherCondition" 
-                  className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950"
+                  className="flex h-9 w-full rounded-lg border border-border/60 bg-transparent px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20"
                   {...register('weatherCondition')}
                 >
                   <option value="Sunny">Sunny</option>
@@ -201,47 +178,47 @@ export default function DailyReportsPage() {
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="workSummary">Work Summary *</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="workSummary" className="text-caption">Work Summary *</Label>
                 <textarea 
                   id="workSummary" 
-                  placeholder="Completed casting of column C3. Installed block walls on ground floor..."
-                  className="flex min-h-[80px] w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950"
+                  placeholder="Completed slab casting of ground floor..."
+                  rows={3}
+                  className="w-full rounded-lg border border-border/60 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 resize-none placeholder:text-muted-foreground/60"
                   {...register('workSummary')}
                 />
-                {errors.workSummary && <p className="text-xs text-destructive font-medium">{errors.workSummary.message}</p>}
+                {errors.workSummary && <p className="text-[10px] text-destructive font-medium">{errors.workSummary.message}</p>}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="issues">Issues/Bottlenecks</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="issues" className="text-caption">Issues/Bottlenecks</Label>
                 <textarea 
                   id="issues" 
-                  placeholder="Any delays, material shortages, or subcontractor issues..."
-                  className="flex min-h-[60px] w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950"
+                  placeholder="Delays, material shortages..."
+                  rows={2}
+                  className="w-full rounded-lg border border-border/60 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 resize-none placeholder:text-muted-foreground/60"
                   {...register('issues')}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="safetyNotes">Safety Notes/Observations</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="safetyNotes" className="text-caption">Safety Notes</Label>
                 <textarea 
                   id="safetyNotes" 
-                  placeholder="Scaffolding inspections, safety briefings, or incidents..."
-                  className="flex min-h-[60px] w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950"
+                  placeholder="Scaffolding inspections..."
+                  rows={2}
+                  className="w-full rounded-lg border border-border/60 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 resize-none placeholder:text-muted-foreground/60"
                   {...register('safetyNotes')}
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+              <div className="flex justify-end gap-2 pt-3 border-t border-border/40">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Submitting...
-                    </>
+                    <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Submitting…</>
                   ) : (
                     'Submit Log'
                   )}
@@ -252,15 +229,15 @@ export default function DailyReportsPage() {
         </Dialog>
       </div>
 
-      {/* Selector banner */}
-      <div className="flex items-center gap-3 p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm">
-        <SlidersHorizontal className="w-4 h-4 text-zinc-400 flex-shrink-0" />
-        <Label htmlFor="projectSelect" className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Select Project</Label>
+      {/* Selector Banner */}
+      <div className="flex items-center gap-3 p-4 bg-accent/20 border border-border/30 rounded-2xl">
+        <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
+        <Label htmlFor="projectSelect" className="text-label text-muted-foreground/60 whitespace-nowrap">Select Project</Label>
         <select
           id="projectSelect"
           value={selectedProjectId}
           onChange={(e) => setSelectedProjectId(e.target.value)}
-          className="max-w-xs h-9 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500 dark:border-zinc-800 dark:bg-zinc-950"
+          className="max-w-xs h-8 rounded-lg border border-border/60 bg-transparent px-3 py-1 text-xs outline-none focus-visible:border-foreground/30"
         >
           <option value="ALL">All Demo Logs</option>
           {projectsList.map((p) => (
@@ -272,88 +249,86 @@ export default function DailyReportsPage() {
       </div>
 
       {isLogsLoading && (
-        <div className="flex h-64 items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+        <div className="space-y-4 max-w-4xl">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="h-44 rounded-xl bg-accent/20 shimmer-bg" />
+          ))}
         </div>
       )}
 
-      {/* Logs Timeline */}
-      <div className="space-y-6 max-w-4xl">
-        {dailyLogs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-center space-y-3">
-            <FolderOpen className="w-10 h-10 text-zinc-300" />
-            <div>
-              <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">No daily logs found</p>
-              <p className="text-xs text-zinc-500 mt-1">Submit the first site log for this construction project.</p>
-            </div>
+      {/* Logs Timeline Feed */}
+      <div className="space-y-4 max-w-4xl">
+        {dailyLogs.length === 0 && !isLogsLoading ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <FolderOpen className="w-8 h-8 text-muted-foreground/20 mb-3" />
+            <p className="text-title text-foreground mb-1">No daily logs found</p>
+            <p className="text-caption">Submit the first site log to catalog progress.</p>
           </div>
         ) : (
           dailyLogs.map((log) => (
-            <Card key={log.id} className="border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-1.5 h-full bg-amber-500" />
+            <Card key={log.id} className="relative overflow-hidden transition-all duration-200 hover:shadow-panel">
+              <span className="absolute top-0 bottom-0 left-0 w-[3px] bg-foreground/60" />
               
-              <CardHeader className="pb-3 pl-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-zinc-50/50 dark:bg-zinc-900/10 border-b border-zinc-100 dark:border-zinc-900">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-amber-500" />
-                  <span className="font-bold text-sm text-zinc-900 dark:text-white">
-                    {new Date(log.reportDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                  </span>
+              <CardContent className="p-5 pl-7 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/30 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-3.5 h-3.5 text-muted-foreground/50" />
+                    <span className="text-xs font-semibold text-foreground">
+                      {new Date(log.reportDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-4 text-[10px] text-muted-foreground/60 font-semibold uppercase tracking-wider">
+                    <span className="inline-flex items-center gap-1.5">
+                      <CloudSun className="w-3.5 h-3.5 text-muted-foreground/40" />
+                      Weather: <strong className="text-foreground">{log.weatherCondition}</strong>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-muted-foreground/40" />
+                      Crew Size: <strong className="text-foreground text-financial">{log.workersOnSite} on site</strong>
+                    </span>
+                  </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-500">
-                  <span className="inline-flex items-center gap-1">
-                    <CloudSun className="w-3.5 h-3.5 text-zinc-400" />
-                    Weather: <strong className="text-zinc-700 dark:text-zinc-300">{log.weatherCondition}</strong>
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Users className="w-3.5 h-3.5 text-zinc-400" />
-                    Crew Size: <strong className="text-zinc-700 dark:text-zinc-300">{log.workersOnSite} on site</strong>
-                  </span>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="pl-8 pt-4 space-y-4">
-                {/* Work summary */}
-                <div className="space-y-1">
-                  <h5 className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <ClipboardList className="w-3.5 h-3.5 text-amber-500" />
+                
+                <div className="space-y-1.5">
+                  <h5 className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider flex items-center gap-1.5">
+                    <ClipboardList className="w-3.5 h-3.5 text-muted-foreground/40" />
                     Work Summary & Progress
                   </h5>
-                  <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                  <p className="text-xs text-foreground/80 leading-relaxed font-medium">
                     {log.workSummary}
                   </p>
                 </div>
 
-                {/* Grid details (Issues & safety) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-zinc-100 dark:border-zinc-900">
-                  {/* Bottlenecks/Issues */}
-                  {log.issues && (
-                    <div className="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl space-y-1 border border-zinc-100 dark:border-zinc-900">
-                      <div className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
-                        Bottlenecks / Issues
+                {(log.issues || log.safetyNotes) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-border/20">
+                    {log.issues && (
+                      <div className="p-3 bg-danger-subtle rounded-xl space-y-1.5">
+                        <div className="text-[9px] font-bold text-danger uppercase tracking-wider flex items-center gap-1.5">
+                          <ShieldAlert className="w-3.5 h-3.5" />
+                          Bottlenecks / Issues
+                        </div>
+                        <p className="text-xs text-danger/80 leading-relaxed font-medium">
+                          {log.issues}
+                        </p>
                       </div>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                        {log.issues}
-                      </p>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Safety logs */}
-                  {log.safetyNotes && (
-                    <div className="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl space-y-1 border border-zinc-100 dark:border-zinc-900">
-                      <div className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <ClipboardList className="w-3.5 h-3.5 text-emerald-500" />
-                        Safety Observations
+                    {log.safetyNotes && (
+                      <div className="p-3 bg-success-subtle rounded-xl space-y-1.5">
+                        <div className="text-[9px] font-bold text-success uppercase tracking-wider flex items-center gap-1.5">
+                          <ClipboardList className="w-3.5 h-3.5" />
+                          Safety Observations
+                        </div>
+                        <p className="text-xs text-success/80 leading-relaxed font-medium">
+                          {log.safetyNotes}
+                        </p>
                       </div>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                        {log.safetyNotes}
-                      </p>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
 
-                <div className="text-xs text-zinc-400 flex items-center gap-1.5 pt-2">
-                  <span>Logged by: <strong className="text-zinc-600 dark:text-zinc-400">{log.reporter?.firstName} {log.reporter?.lastName}</strong></span>
+                <div className="text-caption pt-1 flex items-center justify-between">
+                  <span>Logged by: <strong className="text-foreground/80 font-medium">{log.reporter?.firstName} {log.reporter?.lastName}</strong></span>
                 </div>
               </CardContent>
             </Card>

@@ -6,24 +6,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { 
-  Landmark, 
-  Plus, 
-  Loader2, 
-  AlertCircle,
-  FileCheck2,
-  DollarSign,
-  TrendingUp,
-  SlidersHorizontal,
-  FolderDot,
-  Check,
-  X,
-  ShieldCheck,
-  FileSpreadsheet
+  Landmark, Plus, Loader2, AlertCircle, FileCheck2, SlidersHorizontal,
+  Check, X, ShieldCheck
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -61,6 +50,22 @@ const expenseSchema = z.object({
 
 type ExpenseFormValues = z.infer<typeof expenseSchema>;
 
+const statusMeta: Record<string, { label: string; dotClass: string }> = {
+  PENDING: { label: 'Pending', dotClass: 'status-paused' },
+  APPROVED: { label: 'Approved', dotClass: 'status-complete' },
+  PAID: { label: 'Paid', dotClass: 'status-active' },
+  REJECTED: { label: 'Rejected', dotClass: 'status-critical' },
+};
+
+const categoryLabels: Record<string, string> = {
+  LABOUR: 'Labour',
+  MATERIAL: 'Material',
+  EQUIPMENT: 'Equipment',
+  TRANSPORT: 'Transport',
+  SUBCONTRACTOR: 'Subcontractor',
+  MISCELLANEOUS: 'Other',
+};
+
 export default function ExpensesPage() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
@@ -76,10 +81,7 @@ export default function ExpensesPage() {
   // Fetch projects list
   const { data: projectsData } = useQuery<{ data: Project[] }>({
     queryKey: ['projects'],
-    queryFn: async () => {
-      const response = await apiClient.get('/projects');
-      return response.data;
-    },
+    queryFn: async () => (await apiClient.get('/projects')).data,
     retry: 1,
   });
 
@@ -89,10 +91,8 @@ export default function ExpensesPage() {
     queryFn: async () => {
       const pList = projectsData?.data || [];
       if (selectedProjectId && selectedProjectId !== 'ALL') {
-        const response = await apiClient.get(`/projects/${selectedProjectId}/expenses`);
-        return response.data;
+        return (await apiClient.get(`/projects/${selectedProjectId}/expenses`)).data;
       }
-      // Load across all projects
       const allExps: Expense[] = [];
       for (const p of pList) {
         try {
@@ -109,10 +109,7 @@ export default function ExpensesPage() {
   // Fetch pending approvals across company
   const { data: pendingData, isLoading: isPendingLoading } = useQuery<Expense[]>({
     queryKey: ['pending-expenses'],
-    queryFn: async () => {
-      const response = await apiClient.get('/expenses/pending');
-      return response.data;
-    },
+    queryFn: async () => (await apiClient.get('/expenses/pending')).data,
     enabled: activeTab === 'approvals' && isAuthorizer,
     retry: 1,
   });
@@ -120,12 +117,10 @@ export default function ExpensesPage() {
   // Submit expense mutation
   const createExpenseMutation = useMutation({
     mutationFn: async (values: ExpenseFormValues) => {
-      const response = await apiClient.post(`/projects/${selectedProjectId}/expenses`, values);
-      return response.data;
+      return (await apiClient.post(`/projects/${selectedProjectId}/expenses`, values)).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project-expenses'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       setIsDialogOpen(false);
       resetForm();
     },
@@ -137,26 +132,22 @@ export default function ExpensesPage() {
   // Approve expense mutation
   const approveMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiClient.post(`/expenses/${id}/approve`);
-      return response.data;
+      return (await apiClient.post(`/expenses/${id}/approve`)).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project-expenses'] });
       queryClient.invalidateQueries({ queryKey: ['pending-expenses'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 
   // Reject expense mutation
   const rejectMutation = useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      const response = await apiClient.post(`/expenses/${id}/reject`, { reason });
-      return response.data;
+      return (await apiClient.post(`/expenses/${id}/reject`, { reason })).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project-expenses'] });
       queryClient.invalidateQueries({ queryKey: ['pending-expenses'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       setRejectingExpenseId(null);
       setRejectionReason('');
     },
@@ -200,66 +191,50 @@ export default function ExpensesPage() {
     rejectMutation.mutate({ id, reason: rejectionReason });
   };
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case 'PENDING': return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300';
-      case 'APPROVED': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300';
-      case 'REJECTED': return 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300';
-      default: return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
-    }
-  };
-
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-12 text-left">
-      {/* Header Panel */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-2 border-b border-zinc-200/40 dark:border-zinc-800/40">
-        <div className="text-left">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">
-            Expenses Ledger
-          </h1>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Log financial expenditures, upload material receipts, and approve field cash transactions.
-          </p>
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 text-left stagger-children">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div>
+          <h1 className="text-headline text-foreground">Expenses Ledger</h1>
+          <p className="text-caption mt-1">Track expenditures, upload invoice statements, and authorize payouts.</p>
         </div>
 
-        {/* Dialog Trigger */}
         {activeTab === 'ledger' && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-zinc-900 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-900 border border-zinc-950 shadow-sm rounded-lg text-xs font-semibold px-4 py-2 hover:bg-zinc-800 dark:hover:bg-zinc-200">
-                <Plus className="w-4 h-4 mr-2 text-orange-500" />
+              <Button>
+                <Plus className="w-4 h-4 mr-1.5" />
                 Log Expense
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto glass-panel p-6">
-              <DialogHeader className="text-left mb-4">
-                <DialogTitle className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white">Log Purchase Expense</DialogTitle>
-                <DialogDescription className="text-xs text-zinc-400 font-medium">
-                  Record site expenses and receipt metadata.
-                </DialogDescription>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Log Purchase Expense</DialogTitle>
+                <DialogDescription>Record site expenses and upload receipt logs.</DialogDescription>
               </DialogHeader>
 
               {mutateError && (
-                <Alert variant="destructive" className="mb-4">
+                <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Error</AlertTitle>
                   <AlertDescription>{mutateError}</AlertDescription>
                 </Alert>
               )}
 
-              <form onSubmit={handleSubmit(handleCreateExpense)} className="space-y-4 text-left">
+              <form onSubmit={handleSubmit(handleCreateExpense)} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="title" className="text-xs text-zinc-400 font-medium">Expense Title *</Label>
-                  <Input id="title" placeholder="Concrete supplier payment" {...register('title')} />
-                  {errors.title && <p className="text-[10px] text-rose-500 font-medium">{errors.title.message}</p>}
+                  <Label htmlFor="title" className="text-caption">Expense Title *</Label>
+                  <Input id="title" placeholder="Concrete supplier invoice" {...register('title')} />
+                  {errors.title && <p className="text-[10px] text-destructive font-medium">{errors.title.message}</p>}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="category" className="text-xs text-zinc-400 font-medium">Category *</Label>
+                    <Label htmlFor="category" className="text-caption">Category *</Label>
                     <select 
                       id="category" 
-                      className="flex h-8 w-full rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs focus-visible:outline-none focus-visible:border-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
+                      className="flex h-9 w-full rounded-lg border border-border/60 bg-transparent px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 font-medium"
                       {...register('category')}
                     >
                       <option value="MATERIAL">Material</option>
@@ -271,38 +246,36 @@ export default function ExpensesPage() {
                     </select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="amount" className="text-xs text-zinc-400 font-medium">Amount (LKR) *</Label>
+                    <Label htmlFor="amount" className="text-caption">Amount (LKR) *</Label>
                     <Input id="amount" type="number" placeholder="50000" {...register('amount')} />
-                    {errors.amount && <p className="text-[10px] text-rose-500 font-medium">{errors.amount.message}</p>}
+                    {errors.amount && <p className="text-[10px] text-destructive font-medium">{errors.amount.message}</p>}
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="expenseDate" className="text-xs text-zinc-400 font-medium">Expense Date *</Label>
+                  <Label htmlFor="expenseDate" className="text-caption">Expense Date *</Label>
                   <Input id="expenseDate" type="date" {...register('expenseDate')} />
-                  {errors.expenseDate && <p className="text-[10px] text-rose-500 font-medium">{errors.expenseDate.message}</p>}
+                  {errors.expenseDate && <p className="text-[10px] text-destructive font-medium">{errors.expenseDate.message}</p>}
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="description" className="text-xs text-zinc-400 font-medium">Remarks / Description</Label>
+                  <Label htmlFor="description" className="text-caption">Remarks / Description</Label>
                   <textarea 
                     id="description" 
                     placeholder="Provide details regarding the supplier invoice..."
-                    className="flex min-h-[80px] w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs focus-visible:outline-none focus-visible:border-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
+                    rows={3}
+                    className="w-full rounded-lg border border-border/60 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 resize-none placeholder:text-muted-foreground/60"
                     {...register('description')}
                   />
                 </div>
 
-                <div className="flex justify-end gap-2 pt-4 border-t border-zinc-200/40 dark:border-zinc-800/40">
+                <div className="flex justify-end gap-2 pt-3 border-t border-border/40">
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
                     Cancel
                   </Button>
-                  <Button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold" disabled={isSubmitting}>
+                  <Button type="submit" disabled={isSubmitting}>
                     {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                        Logging...
-                      </>
+                      <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Logging…</>
                     ) : (
                       'Log Purchase'
                     )}
@@ -314,8 +287,8 @@ export default function ExpensesPage() {
         )}
       </div>
 
-      {/* Tabs navigation */}
-      <div className="flex bg-zinc-100/50 dark:bg-zinc-800/40 p-1.5 rounded-xl border border-zinc-200/50 dark:border-zinc-800/60 overflow-x-auto gap-1 w-max">
+      {/* Segmented Switcher */}
+      <div className="flex bg-accent/40 p-1 rounded-xl border border-border/40 overflow-x-auto gap-1 w-max">
         {[
           { id: 'ledger', label: 'Financial Ledger', icon: Landmark },
           { id: 'approvals', label: `Pending Approvals (${pendingApprovals.length})`, icon: ShieldCheck }
@@ -326,10 +299,10 @@ export default function ExpensesPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
                 isActive 
-                  ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 border border-zinc-200/60 dark:border-zinc-800 shadow-sm' 
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 border border-transparent'
+                  ? 'bg-card text-foreground border border-border/40 shadow-sm' 
+                  : 'text-muted-foreground hover:text-foreground border border-transparent'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -339,19 +312,19 @@ export default function ExpensesPage() {
         })}
       </div>
 
-      {/* Tab Panels */}
+      {/* Tab Panel */}
       <div className="pt-2">
         {activeTab === 'ledger' && (
           <div className="space-y-4">
-            {/* Filter controls */}
-            <div className="flex items-center gap-3 p-4 bg-white/50 dark:bg-zinc-900/30 border border-zinc-200/40 dark:border-zinc-800/50 rounded-2xl shadow-sm glass-panel text-left">
-              <SlidersHorizontal className="w-4 h-4 text-zinc-400 flex-shrink-0" />
-              <Label htmlFor="projectSelect" className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Select Project</Label>
+            {/* Filter Bar */}
+            <div className="flex items-center gap-3 p-4 bg-accent/20 border border-border/30 rounded-2xl">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
+              <Label htmlFor="projectSelect" className="text-label text-muted-foreground/60 whitespace-nowrap">Select Project</Label>
               <select
                 id="projectSelect"
                 value={selectedProjectId}
                 onChange={(e) => setSelectedProjectId(e.target.value)}
-                className="max-w-xs h-8 rounded-lg border border-zinc-200 bg-white px-3 py-1 text-xs focus-visible:outline-none focus-visible:border-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
+                className="max-w-xs h-8 rounded-lg border border-border/60 bg-transparent px-3 py-1 text-xs outline-none focus-visible:border-foreground/30 font-semibold"
               >
                 <option value="ALL">All Demo Expenses</option>
                 {projectsList.map((p) => (
@@ -363,51 +336,55 @@ export default function ExpensesPage() {
             </div>
 
             {isLedgerLoading ? (
-              <div className="grid grid-cols-1 gap-4">
-                <div className="h-48 rounded-xl bg-white/50 dark:bg-zinc-900/50 shimmer-bg" />
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-16 rounded-xl bg-accent/20 shimmer-bg" />
+                ))}
               </div>
             ) : (
-              <Card className="glass-panel">
-                <CardHeader className="border-b border-zinc-200/40 dark:border-zinc-800/40 text-left">
-                  <CardTitle className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Logged Ledger Expenses</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
+              <Card>
+                <CardContent className="p-6">
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs text-left">
                       <thead>
-                        <tr className="border-b border-zinc-200/60 dark:border-zinc-800/80 text-zinc-400 font-bold uppercase tracking-wider">
-                          <th className="pb-3.5 font-semibold">Expense title</th>
-                          <th className="pb-3.5 font-semibold">Category</th>
-                          <th className="pb-3.5 font-semibold">Amount (LKR)</th>
-                          <th className="pb-3.5 font-semibold">Date</th>
-                          <th className="pb-3.5 font-semibold">Submitter</th>
-                          <th className="pb-3.5 font-semibold">Status</th>
+                        <tr className="border-b border-border/40 text-muted-foreground/60 font-semibold uppercase tracking-wider">
+                          <th className="pb-3 pl-2">Expense Details</th>
+                          <th className="pb-3">Category</th>
+                          <th className="pb-3 text-right">Amount (LKR)</th>
+                          <th className="pb-3">Date</th>
+                          <th className="pb-3">Submitter</th>
+                          <th className="pb-3 pr-2">Status</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {expenses.map((exp) => (
-                          <tr key={exp.id} className="border-b border-zinc-200/20 dark:border-zinc-800/20 last:border-0 hover:bg-zinc-50/20 dark:hover:bg-zinc-900/10 transition-colors">
-                            <td className="py-3.5 text-left">
-                              <div>
-                                <div className="font-semibold text-zinc-850 dark:text-zinc-200">{exp.title}</div>
-                                {exp.description && <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">{exp.description}</span>}
-                              </div>
-                            </td>
-                            <td className="py-3.5 text-zinc-500 font-semibold uppercase tracking-wider text-[9px]">{exp.category}</td>
-                            <td className="py-3.5 font-bold text-zinc-850 dark:text-zinc-200">LKR {exp.amount.toLocaleString()}</td>
-                            <td className="py-3.5 text-zinc-500 font-medium">{new Date(exp.expenseDate).toLocaleDateString()}</td>
-                            <td className="py-3.5 text-zinc-500 font-medium">{exp.submittedBy?.firstName} {exp.submittedBy?.lastName}</td>
-                            <td className="py-3.5">
-                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                                exp.status === 'APPROVED' || exp.status === 'PAID' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
-                                exp.status === 'PENDING' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
-                                'bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                              }`}>
-                                {exp.status}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
+                        {expenses.map((exp) => {
+                          const stat = statusMeta[exp.status] || { label: exp.status, dotClass: '' };
+                          return (
+                            <tr key={exp.id} className="border-b border-border/20 last:border-0 hover:bg-accent/20 transition-colors">
+                              <td className="py-3.5 pl-2 text-left">
+                                <div className="font-semibold text-foreground">{exp.title}</div>
+                                {exp.description && <span className="text-[10px] text-muted-foreground/60 font-medium">{exp.description}</span>}
+                              </td>
+                              <td className="py-3.5 text-muted-foreground font-semibold uppercase tracking-wider text-[9px]">
+                                {categoryLabels[exp.category] || exp.category}
+                              </td>
+                              <td className="py-3.5 text-right font-semibold text-foreground text-financial">
+                                LKR {exp.amount.toLocaleString()}
+                              </td>
+                              <td className="py-3.5 text-muted-foreground">{new Date(exp.expenseDate).toLocaleDateString()}</td>
+                              <td className="py-3.5 text-muted-foreground">{exp.submittedBy?.firstName} {exp.submittedBy?.lastName}</td>
+                              <td className="py-3.5 pr-2">
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`status-dot ${stat.dotClass}`} />
+                                  <span className="text-[10px] font-medium text-muted-foreground uppercase">{stat.label}</span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {expenses.length === 0 && (
+                          <tr><td colSpan={6} className="py-8 text-center text-muted-foreground italic">No expenses found.</td></tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -426,58 +403,56 @@ export default function ExpensesPage() {
                 <AlertDescription>Your role does not have authorization to approve expenses.</AlertDescription>
               </Alert>
             ) : isPendingLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[...Array(2)].map((_, i) => (
-                  <div key={i} className="h-48 rounded-xl bg-white/50 dark:bg-zinc-900/50 shimmer-bg" />
+                  <div key={i} className="h-44 rounded-xl bg-accent/20 shimmer-bg" />
                 ))}
               </div>
             ) : pendingApprovals.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 bg-white/50 dark:bg-zinc-900/30 border border-zinc-200/40 dark:border-zinc-800/50 rounded-2xl text-center space-y-3 glass-panel">
-                <FileCheck2 className="w-8 h-8 text-zinc-400" />
-                <div>
-                  <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">No pending approvals</p>
-                  <p className="text-[10px] text-zinc-400 mt-1">Excellent! All logged expenses are processed.</p>
-                </div>
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <FileCheck2 className="w-8 h-8 text-muted-foreground/20 mb-3" />
+                <p className="text-title text-foreground mb-1">No pending approvals</p>
+                <p className="text-caption">All logged expenses have been processed successfully.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {pendingApprovals.map((exp) => (
-                  <Card key={exp.id} className="glass-panel relative overflow-hidden text-left hover:-translate-y-0.5 transition-all duration-300">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-orange-500" />
-                    <CardHeader className="pb-2 pl-6">
-                      <div className="flex justify-between items-baseline gap-2 mb-1">
-                        <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
-                          {exp.project?.code} • {exp.category}
-                        </span>
-                        <span className="text-[9px] text-zinc-450 font-medium">
-                          {new Date(exp.expenseDate).toLocaleDateString()}
-                        </span>
+                  <Card key={exp.id} className="relative overflow-hidden hover:shadow-panel transition-all duration-200">
+                    <span className="absolute top-0 bottom-0 left-0 w-[3px] bg-warning" />
+                    <CardContent className="p-5 pl-7 space-y-4">
+                      <div>
+                        <div className="flex justify-between items-baseline gap-2 mb-1">
+                          <span className="text-label text-muted-foreground/50 text-[9px]">
+                            {exp.project?.code} • {categoryLabels[exp.category] || exp.category}
+                          </span>
+                          <span className="text-caption font-medium text-muted-foreground">
+                            {new Date(exp.expenseDate).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-semibold text-foreground">{exp.title}</h4>
                       </div>
-                      <CardTitle className="text-sm font-semibold text-zinc-900 dark:text-white">{exp.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pl-6 space-y-4 pt-2">
+
                       {exp.description && (
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">
+                        <p className="text-xs text-muted-foreground leading-relaxed font-medium">
                           {exp.description}
                         </p>
                       )}
 
-                      <div className="flex justify-between items-baseline border-y border-zinc-200/20 dark:border-zinc-850/40 py-3">
-                        <span className="text-zinc-400 text-[10px] font-bold uppercase tracking-wider">Total Amount</span>
-                        <span className="text-base font-bold text-rose-500">LKR {exp.amount.toLocaleString()}</span>
+                      <div className="flex justify-between items-baseline border-y border-border/20 py-2.5">
+                        <span className="text-label text-muted-foreground/50 text-[9px]">Total Amount</span>
+                        <span className="text-sm font-bold text-danger text-financial">LKR {exp.amount.toLocaleString()}</span>
                       </div>
 
-                      <div className="flex justify-between items-center text-[10px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider">
-                        <span>Submitted by: <strong className="text-zinc-700 dark:text-zinc-300 font-semibold">{exp.submittedBy?.firstName} {exp.submittedBy?.lastName}</strong></span>
+                      <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
+                        <span>Submitted by: <strong className="text-foreground/80 font-semibold">{exp.submittedBy?.firstName} {exp.submittedBy?.lastName}</strong></span>
                       </div>
 
-                      {/* Approval buttons */}
                       {rejectingExpenseId === exp.id ? (
-                        <div className="space-y-2 pt-3 border-t border-zinc-200/20 dark:border-zinc-800/30">
-                          <Label htmlFor="rejectReason" className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Reason for Rejection *</Label>
+                        <div className="space-y-2.5 pt-3 border-t border-border/20">
+                          <Label htmlFor="rejectReason" className="text-caption">Reason for Rejection *</Label>
                           <Input 
                             id="rejectReason" 
-                            placeholder="e.g. Budget cap exceeded, duplicate invoice" 
+                            placeholder="e.g. Budget limit exceeded, check invoice" 
                             value={rejectionReason}
                             onChange={(e) => setRejectionReason(e.target.value)}
                           />
@@ -486,30 +461,29 @@ export default function ExpensesPage() {
                               Cancel
                             </Button>
                             <Button variant="destructive" size="sm" onClick={() => handleRejectSubmit(exp.id)} disabled={rejectMutation.isPending || !rejectionReason.trim()}>
-                              {rejectMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Confirm Reject'}
+                              {rejectMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : 'Confirm Reject'}
                             </Button>
                           </div>
                         </div>
                       ) : (
-                        <div className="flex gap-2 justify-end pt-3 border-t border-zinc-200/20 dark:border-zinc-800/30">
+                        <div className="flex gap-2 justify-end pt-3 border-t border-border/20">
                           <Button 
-                            variant="outline" 
+                            variant="destructive" 
                             size="sm" 
                             onClick={() => setRejectingExpenseId(exp.id)} 
-                            className="border-zinc-200 dark:border-zinc-800 text-rose-600 hover:bg-rose-500/10"
                             disabled={approveMutation.isPending}
                           >
-                            <X className="w-3.5 h-3.5 mr-1.5" />
+                            <X className="w-3.5 h-3.5 mr-1" />
                             Reject
                           </Button>
                           <Button 
                             variant="default" 
                             size="sm" 
                             onClick={() => handleApprove(exp.id)} 
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm"
+                            className="bg-success-subtle text-success border border-success/15 hover:bg-success/20 font-semibold"
                             disabled={approveMutation.isPending}
                           >
-                            <Check className="w-3.5 h-3.5 mr-1.5" />
+                            <Check className="w-3.5 h-3.5 mr-1" />
                             Approve
                           </Button>
                         </div>

@@ -6,24 +6,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { 
-  Package, 
-  Plus, 
-  Loader2, 
-  AlertCircle,
-  Truck,
-  Store,
-  Layers,
-  History,
-  AlertTriangle,
-  ArrowRight,
-  TrendingDown,
-  ShieldAlert,
-  SlidersHorizontal,
-  FolderDot
+  Package, Plus, Loader2, AlertCircle, Truck, Store, Layers,
+  AlertTriangle, SlidersHorizontal, FolderDot
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -83,6 +71,14 @@ const requestSchema = z.object({
 
 type RequestFormValues = z.infer<typeof requestSchema>;
 
+const statusMeta: Record<string, { label: string; bgClass: string; textClass: string }> = {
+  PENDING: { label: 'Pending', bgClass: 'bg-warning-subtle', textClass: 'text-warning' },
+  APPROVED: { label: 'Approved', bgClass: 'bg-info-subtle', textClass: 'text-info' },
+  ORDERED: { label: 'Ordered', bgClass: 'bg-info-subtle', textClass: 'text-info' },
+  DELIVERED: { label: 'Delivered', bgClass: 'bg-success-subtle', textClass: 'text-success' },
+  CANCELLED: { label: 'Cancelled', bgClass: 'bg-danger-subtle', textClass: 'text-danger' },
+};
+
 export default function MaterialsPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'requests' | 'inventory' | 'suppliers'>('requests');
@@ -93,30 +89,21 @@ export default function MaterialsPage() {
   // Fetch materials list
   const { data: materialsData, isLoading: isMaterialsLoading } = useQuery<Material[]>({
     queryKey: ['materials'],
-    queryFn: async () => {
-      const response = await apiClient.get('/materials');
-      return response.data;
-    },
+    queryFn: async () => (await apiClient.get('/materials')).data,
     retry: 1,
   });
 
   // Fetch suppliers list
   const { data: suppliersData, isLoading: isSuppliersLoading } = useQuery<Supplier[]>({
     queryKey: ['suppliers'],
-    queryFn: async () => {
-      const response = await apiClient.get('/suppliers');
-      return response.data;
-    },
+    queryFn: async () => (await apiClient.get('/suppliers')).data,
     retry: 1,
   });
 
   // Fetch projects list for filter
   const { data: projectsData } = useQuery<{ data: Project[] }>({
     queryKey: ['projects'],
-    queryFn: async () => {
-      const response = await apiClient.get('/projects');
-      return response.data;
-    },
+    queryFn: async () => (await apiClient.get('/projects')).data,
     retry: 1,
   });
 
@@ -126,8 +113,7 @@ export default function MaterialsPage() {
     queryFn: async () => {
       const pList = projectsData?.data || [];
       if (selectedProjectId && selectedProjectId !== 'ALL') {
-        const response = await apiClient.get(`/projects/${selectedProjectId}/material-requests`);
-        return response.data;
+        return (await apiClient.get(`/projects/${selectedProjectId}/material-requests`)).data;
       }
       const allReqs: MaterialRequest[] = [];
       for (const p of pList) {
@@ -144,8 +130,7 @@ export default function MaterialsPage() {
 
   const createRequestMutation = useMutation({
     mutationFn: async (values: RequestFormValues) => {
-      const response = await apiClient.post(`/projects/${selectedProjectId}/material-requests`, values);
-      return response.data;
+      return (await apiClient.post(`/projects/${selectedProjectId}/material-requests`, values)).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['material-requests'] });
@@ -159,8 +144,7 @@ export default function MaterialsPage() {
 
   const updateRequestStatusMutation = useMutation({
     mutationFn: async ({ requestId, status }: { requestId: string; status: string }) => {
-      const response = await apiClient.patch(`/material-requests/${requestId}/status`, { status });
-      return response.data;
+      return (await apiClient.patch(`/material-requests/${requestId}/status`, { status })).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['material-requests'] });
@@ -200,42 +184,29 @@ export default function MaterialsPage() {
     createRequestMutation.mutate(values);
   };
 
-  const getRequestBadgeColor = (status: string) => {
-    switch (status) {
-      case 'PENDING': return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300';
-      case 'APPROVED': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
-      case 'ORDERED': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300';
-      case 'DELIVERED': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300';
-      default: return 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300';
-    }
-  };
+  const selectStyle = "h-8 rounded-lg border border-border/60 bg-transparent px-3 py-1 text-xs outline-none focus-visible:border-foreground/30 font-semibold";
 
   return (
-    <div className="space-y-6">
-      {/* Header Panel */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 text-left stagger-children">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
-            Materials & Procurement
-          </h1>
-          <p className="text-zinc-500 dark:text-zinc-400">
-            Log material inventory stock catalogs and submit purchasing requisitions.
-          </p>
+          <h1 className="text-headline text-foreground">Materials & Procurement</h1>
+          <p className="text-caption mt-1">Monitor inventories, map suppliers, and handle material requests.</p>
         </div>
 
-        {/* Create Dialog Trigger (Only active on Requisitions Tab) */}
         {activeTab === 'requests' && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger render={<Button className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold shadow-md shadow-amber-500/10" />}>
-              <Plus className="w-4 h-4 mr-2" />
-              Request Materials
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-1.5" />
+                Request Materials
+              </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Submit Procurement Request</DialogTitle>
-                <DialogDescription>
-                  Select a material item and quantity to request for the selected project.
-                </DialogDescription>
+                <DialogDescription>Select material items and quantities to request for the project.</DialogDescription>
               </DialogHeader>
 
               {mutateError && (
@@ -247,11 +218,11 @@ export default function MaterialsPage() {
               )}
 
               <form onSubmit={handleSubmit(handleCreateRequest)} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="materialId">Material Item *</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="materialId" className="text-caption">Material Item *</Label>
                   <select 
                     id="materialId" 
-                    className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950"
+                    className="flex h-9 w-full rounded-lg border border-border/60 bg-transparent px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 font-medium"
                     {...register('materialId')}
                   >
                     <option value="">Select Material...</option>
@@ -261,14 +232,14 @@ export default function MaterialsPage() {
                       </option>
                     ))}
                   </select>
-                  {errors.materialId && <p className="text-xs text-destructive font-medium">{errors.materialId.message}</p>}
+                  {errors.materialId && <p className="text-[10px] text-destructive font-medium">{errors.materialId.message}</p>}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="supplierId">Preferred Supplier</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="supplierId" className="text-caption">Preferred Supplier</Label>
                   <select 
                     id="supplierId" 
-                    className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950"
+                    className="flex h-9 w-full rounded-lg border border-border/60 bg-transparent px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 font-medium"
                     {...register('supplierId')}
                   >
                     <option value="">Select Supplier...</option>
@@ -280,32 +251,30 @@ export default function MaterialsPage() {
                   </select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="quantity">Quantity *</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="quantity" className="text-caption">Quantity *</Label>
                   <Input id="quantity" type="number" step="any" placeholder="e.g. 50" {...register('quantity')} />
-                  {errors.quantity && <p className="text-xs text-destructive font-medium">{errors.quantity.message}</p>}
+                  {errors.quantity && <p className="text-[10px] text-destructive font-medium">{errors.quantity.message}</p>}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Delivery Notes / Remarks</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="notes" className="text-caption">Delivery Notes / Remarks</Label>
                   <textarea 
                     id="notes" 
-                    placeholder="Deliver to Colombo 07 site office. Urgent casting required."
-                    className="flex min-h-[80px] w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950"
+                    placeholder="Deliver to site office. Casting priority."
+                    rows={3}
+                    className="w-full rounded-lg border border-border/60 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 resize-none placeholder:text-muted-foreground/60"
                     {...register('notes')}
                   />
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                <div className="flex justify-end gap-2 pt-3 border-t border-border/40">
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
                     Cancel
                   </Button>
-                  <Button type="submit" className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold" disabled={isSubmitting}>
+                  <Button type="submit" disabled={isSubmitting}>
                     {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Requesting...
-                      </>
+                      <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Requesting…</>
                     ) : (
                       'Submit Requisition'
                     )}
@@ -317,12 +286,12 @@ export default function MaterialsPage() {
         )}
       </div>
 
-      {/* Tabs headers */}
-      <div className="flex items-center border-b border-zinc-200 dark:border-zinc-800 overflow-x-auto gap-2 pb-px">
+      {/* Segmented Switcher */}
+      <div className="flex bg-accent/40 p-1 rounded-xl border border-border/40 overflow-x-auto gap-1 w-max">
         {[
           { id: 'requests', label: 'Procurement Requests', icon: Truck },
           { id: 'inventory', label: 'Inventory Stock', icon: Layers },
-          { id: 'suppliers', label: 'Suppliers directory', icon: Store }
+          { id: 'suppliers', label: 'Suppliers Directory', icon: Store }
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -330,32 +299,32 @@ export default function MaterialsPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
                 isActive 
-                  ? 'border-amber-500 text-amber-600 dark:text-amber-500 font-semibold' 
-                  : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                  ? 'bg-card text-foreground border border-border/40 shadow-sm' 
+                  : 'text-muted-foreground hover:text-foreground border border-transparent'
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-3.5 h-3.5" />
               <span>{tab.label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Panels content */}
+      {/* Tab Panels */}
       <div className="pt-2">
         {activeTab === 'requests' && (
           <div className="space-y-4">
-            {/* Filter and select */}
-            <div className="flex items-center gap-3 p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm">
-              <SlidersHorizontal className="w-4 h-4 text-zinc-400 flex-shrink-0" />
-              <Label htmlFor="projectSelect" className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Select Project</Label>
+            {/* Filter controls */}
+            <div className="flex items-center gap-3 p-4 bg-accent/20 border border-border/30 rounded-2xl">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
+              <Label htmlFor="projectSelect" className="text-label text-muted-foreground/60 whitespace-nowrap">Select Project</Label>
               <select
                 id="projectSelect"
                 value={selectedProjectId}
                 onChange={(e) => setSelectedProjectId(e.target.value)}
-                className="max-w-xs h-9 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500 dark:border-zinc-800 dark:bg-zinc-950"
+                className="max-w-xs h-8 rounded-lg border border-border/60 bg-transparent px-3 py-1 text-xs outline-none focus-visible:border-foreground/30 font-semibold"
               >
                 <option value="ALL">All Demo Requisitions</option>
                 {projectsList.map((p) => (
@@ -367,51 +336,52 @@ export default function MaterialsPage() {
             </div>
 
             {isRequestsLoading ? (
-              <div className="flex h-32 items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-16 rounded-xl bg-accent/20 shimmer-bg" />
+                ))}
               </div>
             ) : (
-              <Card className="border-zinc-200 dark:border-zinc-800">
-                <CardHeader>
-                  <CardTitle className="text-base">Requisition Ledger</CardTitle>
-                </CardHeader>
-                <CardContent>
+              <Card>
+                <CardContent className="p-6">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
+                    <table className="w-full text-xs text-left">
                       <thead>
-                        <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 text-xs font-bold uppercase tracking-wider">
-                          <th className="pb-3 font-semibold">Material Item</th>
-                          <th className="pb-3 font-semibold">Project Code</th>
-                          <th className="pb-3 font-semibold">Quantity</th>
-                          <th className="pb-3 font-semibold">Cost Estimate</th>
-                          <th className="pb-3 font-semibold">Supplier</th>
-                          <th className="pb-3 font-semibold">Approval Status</th>
+                        <tr className="border-b border-border/40 text-muted-foreground/60 font-semibold uppercase tracking-wider">
+                          <th className="pb-3 pl-2">Material Item</th>
+                          <th className="pb-3">Project Code</th>
+                          <th className="pb-3">Quantity</th>
+                          <th className="pb-3 text-right">Cost Estimate</th>
+                          <th className="pb-3">Supplier</th>
+                          <th className="pb-3 pr-2">Approval Status</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {requests.map((req, i) => (
-                          <tr key={i} className="border-b border-zinc-100 dark:border-zinc-900 last:border-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/10">
-                            <td className="py-3.5 font-medium text-zinc-800 dark:text-zinc-200">{req.material.name}</td>
-                            <td className="py-3.5 text-zinc-500 text-xs">{req.project?.code || 'PRJ-001'}</td>
-                            <td className="py-3.5 text-zinc-800 dark:text-zinc-200">{req.quantity} {req.material.unit}</td>
-                            <td className="py-3.5 text-zinc-800 dark:text-zinc-200 font-semibold">LKR {(req.totalPrice || 0).toLocaleString()}</td>
-                            <td className="py-3.5 text-zinc-500 text-xs">{req.supplier?.name || 'N/A'}</td>
-                            <td className="py-3.5">
-                              {/* Simple dropdown for status shifts */}
-                              <select 
-                                value={req.status}
-                                onChange={(e) => handleStatusChange(req.id, e.target.value)}
-                                className={`text-xs font-bold px-2 py-0.5 rounded border focus:outline-none ${getRequestBadgeColor(req.status)}`}
-                              >
-                                <option value="PENDING">Pending</option>
-                                <option value="APPROVED">Approved</option>
-                                <option value="ORDERED">Ordered</option>
-                                <option value="DELIVERED">Delivered</option>
-                                <option value="CANCELLED">Cancelled</option>
-                              </select>
-                            </td>
-                          </tr>
-                        ))}
+                        {requests.map((req, i) => {
+                          const stat = statusMeta[req.status] || { label: req.status, bgClass: 'bg-accent', textClass: 'text-muted-foreground' };
+                          return (
+                            <tr key={i} className="border-b border-border/20 last:border-0 hover:bg-accent/20 transition-colors">
+                              <td className="py-3.5 pl-2 font-medium text-foreground">{req.material.name}</td>
+                              <td className="py-3.5 text-muted-foreground">{req.project?.code || 'PRJ-001'}</td>
+                              <td className="py-3.5 text-foreground font-medium">{req.quantity} {req.material.unit}</td>
+                              <td className="py-3.5 text-right font-semibold text-foreground text-financial">LKR {(req.totalPrice || 0).toLocaleString()}</td>
+                              <td className="py-3.5 text-muted-foreground">{req.supplier?.name || '—'}</td>
+                              <td className="py-3.5 pr-2">
+                                <select 
+                                  value={req.status}
+                                  onChange={(e) => handleStatusChange(req.id, e.target.value)}
+                                  className={`text-[10px] font-bold px-2 py-0.5 rounded border border-border/40 outline-none ${stat.bgClass} ${stat.textClass}`}
+                                >
+                                  <option value="PENDING">Pending</option>
+                                  <option value="APPROVED">Approved</option>
+                                  <option value="ORDERED">Ordered</option>
+                                  <option value="DELIVERED">Delivered</option>
+                                  <option value="CANCELLED">Cancelled</option>
+                                </select>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -424,42 +394,48 @@ export default function MaterialsPage() {
         {activeTab === 'inventory' && (
           <div className="space-y-4">
             {isMaterialsLoading ? (
-              <div className="flex h-32 items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-40 rounded-xl bg-accent/20 shimmer-bg" />
+                ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {materials.map((m) => {
                   const isLow = m.currentStock <= m.minimumStock;
                   return (
-                    <Card key={m.id} className={`border-zinc-200 dark:border-zinc-800 relative ${isLow ? 'ring-1 ring-amber-500/35 bg-amber-50/5 dark:bg-amber-900/5' : ''}`}>
-                      <CardHeader className="pb-2">
+                    <Card key={m.id} className={`relative overflow-hidden transition-all duration-200 hover:shadow-panel ${isLow ? 'ring-1 ring-warning/30 bg-warning-subtle/5' : ''}`}>
+                      {isLow && <span className="absolute top-0 bottom-0 left-0 w-[3px] bg-warning" />}
+                      <CardContent className="p-5 pl-6 space-y-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-zinc-400 uppercase">{m.category}</span>
+                          <span className="text-label text-muted-foreground/50 text-[9px]">{m.category || 'Inventory'}</span>
                           {isLow && (
-                            <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full uppercase">
-                              <AlertTriangle className="w-3 h-3" />
+                            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-warning bg-warning-subtle px-2 py-0.5 rounded-full uppercase tracking-wider">
+                              <AlertTriangle className="w-2.5 h-2.5" />
                               Low Stock
                             </span>
                           )}
                         </div>
-                        <CardTitle className="text-lg">{m.name}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="flex justify-between items-baseline border-b border-zinc-100 dark:border-zinc-900 pb-2">
-                          <span className="text-zinc-500 text-xs">Current Stock</span>
-                          <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-                            {m.currentStock} <span className="text-xs text-zinc-400 font-semibold">{m.unit}</span>
+                        
+                        <div>
+                          <h4 className="text-xs font-semibold text-foreground">{m.name}</h4>
+                        </div>
+
+                        <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
+                          <span className="text-caption">Current Stock</span>
+                          <span className="text-xl font-bold text-foreground text-financial">
+                            {m.currentStock} <span className="text-xs text-muted-foreground font-semibold uppercase">{m.unit}</span>
                           </span>
                         </div>
-                        <div className="grid grid-cols-2 text-xs pt-1">
+
+                        <div className="grid grid-cols-2 gap-2 text-[10px]">
                           <div>
-                            <div className="text-zinc-400">Min Alert Stock</div>
-                            <div className="font-bold text-zinc-700 dark:text-zinc-300">{m.minimumStock} {m.unit}</div>
+                            <span className="text-muted-foreground/60 block uppercase font-bold text-[8px]">Min Limit</span>
+                            <span className="font-semibold text-foreground/80">{m.minimumStock} {m.unit}</span>
                           </div>
                           <div>
-                            <div className="text-zinc-400">Estimated Unit Cost</div>
-                            <div className="font-bold text-zinc-700 dark:text-zinc-300">LKR {m.unitPrice.toLocaleString()}</div>
+                            <span className="text-muted-foreground/60 block uppercase font-bold text-[8px]">Est. Cost</span>
+                            <span className="font-semibold text-foreground/80 text-financial">LKR {m.unitPrice.toLocaleString()}</span>
                           </div>
                         </div>
                       </CardContent>
@@ -474,35 +450,41 @@ export default function MaterialsPage() {
         {activeTab === 'suppliers' && (
           <div className="space-y-4">
             {isSuppliersLoading ? (
-              <div className="flex h-32 items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[...Array(2)].map((_, i) => (
+                  <div key={i} className="h-40 rounded-xl bg-accent/20 shimmer-bg" />
+                ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {suppliers.map((s) => (
-                  <Card key={s.id} className="border-zinc-200 dark:border-zinc-800 hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-2">
+                  <Card key={s.id} className="relative overflow-hidden hover:shadow-panel transition-all duration-200">
+                    <span className="absolute top-0 bottom-0 left-0 w-[3px] bg-success" />
+                    <CardContent className="p-5 pl-6 space-y-3.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-amber-500 font-bold">★ {s.rating || 5}.0 Rating</span>
-                        <span className="text-xs font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase">Active</span>
+                        <span className="text-xs text-info font-bold text-financial">★ {s.rating || 5}.0 Rating</span>
+                        <span className="text-[9px] font-bold bg-success-subtle text-success px-2 py-0.5 rounded-full uppercase tracking-wider">Active</span>
                       </div>
-                      <CardTitle className="text-lg">{s.name}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-xs text-zinc-500 dark:text-zinc-400">
-                      <div>
-                        <strong className="text-zinc-700 dark:text-zinc-300">Contact:</strong> {s.contactPerson || 'N/A'}
-                      </div>
-                      <div>
-                        <strong className="text-zinc-700 dark:text-zinc-300">Phone:</strong> {s.phone || 'N/A'}
-                      </div>
-                      {s.email && (
+                      
+                      <h4 className="text-xs font-semibold text-foreground">{s.name}</h4>
+                      
+                      <div className="space-y-1 text-xs text-muted-foreground/80 border-t border-border/10 pt-3">
                         <div>
-                          <strong className="text-zinc-700 dark:text-zinc-300">Email:</strong> {s.email}
+                          <strong className="text-foreground/70 font-semibold">Contact:</strong> {s.contactPerson || '—'}
                         </div>
-                      )}
-                      <div className="pt-2 flex flex-wrap gap-1 border-t border-zinc-100 dark:border-zinc-900">
+                        <div>
+                          <strong className="text-foreground/70 font-semibold">Phone:</strong> {s.phone || '—'}
+                        </div>
+                        {s.email && (
+                          <div>
+                            <strong className="text-foreground/70 font-semibold">Email:</strong> {s.email}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="pt-2.5 flex flex-wrap gap-1 border-t border-border/10">
                         {s.materialTypes.map((cat, idx) => (
-                          <span key={idx} className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-2 py-0.5 rounded text-xs font-semibold uppercase">
+                          <span key={idx} className="bg-accent/40 border border-border/30 text-muted-foreground/80 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">
                             {cat}
                           </span>
                         ))}

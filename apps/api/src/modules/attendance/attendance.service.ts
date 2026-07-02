@@ -6,14 +6,37 @@ export class AttendanceService {
   constructor(private readonly prisma: PrismaService) {}
 
   async markBatch(projectId: string, markedById: string, records: any[]) {
+    const workerIds = records.map((r) => r.workerId);
+    const workersList = await this.prisma.worker.findMany({
+      where: { id: { in: workerIds } },
+    });
+    const rates = new Map(workersList.map((w) => [w.id, Number(w.dailyRate)]));
+
     const results = await Promise.all(
-      records.map((record) =>
-        this.prisma.attendance.upsert({
+      records.map((record) => {
+        const rate = rates.get(record.workerId) || 0;
+        const wage = record.dailyWage !== undefined ? record.dailyWage : rate;
+
+        return this.prisma.attendance.upsert({
           where: { workerId_projectId_date: { workerId: record.workerId, projectId, date: new Date(record.date) } },
-          create: { workerId: record.workerId, projectId, date: new Date(record.date), status: record.status, dailyWage: record.dailyWage, markedById, hoursWorked: record.hoursWorked, overtimeHours: record.overtimeHours },
-          update: { status: record.status, dailyWage: record.dailyWage, hoursWorked: record.hoursWorked, overtimeHours: record.overtimeHours },
-        }),
-      ),
+          create: {
+            workerId: record.workerId,
+            projectId,
+            date: new Date(record.date),
+            status: record.status,
+            dailyWage: wage,
+            markedById,
+            hoursWorked: record.hoursWorked || 8,
+            overtimeHours: record.overtimeHours || 0,
+          },
+          update: {
+            status: record.status,
+            dailyWage: wage,
+            hoursWorked: record.hoursWorked || 8,
+            overtimeHours: record.overtimeHours || 0,
+          },
+        });
+      }),
     );
     return results;
   }

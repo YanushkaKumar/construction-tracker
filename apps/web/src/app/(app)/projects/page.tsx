@@ -6,24 +6,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { 
-  Building2, 
-  MapPin, 
-  User, 
-  Calendar, 
-  Plus, 
-  Loader2, 
-  AlertCircle,
-  TrendingUp,
-  SlidersHorizontal,
-  FolderDot
+  Building2, MapPin, User, Calendar, Plus, Loader2, AlertCircle,
+  TrendingUp, ChevronRight,
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ProgressBar } from '@/components/ui/custom-charts';
 import Link from 'next/link';
 
 interface Project {
@@ -62,6 +55,20 @@ const projectSchema = z.object({
 });
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
+
+const statusMeta: Record<string, { label: string; dotClass: string }> = {
+  PLANNING: { label: 'Planning', dotClass: 'status-planning' },
+  IN_PROGRESS: { label: 'Active', dotClass: 'status-active' },
+  ON_HOLD: { label: 'Paused', dotClass: 'status-paused' },
+  COMPLETED: { label: 'Done', dotClass: 'status-complete' },
+  CANCELLED: { label: 'Cancelled', dotClass: 'status-critical' },
+};
+
+const fmt = (n: number) => {
+  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(0)}K`;
+  return n.toLocaleString();
+};
 
 export default function ProjectsPage() {
   const queryClient = useQueryClient();
@@ -113,60 +120,6 @@ export default function ProjectsPage() {
     },
   });
 
-  // Mock projects for preview in case DB is unpopulated
-  const mockProjects: Project[] = [
-    {
-      id: 'prj1',
-      name: 'Horizon Tower - Colombo 07',
-      code: 'PRJ-001',
-      description: '12-story residential apartment complex in Colombo 07',
-      clientName: 'Mr. Amal Rajapaksa',
-      clientPhone: '+94777654321',
-      location: 'Colombo 07',
-      status: 'IN_PROGRESS',
-      priority: 'HIGH',
-      budgetEstimate: 150000000,
-      budgetActual: 85000000,
-      progressPercent: 58,
-      startDate: '2025-06-01',
-      endDate: '2027-06-01',
-      _count: { tasks: 4, expenses: 3, dailyReports: 8 }
-    },
-    {
-      id: 'prj2',
-      name: 'Palm Villa - Negombo',
-      code: 'PRJ-002',
-      description: 'Luxury 3-bedroom villa with pool in Negombo',
-      clientName: 'Mrs. Kumari Bandara',
-      clientPhone: '+94778765432',
-      location: 'Negombo',
-      status: 'IN_PROGRESS',
-      priority: 'MEDIUM',
-      budgetEstimate: 45000000,
-      budgetActual: 18000000,
-      progressPercent: 35,
-      startDate: '2026-01-15',
-      endDate: '2026-12-31',
-      _count: { tasks: 2, expenses: 1, dailyReports: 4 }
-    },
-    {
-      id: 'prj3',
-      name: 'Office Renovation - World Trade Center',
-      code: 'PRJ-003',
-      description: 'Commercial office space renovation, floors 8-10',
-      clientName: 'ABC Holdings',
-      location: 'Colombo 01',
-      status: 'PLANNING',
-      priority: 'LOW',
-      budgetEstimate: 25000000,
-      budgetActual: 0,
-      progressPercent: 0,
-      startDate: '2026-08-01',
-      endDate: '2026-11-30',
-      _count: { tasks: 0, expenses: 0, dailyReports: 0 }
-    }
-  ];
-
   const projects = data?.data || [];
 
   const handleCreateProject = (values: any) => {
@@ -174,110 +127,96 @@ export default function ProjectsPage() {
     createProjectMutation.mutate(values);
   };
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case 'PLANNING':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
-      case 'IN_PROGRESS':
-        return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300';
-      case 'ON_HOLD':
-        return 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300';
-      case 'COMPLETED':
-        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300';
-      default:
-        return 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300';
-    }
-  };
+  const filters = [
+    { value: 'ALL', label: 'All' },
+    { value: 'IN_PROGRESS', label: 'Active' },
+    { value: 'PLANNING', label: 'Planning' },
+    { value: 'ON_HOLD', label: 'Paused' },
+    { value: 'COMPLETED', label: 'Done' },
+  ];
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-12 text-left">
-      {/* Header Panel */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-2 border-b border-zinc-200/40 dark:border-zinc-800/40">
-        <div className="text-left">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white flex items-center gap-3">
-            <FolderDot className="w-6 h-6 text-orange-500" />
-            Projects Workspace
-          </h1>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Create, manage budgets, assign site crews, and monitor active constructions.
-          </p>
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      {/* ═══ Header ═══ */}
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div>
+          <h1 className="text-headline text-foreground">Projects</h1>
+          <p className="text-caption mt-1">Manage construction sites, budgets, and progress tracking.</p>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-zinc-900 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-900 border border-zinc-950 shadow-sm rounded-lg text-xs font-semibold px-4 py-2 hover:bg-zinc-800 dark:hover:bg-zinc-200">
-              <Plus className="w-4 h-4 mr-2 text-orange-500" />
-              Add Project
+            <Button>
+              <Plus className="w-4 h-4 mr-1.5" />
+              New Project
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto glass-panel p-6">
-            <DialogHeader className="text-left mb-4">
-              <DialogTitle className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white">Add New Project</DialogTitle>
-              <DialogDescription className="text-xs text-zinc-400 font-medium">
-                Fill in the details below to initialize a new site tracking context.
-              </DialogDescription>
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create Project</DialogTitle>
+              <DialogDescription>Set up a new construction site tracking context.</DialogDescription>
             </DialogHeader>
 
             {mutateError && (
-              <Alert variant="destructive" className="mb-4">
+              <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{mutateError}</AlertDescription>
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit(handleCreateProject)} className="space-y-4 text-left">
+            <form onSubmit={handleSubmit(handleCreateProject)} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="name" className="text-xs text-zinc-400 font-medium">Project Name *</Label>
+                <Label htmlFor="name" className="text-caption">Project Name *</Label>
                 <Input id="name" placeholder="Horizon Tower Phase 2" {...register('name')} />
-                {errors.name && <p className="text-[10px] text-rose-500 font-medium">{errors.name.message}</p>}
+                {errors.name && <p className="text-[10px] text-destructive font-medium">{errors.name.message}</p>}
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="description" className="text-xs text-zinc-400 font-medium">Description</Label>
+                <Label htmlFor="description" className="text-caption">Description</Label>
                 <Input id="description" placeholder="10-floor residential structure" {...register('description')} />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="clientName" className="text-xs text-zinc-400 font-medium">Client Name</Label>
+                  <Label htmlFor="clientName" className="text-caption">Client Name</Label>
                   <Input id="clientName" placeholder="Mr. Rajapaksa" {...register('clientName')} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="clientPhone" className="text-xs text-zinc-400 font-medium">Client Phone</Label>
+                  <Label htmlFor="clientPhone" className="text-caption">Client Phone</Label>
                   <Input id="clientPhone" placeholder="+9477..." {...register('clientPhone')} />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="location" className="text-xs text-zinc-400 font-medium">Location</Label>
+                  <Label htmlFor="location" className="text-caption">Location</Label>
                   <Input id="location" placeholder="Negombo" {...register('location')} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="budgetEstimate" className="text-xs text-zinc-400 font-medium">Budget Estimate (LKR) *</Label>
+                  <Label htmlFor="budgetEstimate" className="text-caption">Budget (LKR) *</Label>
                   <Input id="budgetEstimate" type="number" {...register('budgetEstimate')} />
-                  {errors.budgetEstimate && <p className="text-[10px] text-rose-500 font-medium">{errors.budgetEstimate.message}</p>}
+                  {errors.budgetEstimate && <p className="text-[10px] text-destructive font-medium">{errors.budgetEstimate.message}</p>}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="startDate" className="text-xs text-zinc-400 font-medium">Start Date</Label>
+                  <Label htmlFor="startDate" className="text-caption">Start Date</Label>
                   <Input id="startDate" type="date" {...register('startDate')} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="endDate" className="text-xs text-zinc-400 font-medium">End Date</Label>
+                  <Label htmlFor="endDate" className="text-caption">End Date</Label>
                   <Input id="endDate" type="date" {...register('endDate')} />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="status" className="text-xs text-zinc-400 font-medium">Status</Label>
+                  <Label htmlFor="status" className="text-caption">Status</Label>
                   <select 
                     id="status" 
-                    className="flex h-8 w-full rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs focus-visible:outline-none focus-visible:border-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
+                    className="flex h-9 w-full rounded-lg border border-border/60 bg-transparent px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20"
                     {...register('status')}
                   >
                     <option value="PLANNING">Planning</option>
@@ -287,10 +226,10 @@ export default function ProjectsPage() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="priority" className="text-xs text-zinc-400 font-medium">Priority</Label>
+                  <Label htmlFor="priority" className="text-caption">Priority</Label>
                   <select 
                     id="priority" 
-                    className="flex h-8 w-full rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs focus-visible:outline-none focus-visible:border-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
+                    className="flex h-9 w-full rounded-lg border border-border/60 bg-transparent px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20"
                     {...register('priority')}
                   >
                     <option value="LOW">Low</option>
@@ -301,16 +240,13 @@ export default function ProjectsPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t border-zinc-200/40 dark:border-zinc-800/40">
+              <div className="flex justify-end gap-2 pt-3 border-t border-border/40">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                      Creating...
-                    </>
+                    <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Creating…</>
                   ) : (
                     'Create Project'
                   )}
@@ -321,150 +257,123 @@ export default function ProjectsPage() {
         </Dialog>
       </div>
 
-      {/* Filter and Controls Header */}
-      <div className="flex items-center gap-1.5 pb-2 overflow-x-auto">
-        <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-400 mr-2 flex-shrink-0" />
-        {['ALL', 'PLANNING', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED'].map((status) => (
-          <Button
-            key={status}
-            variant={statusFilter === status ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setStatusFilter(status)}
-            className={`text-[10px] font-semibold tracking-wide uppercase rounded-lg py-1 px-3 border transition-all ${
-              statusFilter === status 
-                ? 'bg-zinc-950 text-zinc-50 border-zinc-950 dark:bg-zinc-50 dark:text-zinc-950 dark:border-white shadow-sm' 
-                : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+      {/* ═══ Filters — Pill style ═══ */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+        {filters.map((f) => (
+          <button
+            key={f.value}
+            onClick={() => setStatusFilter(f.value)}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap ${
+              statusFilter === f.value
+                ? 'bg-foreground text-background'
+                : 'bg-accent text-muted-foreground hover:text-foreground hover:bg-accent/80'
             }`}
           >
-            {status === 'ALL' ? 'All Projects' : status.replace('_', ' ')}
-          </Button>
+            {f.label}
+          </button>
         ))}
       </div>
 
+      {/* ═══ Loading ═══ */}
       {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-64 rounded-2xl bg-white/50 dark:bg-zinc-900/50 border border-zinc-200/50 dark:border-zinc-800/60 shimmer-bg" />
+            <div key={i} className="h-56 rounded-xl bg-card shadow-surface shimmer-bg" />
           ))}
         </div>
       )}
 
-      {/* Projects Grid */}
-      {projects.length === 0 && !isLoading ? (
-        <div className="py-16 text-center text-zinc-500 flex flex-col items-center border-2 border-dashed border-zinc-200 dark:border-zinc-850 rounded-3xl bg-zinc-500/5">
-          <FolderDot className="w-10 h-10 text-zinc-300 dark:text-zinc-700 mb-3" />
-          <p className="font-semibold text-sm text-zinc-700 dark:text-zinc-300">No projects yet.</p>
-          <p className="text-xs text-zinc-500 mt-1">Initialize a construction project to start tracking logs and budgets.</p>
+      {/* ═══ Empty State ═══ */}
+      {projects.length === 0 && !isLoading && (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center mb-4">
+            <Building2 className="w-6 h-6 text-muted-foreground/30" />
+          </div>
+          <p className="text-title text-foreground mb-1">No projects yet</p>
+          <p className="text-caption max-w-xs">Create your first construction project to start tracking budgets, tasks, and progress.</p>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      )}
+
+      {/* ═══ Project Cards ═══ */}
+      {projects.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
           {projects.map((project) => {
-            const budgetPercent = project.budgetEstimate > 0 
+            const budgetPercent = project.budgetEstimate > 0
               ? Math.round((project.budgetActual / project.budgetEstimate) * 100)
               : 0;
+            const meta = statusMeta[project.status] || { label: project.status, dotClass: '' };
 
             return (
-              <Card key={project.id} className="glass-panel flex flex-col hover:-translate-y-0.5 transition-all duration-300 group">
-                <CardHeader className="pb-3 text-left">
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 tracking-wider uppercase">
-                    {project.code}
-                  </span>
-                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                    project.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
-                    project.status === 'IN_PROGRESS' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
-                    'bg-zinc-100 text-zinc-650 dark:bg-zinc-800/80 dark:text-zinc-450'
-                  }`}>
-                    {project.status.replace('_', ' ')}
-                  </span>
-                </div>
-                <CardTitle className="text-base font-semibold text-zinc-900 dark:text-white group-hover:text-orange-500 transition-colors">
-                  <Link href={`/projects/${project.id}`}>
-                    {project.name}
-                  </Link>
-                </CardTitle>
-                <CardDescription className="line-clamp-2 min-h-8 text-xs text-zinc-400 dark:text-zinc-500 mt-1 font-medium leading-relaxed">
-                  {project.description || 'No description provided.'}
-                </CardDescription>
-              </CardHeader>
-              
-              <CardContent className="flex-1 space-y-4 pt-0 text-left">
-                {/* Meta details list */}
-                <div className="space-y-2 text-[11px] text-zinc-500 dark:text-zinc-400 border-t border-zinc-200/20 dark:border-zinc-800/30 pt-3">
-                  {project.location && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-3.5 h-3.5 text-zinc-400" />
-                      <span>{project.location}</span>
+              <Link key={project.id} href={`/projects/${project.id}`}>
+                <Card className="h-full group cursor-pointer hover:shadow-panel transition-all duration-300">
+                  <CardContent className="p-5 flex flex-col h-full">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-label text-muted-foreground/50">{project.code}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`status-dot ${meta.dotClass}`} />
+                        <span className="text-[10px] font-medium text-muted-foreground">{meta.label}</span>
+                      </div>
                     </div>
-                  )}
-                  {project.clientName && (
-                    <div className="flex items-center gap-2">
-                      <User className="w-3.5 h-3.5 text-zinc-400" />
-                      <span>{project.clientName}</span>
-                    </div>
-                  )}
-                  {project.startDate && (
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-3.5 h-3.5 text-zinc-400" />
-                      <span>
-                        {new Date(project.startDate).toLocaleDateString()}
-                        {project.endDate && ` - ${new Date(project.endDate).toLocaleDateString()}`}
-                      </span>
-                    </div>
-                  )}
-                </div>
 
-                {/* Progress bars */}
-                <div className="space-y-3 pt-3 border-t border-zinc-200/20 dark:border-zinc-800/30">
-                  {/* Construction progress */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
-                      <span className="text-zinc-400">Site Progress</span>
-                      <span className="text-zinc-800 dark:text-zinc-200">{project.progressPercent}%</span>
-                    </div>
-                    <div className="w-full bg-zinc-100 dark:bg-zinc-800/80 h-1 rounded-full overflow-hidden">
-                      <div className="bg-orange-500 h-full rounded-full" style={{ width: `${project.progressPercent}%` }} />
-                    </div>
-                  </div>
+                    {/* Title */}
+                    <h3 className="text-title text-foreground group-hover:text-foreground/80 transition-colors mb-1">
+                      {project.name}
+                    </h3>
+                    <p className="text-caption line-clamp-1 mb-4">
+                      {project.description || 'No description'}
+                    </p>
 
-                  {/* Budget progress */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
-                      <span className="text-zinc-400">Budget Spent</span>
-                      <span className="text-zinc-800 dark:text-zinc-200">
-                        {budgetPercent}% (LKR {(project.budgetActual / 1000000).toFixed(1)}M / {(project.budgetEstimate / 1000000).toFixed(1)}M)
-                      </span>
+                    {/* Meta */}
+                    <div className="space-y-1.5 mb-4 flex-1">
+                      {project.location && (
+                        <div className="flex items-center gap-2 text-caption">
+                          <MapPin className="w-3 h-3 text-muted-foreground/40" />
+                          <span>{project.location}</span>
+                        </div>
+                      )}
+                      {project.clientName && (
+                        <div className="flex items-center gap-2 text-caption">
+                          <User className="w-3 h-3 text-muted-foreground/40" />
+                          <span>{project.clientName}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="w-full bg-zinc-100 dark:bg-zinc-800/80 h-1 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full ${budgetPercent > 90 ? 'bg-rose-500' : 'bg-emerald-500'}`} 
-                        style={{ width: `${Math.min(budgetPercent, 100)}%` }} 
+
+                    {/* Progress */}
+                    <div className="space-y-3 pt-3 border-t border-border/40">
+                      <ProgressBar value={project.progressPercent} label="Progress" showLabel height={4} />
+                      <ProgressBar
+                        value={budgetPercent}
+                        label={`Budget · LKR ${fmt(project.budgetActual)} / ${fmt(project.budgetEstimate)}`}
+                        showLabel
+                        height={4}
+                        color={budgetPercent > 90 ? 'oklch(0.63 0.22 25)' : undefined}
                       />
                     </div>
-                  </div>
-                </div>
 
-                {/* Counters row */}
-                <div className="grid grid-cols-3 gap-2 pt-3 border-t border-zinc-200/20 dark:border-zinc-800/30 text-center">
-                  <div className="p-2 bg-zinc-500/5 dark:bg-zinc-900/10 rounded-xl">
-                    <div className="text-xs font-bold text-zinc-800 dark:text-zinc-200">{project._count.tasks}</div>
-                    <div className="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider mt-0.5">Tasks</div>
-                  </div>
-                  <div className="p-2 bg-zinc-500/5 dark:bg-zinc-900/10 rounded-xl">
-                    <div className="text-xs font-bold text-zinc-800 dark:text-zinc-200">{project._count.dailyReports}</div>
-                    <div className="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider mt-0.5">Logs</div>
-                  </div>
-                  <div className="p-2 bg-zinc-500/5 dark:bg-zinc-900/10 rounded-xl">
-                    <div className="text-xs font-bold text-zinc-800 dark:text-zinc-200">{project._count.expenses}</div>
-                    <div className="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider mt-0.5">Wages</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                    {/* Counters */}
+                    <div className="grid grid-cols-3 gap-2 pt-3 mt-3 border-t border-border/40">
+                      <CountStat value={project._count.tasks} label="Tasks" />
+                      <CountStat value={project._count.dailyReports} label="Logs" />
+                      <CountStat value={project._count.expenses} label="Expenses" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
       )}
+    </div>
+  );
+}
+
+function CountStat({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="text-center py-1">
+      <div className="text-sm font-semibold text-foreground text-financial">{value}</div>
+      <div className="text-label text-muted-foreground/40 text-[8px] mt-0.5">{label}</div>
     </div>
   );
 }
