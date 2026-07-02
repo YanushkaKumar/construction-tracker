@@ -2,14 +2,14 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { 
-  HardHat, 
-  FileText, 
-  Landmark, 
-  Users, 
-  ClipboardCheck, 
-  LayoutGrid, 
-  CheckCircle, 
+import {
+  HardHat,
+  FileText,
+  Landmark,
+  Users,
+  ClipboardCheck,
+  LayoutGrid,
+  CheckCircle,
   ArrowRight,
   TrendingUp,
   MapPin,
@@ -28,6 +28,7 @@ import {
   Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
 
 export default function Home() {
   const [activeSegment, setActiveSegment] = useState<'contractor' | 'engineer' | 'owner' | 'qs'>('contractor');
@@ -61,7 +62,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-stone-50/50 text-zinc-800 scroll-smooth selection:bg-amber-500 selection:text-zinc-950 font-sans">
-      
+
       {/* Soft warm-grey Grid Background Layer */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#e4e4e780_1px,transparent_1px),linear-gradient(to_bottom,#e4e4e780_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none -z-10" />
 
@@ -74,7 +75,7 @@ export default function Home() {
             </div>
             <span className="font-extrabold text-base tracking-tight text-zinc-950">Build<span className="text-amber-500">Track</span></span>
           </div>
-          
+
           <nav className="hidden md:flex gap-8 text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-900 transition-colors">
             <a href="#features" className="hover:text-amber-500 transition-colors">Features</a>
             <a href="#about" className="hover:text-amber-500 transition-colors">How it Works</a>
@@ -97,26 +98,26 @@ export default function Home() {
         {/* Soft glowing auroras */}
         <div className="absolute top-1/3 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
         <div className="absolute top-1/2 right-1/4 translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-orange-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
-        
+
         <div className="container max-w-7xl mx-auto px-6 relative z-10">
           <div className="grid grid-cols-1 gap-16 lg:grid-cols-12 lg:gap-8 items-center">
-            
+
             {/* Left Content */}
             <div className="space-y-8 lg:col-span-6 text-left">
               <div className="inline-flex items-center gap-2 rounded-full bg-white border border-zinc-200/80 px-4 py-1.5 text-xs font-bold text-amber-600 shadow-sm">
                 <Sparkles className="w-3.5 h-3.5 animate-pulse text-amber-500" />
                 Next-Gen Construction Management Platform
               </div>
-              
+
               <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-tight text-zinc-950">
                 Operate sites <br />
                 with <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-600 to-amber-700">absolute precision.</span>
               </h1>
-              
+
               <p className="text-base sm:text-lg text-zinc-600 leading-relaxed max-w-lg font-medium">
                 Unify site logs, worker attendance registers, material supply pipelines, and financial expense approvals in a single, high-fidelity SaaS dashboard built for Sri Lankan contractors.
               </p>
-              
+
               <div className="flex flex-wrap gap-4 pt-2">
                 <Link href="/register">
                   <Button size="lg" className="bg-amber-500 text-zinc-950 hover:bg-amber-600 font-extrabold px-8 py-6 rounded-xl shadow-xl shadow-amber-500/10 group">
@@ -150,12 +151,12 @@ export default function Home() {
 
             {/* Right Interactive Mockup App (3D Mockup Perspective) */}
             <div className="lg:col-span-6 w-full flex items-center justify-center relative select-none">
-              
+
               {/* Backlight glow behind the app frame */}
               <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/5 via-transparent to-orange-500/5 rounded-[2rem] blur-3xl -z-10 translate-y-6"></div>
-              
+
               <div className="w-full max-w-[560px] bg-white border border-zinc-250/80 rounded-2xl shadow-[0_20px_50px_-15px_rgba(24,24,27,0.15)] p-1.5 flex flex-col justify-between group hover:border-zinc-300 transition-colors duration-500">
-                
+
                 {/* macOS style Window Header */}
                 <div className="flex items-center justify-between px-4 py-2.5 bg-zinc-50 border-b border-zinc-200/80 rounded-t-xl">
                   <div className="flex gap-1.5">
@@ -169,7 +170,7 @@ export default function Home() {
 
                 {/* Dashboard Inner Container */}
                 <div className="flex-1 bg-zinc-50/50 p-4 grid grid-cols-12 gap-3.5 text-zinc-700 rounded-b-xl">
-                  
+
                   {/* Left Mock Sidebar */}
                   <div className="col-span-3 flex flex-col gap-2.5 border-r border-zinc-200/60 pr-3 pt-1">
                     <div className="flex items-center gap-1.5 mb-2 px-1">
@@ -185,7 +186,7 @@ export default function Home() {
 
                   {/* Right Dashboard Mock Panel */}
                   <div className="col-span-9 space-y-3 pl-1 pt-1">
-                    
+
                     {/* Project Header Widget */}
                     <div className="flex justify-between items-center bg-white p-2.5 rounded-xl border border-zinc-200/60 shadow-sm">
                       <div>
@@ -227,7 +228,7 @@ export default function Home() {
                         <span>LIVE REPORT LOGS</span>
                         <span className="text-amber-600">REAL-TIME</span>
                       </div>
-                      
+
                       <div className="space-y-1.5 text-xs text-zinc-600">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-1.5">
@@ -266,7 +267,7 @@ export default function Home() {
       {/* Features Section (Bento Grid) */}
       <section id="features" className="py-32 bg-white border-y border-zinc-200/80 relative scroll-mt-12">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[1px] bg-gradient-to-r from-transparent via-zinc-200 to-transparent"></div>
-        
+
         <div className="container max-w-7xl mx-auto px-6">
           <div className="text-center max-w-3xl mx-auto space-y-4 mb-20">
             <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-zinc-950 leading-tight">
@@ -280,11 +281,11 @@ export default function Home() {
 
           {/* Bento Grid */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[220px]">
-            
+
             {/* Bento 1: Large (Real-Time Command) */}
             <div className="md:col-span-8 md:row-span-2 p-8 bg-stone-50 border border-zinc-200/80 rounded-3xl flex flex-col justify-between relative overflow-hidden group hover:shadow-lg hover:border-zinc-300 transition-all duration-300">
               <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/5 rounded-full blur-[70px] pointer-events-none"></div>
-              
+
               <div className="max-w-md space-y-3 z-10">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-700 flex items-center justify-center">
                   <LayoutGrid className="w-5.5 h-5.5" />
@@ -314,7 +315,7 @@ export default function Home() {
             {/* Bento 2: Medium (Expense tracking) */}
             <div className="md:col-span-4 md:row-span-2 p-8 bg-stone-50 border border-zinc-200/80 rounded-3xl flex flex-col justify-between hover:shadow-lg hover:border-zinc-300 transition-all duration-300 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-60 h-60 bg-blue-500/5 rounded-full blur-[60px] pointer-events-none"></div>
-              
+
               <div className="space-y-3 z-10">
                 <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-700 flex items-center justify-center">
                   <Landmark className="w-5.5 h-5.5" />
@@ -391,7 +392,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
-            
+
             {/* Timeline connector line for wide screens */}
             <div className="hidden md:block absolute top-[28px] left-[12%] right-[12%] h-[1px] bg-gradient-to-r from-amber-500/10 via-zinc-250 to-amber-500/10 -z-10"></div>
 
@@ -462,7 +463,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
+
             {/* Left Nav Tabs */}
             <div className="lg:col-span-4 flex flex-col gap-2">
               {[
@@ -476,11 +477,10 @@ export default function Home() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveSegment(tab.id as any)}
-                    className={`text-left p-4 rounded-xl border transition-all ${
-                      isActive 
-                        ? 'bg-stone-50 border-amber-500 text-zinc-950 shadow-md shadow-amber-500/5' 
+                    className={`text-left p-4 rounded-xl border transition-all ${isActive
+                        ? 'bg-stone-50 border-amber-500 text-zinc-950 shadow-md shadow-amber-500/5'
                         : 'bg-transparent border-transparent text-zinc-400 hover:text-zinc-600'
-                    }`}
+                      }`}
                   >
                     <div className="font-extrabold text-sm">{tab.label}</div>
                     <div className="text-xs uppercase font-bold tracking-wider mt-0.5 opacity-60">{tab.desc}</div>
@@ -492,7 +492,7 @@ export default function Home() {
             {/* Right Segment Panel Detail */}
             <div className="lg:col-span-8 bg-stone-50 border border-zinc-200/80 p-8 rounded-3xl relative overflow-hidden min-h-[320px] flex flex-col justify-between shadow-sm">
               <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/5 rounded-full blur-[80px] pointer-events-none"></div>
-              
+
               <div className="space-y-4">
                 <span className="text-xs font-extrabold uppercase tracking-widest text-amber-600">{segmentContent[activeSegment].badge}</span>
                 <h3 className="text-2xl font-black text-zinc-950">{segmentContent[activeSegment].title}</h3>
@@ -518,7 +518,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-zinc-200 bg-white py-16 text-center text-xs text-zinc-500">
         <div className="container max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-8">
-          
+
           <div className="flex items-center gap-2">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500 text-zinc-950">
               <HardHat className="w-4.5 h-4.5" />
