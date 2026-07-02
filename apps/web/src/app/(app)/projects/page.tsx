@@ -190,96 +190,94 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-8 max-w-7xl mx-auto pb-12 text-left">
       {/* Header Panel */}
-      <div className="p-6 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 to-zinc-500 dark:from-white dark:to-zinc-400 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-lg shadow-amber-500/20">
-              <Building2 className="w-5 h-5" />
-            </div>
-            Projects
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-2 border-b border-zinc-200/40 dark:border-zinc-800/40">
+        <div className="text-left">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white flex items-center gap-3">
+            <FolderDot className="w-6 h-6 text-orange-500" />
+            Projects Workspace
           </h1>
-          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mt-2 ml-1">
-            Create, track, and monitor active constructions.
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            Create, manage budgets, assign site crews, and monitor active constructions.
           </p>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold shadow-lg shadow-amber-500/10 rounded-xl">
-              <Plus className="w-4 h-4 mr-2" />
+            <Button className="bg-zinc-900 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-900 border border-zinc-950 shadow-sm rounded-lg text-xs font-semibold px-4 py-2 hover:bg-zinc-800 dark:hover:bg-zinc-200">
+              <Plus className="w-4 h-4 mr-2 text-orange-500" />
               Add Project
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Add New Project</DialogTitle>
-              <DialogDescription>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto glass-panel p-6">
+            <DialogHeader className="text-left mb-4">
+              <DialogTitle className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white">Add New Project</DialogTitle>
+              <DialogDescription className="text-xs text-zinc-400 font-medium">
                 Fill in the details below to initialize a new site tracking context.
               </DialogDescription>
             </DialogHeader>
 
             {mutateError && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{mutateError}</AlertDescription>
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit(handleCreateProject)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Project Name *</Label>
+            <form onSubmit={handleSubmit(handleCreateProject)} className="space-y-4 text-left">
+              <div className="space-y-1.5">
+                <Label htmlFor="name" className="text-xs text-zinc-400 font-medium">Project Name *</Label>
                 <Input id="name" placeholder="Horizon Tower Phase 2" {...register('name')} />
-                {errors.name && <p className="text-xs text-destructive font-medium">{errors.name.message}</p>}
+                {errors.name && <p className="text-[10px] text-rose-500 font-medium">{errors.name.message}</p>}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="description" className="text-xs text-zinc-400 font-medium">Description</Label>
                 <Input id="description" placeholder="10-floor residential structure" {...register('description')} />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="clientName">Client Name</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="clientName" className="text-xs text-zinc-400 font-medium">Client Name</Label>
                   <Input id="clientName" placeholder="Mr. Rajapaksa" {...register('clientName')} />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="clientPhone">Client Phone</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="clientPhone" className="text-xs text-zinc-400 font-medium">Client Phone</Label>
                   <Input id="clientPhone" placeholder="+9477..." {...register('clientPhone')} />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="location">Location</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="location" className="text-xs text-zinc-400 font-medium">Location</Label>
                   <Input id="location" placeholder="Negombo" {...register('location')} />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="budgetEstimate">Budget Estimate (LKR) *</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="budgetEstimate" className="text-xs text-zinc-400 font-medium">Budget Estimate (LKR) *</Label>
                   <Input id="budgetEstimate" type="number" {...register('budgetEstimate')} />
-                  {errors.budgetEstimate && <p className="text-xs text-destructive font-medium">{errors.budgetEstimate.message}</p>}
+                  {errors.budgetEstimate && <p className="text-[10px] text-rose-500 font-medium">{errors.budgetEstimate.message}</p>}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="startDate" className="text-xs text-zinc-400 font-medium">Start Date</Label>
                   <Input id="startDate" type="date" {...register('startDate')} />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="endDate" className="text-xs text-zinc-400 font-medium">End Date</Label>
                   <Input id="endDate" type="date" {...register('endDate')} />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="status" className="text-xs text-zinc-400 font-medium">Status</Label>
                   <select 
                     id="status" 
-                    className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:focus-visible:ring-zinc-300"
+                    className="flex h-8 w-full rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs focus-visible:outline-none focus-visible:border-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
                     {...register('status')}
                   >
                     <option value="PLANNING">Planning</option>
@@ -288,11 +286,11 @@ export default function ProjectsPage() {
                     <option value="COMPLETED">Completed</option>
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="priority">Priority</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="priority" className="text-xs text-zinc-400 font-medium">Priority</Label>
                   <select 
                     id="priority" 
-                    className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:focus-visible:ring-zinc-300"
+                    className="flex h-8 w-full rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs focus-visible:outline-none focus-visible:border-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
                     {...register('priority')}
                   >
                     <option value="LOW">Low</option>
@@ -303,14 +301,14 @@ export default function ProjectsPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+              <div className="flex justify-end gap-2 pt-4 border-t border-zinc-200/40 dark:border-zinc-800/40">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold" disabled={isSubmitting}>
+                <Button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                       Creating...
                     </>
                   ) : (
@@ -324,18 +322,18 @@ export default function ProjectsPage() {
       </div>
 
       {/* Filter and Controls Header */}
-      <div className="flex items-center gap-2 pb-2 overflow-x-auto border-b border-zinc-200 dark:border-zinc-800">
-        <SlidersHorizontal className="w-4 h-4 text-zinc-400 mr-2 flex-shrink-0" />
+      <div className="flex items-center gap-1.5 pb-2 overflow-x-auto">
+        <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-400 mr-2 flex-shrink-0" />
         {['ALL', 'PLANNING', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED'].map((status) => (
           <Button
             key={status}
             variant={statusFilter === status ? 'default' : 'outline'}
             size="sm"
             onClick={() => setStatusFilter(status)}
-            className={`text-xs rounded-full ${
+            className={`text-[10px] font-semibold tracking-wide uppercase rounded-lg py-1 px-3 border transition-all ${
               statusFilter === status 
-                ? 'bg-zinc-900 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-950' 
-                : 'border-zinc-200 dark:border-zinc-800'
+                ? 'bg-zinc-950 text-zinc-50 border-zinc-950 dark:bg-zinc-50 dark:text-zinc-950 dark:border-white shadow-sm' 
+                : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
             }`}
           >
             {status === 'ALL' ? 'All Projects' : status.replace('_', ' ')}
@@ -344,8 +342,10 @@ export default function ProjectsPage() {
       </div>
 
       {isLoading && (
-        <div className="flex h-64 items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-64 rounded-2xl bg-white/50 dark:bg-zinc-900/50 border border-zinc-200/50 dark:border-zinc-800/60 shimmer-bg" />
+          ))}
         </div>
       )}
 
@@ -357,29 +357,33 @@ export default function ProjectsPage() {
             : 0;
 
           return (
-            <Card key={project.id} className="border-zinc-200 dark:border-zinc-800 flex flex-col hover:shadow-md transition-shadow group">
-              <CardHeader className="pb-3">
+            <Card key={project.id} className="glass-panel flex flex-col hover:-translate-y-0.5 transition-all duration-300 group">
+              <CardHeader className="pb-3 text-left">
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-xs font-semibold text-zinc-400">
+                  <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 tracking-wider uppercase">
                     {project.code}
                   </span>
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full uppercase ${getStatusBadgeColor(project.status)}`}>
+                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                    project.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+                    project.status === 'IN_PROGRESS' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
+                    'bg-zinc-100 text-zinc-650 dark:bg-zinc-800/80 dark:text-zinc-450'
+                  }`}>
                     {project.status.replace('_', ' ')}
                   </span>
                 </div>
-                <CardTitle className="text-xl group-hover:text-amber-500 transition-colors">
+                <CardTitle className="text-base font-semibold text-zinc-900 dark:text-white group-hover:text-orange-500 transition-colors">
                   <Link href={`/projects/${project.id}`}>
                     {project.name}
                   </Link>
                 </CardTitle>
-                <CardDescription className="line-clamp-2 min-h-10">
+                <CardDescription className="line-clamp-2 min-h-8 text-xs text-zinc-400 dark:text-zinc-500 mt-1 font-medium leading-relaxed">
                   {project.description || 'No description provided.'}
                 </CardDescription>
               </CardHeader>
               
-              <CardContent className="flex-1 space-y-4">
+              <CardContent className="flex-1 space-y-4 pt-0 text-left">
                 {/* Meta details list */}
-                <div className="space-y-2 text-xs text-zinc-500 dark:text-zinc-400">
+                <div className="space-y-2 text-[11px] text-zinc-500 dark:text-zinc-400 border-t border-zinc-200/20 dark:border-zinc-800/30 pt-3">
                   {project.location && (
                     <div className="flex items-center gap-2">
                       <MapPin className="w-3.5 h-3.5 text-zinc-400" />
@@ -404,27 +408,27 @@ export default function ProjectsPage() {
                 </div>
 
                 {/* Progress bars */}
-                <div className="space-y-3 pt-2 border-t border-zinc-100 dark:border-zinc-900">
+                <div className="space-y-3 pt-3 border-t border-zinc-200/20 dark:border-zinc-800/30">
                   {/* Construction progress */}
                   <div className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-zinc-500">Site Progress</span>
-                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">{project.progressPercent}%</span>
+                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
+                      <span className="text-zinc-400">Site Progress</span>
+                      <span className="text-zinc-800 dark:text-zinc-200">{project.progressPercent}%</span>
                     </div>
-                    <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-amber-500 h-full rounded-full" style={{ width: `${project.progressPercent}%` }} />
+                    <div className="w-full bg-zinc-100 dark:bg-zinc-800/80 h-1 rounded-full overflow-hidden">
+                      <div className="bg-orange-500 h-full rounded-full" style={{ width: `${project.progressPercent}%` }} />
                     </div>
                   </div>
 
                   {/* Budget progress */}
                   <div className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-zinc-500">Budget Spent</span>
-                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
+                      <span className="text-zinc-400">Budget Spent</span>
+                      <span className="text-zinc-800 dark:text-zinc-200">
                         {budgetPercent}% (LKR {(project.budgetActual / 1000000).toFixed(1)}M / {(project.budgetEstimate / 1000000).toFixed(1)}M)
                       </span>
                     </div>
-                    <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                    <div className="w-full bg-zinc-100 dark:bg-zinc-800/80 h-1 rounded-full overflow-hidden">
                       <div 
                         className={`h-full rounded-full ${budgetPercent > 90 ? 'bg-rose-500' : 'bg-emerald-500'}`} 
                         style={{ width: `${Math.min(budgetPercent, 100)}%` }} 
@@ -434,18 +438,18 @@ export default function ProjectsPage() {
                 </div>
 
                 {/* Counters row */}
-                <div className="grid grid-cols-3 gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-900 text-center">
-                  <div className="p-2 bg-zinc-50 dark:bg-zinc-950 rounded-xl">
-                    <div className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{project._count.tasks}</div>
-                    <div className="text-xs text-zinc-400 font-semibold uppercase">Tasks</div>
+                <div className="grid grid-cols-3 gap-2 pt-3 border-t border-zinc-200/20 dark:border-zinc-800/30 text-center">
+                  <div className="p-2 bg-zinc-500/5 dark:bg-zinc-900/10 rounded-xl">
+                    <div className="text-xs font-bold text-zinc-800 dark:text-zinc-200">{project._count.tasks}</div>
+                    <div className="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider mt-0.5">Tasks</div>
                   </div>
-                  <div className="p-2 bg-zinc-50 dark:bg-zinc-950 rounded-xl">
-                    <div className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{project._count.dailyReports}</div>
-                    <div className="text-xs text-zinc-400 font-semibold uppercase">Logs</div>
+                  <div className="p-2 bg-zinc-500/5 dark:bg-zinc-900/10 rounded-xl">
+                    <div className="text-xs font-bold text-zinc-800 dark:text-zinc-200">{project._count.dailyReports}</div>
+                    <div className="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider mt-0.5">Logs</div>
                   </div>
-                  <div className="p-2 bg-zinc-50 dark:bg-zinc-950 rounded-xl">
-                    <div className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{project._count.expenses}</div>
-                    <div className="text-xs text-zinc-400 font-semibold uppercase">Expenses</div>
+                  <div className="p-2 bg-zinc-500/5 dark:bg-zinc-900/10 rounded-xl">
+                    <div className="text-xs font-bold text-zinc-800 dark:text-zinc-200">{project._count.expenses}</div>
+                    <div className="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider mt-0.5">Wages</div>
                   </div>
                 </div>
               </CardContent>

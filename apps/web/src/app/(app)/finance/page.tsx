@@ -289,27 +289,36 @@ export default function FinancePage() {
   const textareaClass = "flex min-h-[60px] w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200";
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-8 max-w-7xl mx-auto pb-12 text-left">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 to-zinc-500 dark:from-white dark:to-zinc-400 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-lg shadow-amber-500/20">
-              <Wallet className="w-5 h-5" />
-            </div>
-            Finance & Treasury
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-zinc-200/40 dark:border-zinc-800/40">
+        <div className="text-left">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white flex items-center gap-3">
+            <Landmark className="w-6 h-6 text-orange-500" />
+            Finance & Treasury Hub
           </h1>
-          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mt-2 ml-1">Command center for tracking project budgets, external financing, and assets.</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            Command center for managing project budgets, client advances, bank loans, and site assets.
+          </p>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 p-1.5 bg-zinc-100 dark:bg-zinc-900 rounded-2xl overflow-x-auto border border-zinc-200 dark:border-zinc-800 w-max">
+      {/* Segmented Tabs Switcher */}
+      <div className="flex bg-zinc-100/50 dark:bg-zinc-800/40 p-1.5 rounded-xl border border-zinc-200/50 dark:border-zinc-800/60 overflow-x-auto gap-1 w-max">
         {tabs.map(({ id, label, icon: Icon }) => {
           const isActive = tab === id;
           return (
-            <button key={id} onClick={() => setTab(id as any)} className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl whitespace-nowrap transition-all duration-300 ${isActive ? 'bg-white dark:bg-zinc-800 text-amber-600 dark:text-amber-400 shadow-sm' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50'}`}>
-              <Icon className={`w-4 h-4 ${isActive ? 'scale-110 transition-transform' : ''}`} />{label}
+            <button 
+              key={id} 
+              onClick={() => setTab(id as any)} 
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                isActive 
+                  ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 border border-zinc-200/60 dark:border-zinc-800 shadow-sm' 
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 border border-transparent'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{label}</span>
             </button>
           );
         })}
@@ -317,25 +326,31 @@ export default function FinancePage() {
 
       {/* ═══ TAB 1: OVERVIEW ═══ */}
       {tab === 'overview' && (
-        <div className="space-y-6">
-          {ovLoading ? <Spinner /> : overview ? (
+        <div className="space-y-8">
+          {ovLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-28 rounded-xl bg-white/50 dark:bg-zinc-900/50 shimmer-bg" />
+              ))}
+            </div>
+          ) : overview ? (
             <>
               {/* KPI Row */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <KpiCard label="Total Budget" value={fmt(overview.companyTotals.totalBudget)} icon={Target} color="zinc" sub="Estimated project budgets" />
-                <KpiCard label="Advances Received" value={fmt(overview.companyTotals.totalAdvance)} icon={ArrowDownCircle} color="emerald" sub="Money in from clients" />
-                <KpiCard label="Total Spent" value={fmt(overview.companyTotals.totalSpent)} icon={ArrowUpCircle} color="rose" sub="Purchases & expenses" />
-                <KpiCard label="Available Balance" value={fmt(overview.companyTotals.balance)} icon={overview.companyTotals.balance >= 0 ? TrendingUp : TrendingDown} color={overview.companyTotals.balance >= 0 ? 'blue' : 'red'} sub={overview.companyTotals.balance >= 0 ? 'Funds available' : '⚠ Overspent'} />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <KpiCard label="Total Budgeted" value={fmt(overview.companyTotals.totalBudget)} icon={Target} iconColor="text-zinc-500 bg-zinc-100 dark:bg-zinc-800" sub="Project budget targets" />
+                <KpiCard label="Advances Received" value={fmt(overview.companyTotals.totalAdvance)} icon={ArrowDownCircle} iconColor="text-emerald-500 bg-emerald-500/10" sub="Funds received from clients" />
+                <KpiCard label="Total Disbursed" value={fmt(overview.companyTotals.totalSpent)} icon={ArrowUpCircle} iconColor="text-rose-500 bg-rose-500/10" sub="Purchase orders logged" />
+                <KpiCard label="Treasury Balance" value={fmt(overview.companyTotals.balance)} icon={overview.companyTotals.balance >= 0 ? TrendingUp : TrendingDown} iconColor={overview.companyTotals.balance >= 0 ? 'text-sky-500 bg-sky-500/10' : 'text-rose-500 bg-rose-500/10'} sub={overview.companyTotals.balance >= 0 ? 'Liquid assets' : '⚠ Overspent'} />
               </div>
 
               {/* Cash Flow Comparison Chart */}
               {overview.projectBreakdown.length > 0 && (
-                <Card className="border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md transition-all duration-300">
-                  <CardHeader>
-                    <CardTitle className="text-base font-bold">Project Cash Flow Comparison</CardTitle>
-                    <CardDescription>Visual comparison of advances received versus actual spent per project</CardDescription>
+                <Card className="glass-panel">
+                  <CardHeader className="border-b border-zinc-200/40 dark:border-zinc-800/40">
+                    <CardTitle className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Project Cash Flow Comparison</CardTitle>
+                    <CardDescription className="text-zinc-500 mt-1">Visual comparison of advances received versus actual spent per project</CardDescription>
                   </CardHeader>
-                  <CardContent className="pt-2">
+                  <CardContent className="pt-6">
                     <ResponsiveBarChart
                       data={overview.projectBreakdown}
                       xAxisKey="code"
@@ -349,99 +364,99 @@ export default function FinancePage() {
               )}
 
               {/* Per-Project Cards */}
-              <div>
-                <h3 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-3 flex items-center gap-2">
+              <div className="space-y-4">
+                <h3 className="text-xs uppercase tracking-wider text-zinc-400 font-bold flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-zinc-400" /> Project Financial Status
                 </h3>
                 <div className="space-y-3">
                   {overview.projectBreakdown.map((p) => (
-                    <div key={p.id} className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden hover:shadow-md transition-shadow">
+                    <div key={p.id} className="rounded-xl border border-zinc-200/50 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-900/30 overflow-hidden shadow-sm hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-200">
                       {/* Project Header Bar */}
                       <button
                         onClick={() => setExpandedProject(expandedProject === p.id ? null : p.id)}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                        className="w-full flex items-center gap-4 px-4 py-3 text-left hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 transition-colors"
                       >
-                        <div className={`w-1.5 h-10 rounded-full flex-shrink-0 ${p.balance >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                        <div className={`w-1 h-8 rounded-full flex-shrink-0 ${p.balance >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-amber-600">{p.code}</span>
-                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full uppercase ${statusColor[p.status || ''] || 'bg-zinc-100 text-zinc-500'}`}>{p.status?.replace('_', ' ')}</span>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[9px] font-bold text-orange-500 tracking-wider uppercase">{p.code}</span>
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase ${statusColor[p.status || ''] || 'bg-zinc-100 text-zinc-500'}`}>{p.status?.replace('_', ' ')}</span>
                           </div>
-                          <h4 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate">{p.name}</h4>
+                          <h4 className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate">{p.name}</h4>
                         </div>
 
                         {/* Mini Stats */}
-                        <div className="hidden md:flex items-center gap-4 text-xs">
-                          <div className="text-center">
-                            <p className="font-bold text-zinc-500 uppercase">Budget</p>
-                            <p className="font-bold text-zinc-700 dark:text-zinc-300">{fmt(p.budgetEstimate)}</p>
+                        <div className="hidden md:flex items-center gap-6 text-[10px]">
+                          <div className="text-right">
+                            <p className="font-semibold text-zinc-450 uppercase tracking-wide">Budget</p>
+                            <p className="font-bold text-zinc-700 dark:text-zinc-300 mt-0.5">{fmt(p.budgetEstimate)}</p>
                           </div>
-                          <div className="text-center">
-                            <p className="font-bold text-emerald-500 uppercase">Received</p>
-                            <p className="font-bold text-emerald-600">{fmt(p.totalAdvance)}</p>
+                          <div className="text-right">
+                            <p className="font-semibold text-emerald-500 uppercase tracking-wide">Received</p>
+                            <p className="font-bold text-emerald-600 dark:text-emerald-450 mt-0.5">{fmt(p.totalAdvance)}</p>
                           </div>
-                          <div className="text-center">
-                            <p className="font-bold text-rose-500 uppercase">Spent</p>
-                            <p className="font-bold text-rose-600">{fmt(p.totalSpent)}</p>
+                          <div className="text-right">
+                            <p className="font-semibold text-rose-500 uppercase tracking-wide">Spent</p>
+                            <p className="font-bold text-rose-600 dark:text-rose-400 mt-0.5">{fmt(p.totalSpent)}</p>
                           </div>
-                          <div className="text-center">
-                            <p className={`font-bold uppercase ${p.balance >= 0 ? 'text-blue-500' : 'text-red-500'}`}>Balance</p>
-                            <p className={`font-bold text-lg ${p.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{fmt(p.balance)}</p>
+                          <div className="text-right">
+                            <p className={`font-semibold uppercase tracking-wide ${p.balance >= 0 ? 'text-sky-500' : 'text-rose-500'}`}>Balance</p>
+                            <p className={`font-bold ${p.balance >= 0 ? 'text-sky-600 dark:text-sky-400' : 'text-rose-600 dark:text-rose-455'} mt-0.5`}>{fmt(p.balance)}</p>
                           </div>
                         </div>
-                        <ChevronRight className={`w-4 h-4 text-zinc-400 transition-transform ${expandedProject === p.id ? 'rotate-90' : ''}`} />
+                        <ChevronRight className={`w-4 h-4 text-zinc-450 transition-transform duration-200 ${expandedProject === p.id ? 'rotate-90' : ''}`} />
                       </button>
 
                       {/* Expanded Details */}
                       {expandedProject === p.id && (
-                        <div className="px-4 pb-4 pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-4 animate-in slide-in-from-top-1">
+                        <div className="px-5 pb-5 pt-3 border-t border-zinc-200/30 dark:border-zinc-800/40 space-y-5 text-left bg-zinc-550/5 dark:bg-zinc-950/5 animate-in slide-in-from-top-1 duration-200">
                           {/* Financial Grid */}
-                          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                             <MiniStat label="Total Budget" value={fmtFull(p.budgetEstimate)} color="zinc" />
                             <MiniStat label="Advances Received" value={fmtFull(p.totalAdvance)} color="emerald" sub={`${p.advanceCount} payment${p.advanceCount !== 1 ? 's' : ''}`} />
                             <MiniStat label="Total Spent" value={fmtFull(p.totalSpent)} color="rose" />
                             <MiniStat label="Balance" value={fmtFull(p.balance)} color={p.balance >= 0 ? 'blue' : 'red'} />
-                            <MiniStat label="Still to Receive" value={fmtFull(p.remainingToReceive)} color="amber" sub={p.remainingToReceive > 0 ? 'From client' : 'Fully received'} />
+                            <MiniStat label="Remaining Advance" value={fmtFull(p.remainingToReceive)} color="amber" sub={p.remainingToReceive > 0 ? 'To invoice' : 'Fully received'} />
                           </div>
 
                           {/* Progress Bars */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Fund Utilization */}
-                            <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
-                              <div className="flex justify-between text-xs font-bold mb-1.5">
-                                <span className="text-zinc-500 uppercase">Fund Utilization</span>
-                                <span className={p.utilizationPercent > 100 ? 'text-rose-600' : 'text-zinc-600 dark:text-zinc-400'}>{p.utilizationPercent}%</span>
+                            <div className="p-4 rounded-xl bg-white/50 dark:bg-zinc-900/30 border border-zinc-200/30 dark:border-zinc-800/50">
+                              <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider mb-2">
+                                <span className="text-zinc-400">Fund Utilization</span>
+                                <span className={p.utilizationPercent > 100 ? 'text-rose-600' : 'text-zinc-500 dark:text-zinc-400'}>{p.utilizationPercent}%</span>
                               </div>
-                              <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                              <div className="h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                                 <div className={`h-full rounded-full transition-all duration-500 ${p.utilizationPercent > 100 ? 'bg-rose-500' : p.utilizationPercent > 80 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min(p.utilizationPercent, 100)}%` }} />
                               </div>
-                              <p className="text-xs text-zinc-400 mt-1">Spent {fmtFull(p.totalSpent)} of {fmtFull(p.totalAdvance)} received</p>
+                              <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-2 font-medium">Spent {fmtFull(p.totalSpent)} of {fmtFull(p.totalAdvance)} received</p>
                             </div>
 
                             {/* Work Progress */}
-                            <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
-                              <div className="flex justify-between text-xs font-bold mb-1.5">
-                                <span className="text-zinc-550 uppercase">Work Progress</span>
-                                <span className="text-blue-600 dark:text-blue-400">{p.workDonePercent}%</span>
+                            <div className="p-4 rounded-xl bg-white/50 dark:bg-zinc-900/30 border border-zinc-200/30 dark:border-zinc-800/50">
+                              <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider mb-2">
+                                <span className="text-zinc-400">Work Progress</span>
+                                <span className="text-sky-500">{p.workDonePercent}%</span>
                               </div>
-                              <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-                                <div className="h-full rounded-full bg-blue-500 transition-all duration-500" style={{ width: `${p.workDonePercent}%` }} />
+                              <div className="h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                <div className="h-full rounded-full bg-sky-500 transition-all duration-500" style={{ width: `${p.workDonePercent}%` }} />
                               </div>
-                              <div className="flex gap-3 mt-1.5 text-xs">
-                                <span className="text-emerald-600">✓ {p.tasks.completed} done</span>
-                                <span className="text-blue-600">▶ {p.tasks.inProgress} active</span>
-                                <span className="text-zinc-400">○ {p.tasks.todo} pending</span>
+                              <div className="flex gap-3 mt-2 text-[10px] font-semibold">
+                                <span className="text-emerald-500">✓ {p.tasks.completed} done</span>
+                                <span className="text-sky-500">▶ {p.tasks.inProgress} active</span>
+                                <span className="text-zinc-450 dark:text-zinc-500">○ {p.tasks.todo} pending</span>
                               </div>
                             </div>
                           </div>
 
                           {/* Quick Actions */}
                           <div className="flex gap-2">
-                            <Button size="sm" className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => { setAdvProject(p.id); setAdvDlg(true); }}>
-                              <ArrowDownCircle className="w-3 h-3 mr-1" /> Record Advance
+                            <Button size="sm" className="text-xs bg-orange-500 hover:bg-orange-600 text-white font-medium" onClick={() => { setAdvProject(p.id); setAdvDlg(true); }}>
+                              <ArrowDownCircle className="w-3.5 h-3.5 mr-1.5" /> Record Advance
                             </Button>
-                            <Button size="sm" variant="outline" className="text-xs" onClick={() => { setLedgerProject(p.id); setTab('ledger'); }}>
-                              <Eye className="w-3 h-3 mr-1" /> View Ledger
+                            <Button size="sm" variant="outline" className="text-xs font-medium" onClick={() => { setLedgerProject(p.id); setTab('ledger'); }}>
+                              <Eye className="w-3.5 h-3.5 mr-1.5" /> View Ledger
                             </Button>
                           </div>
                         </div>
@@ -453,25 +468,27 @@ export default function FinancePage() {
               </div>
 
               {/* Category Spending + Assets */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md transition-all duration-300">
-                  <CardHeader className="pb-3"><CardTitle className="text-sm font-bold">Spending by Category</CardTitle></CardHeader>
-                  <CardContent className="pt-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="glass-panel">
+                  <CardHeader className="pb-3 border-b border-zinc-200/40 dark:border-zinc-800/40">
+                    <CardTitle className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Spending by Category</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6">
                     {overview.categoryBreakdown.length > 0 ? (
                       <DonutChart
                         data={overview.categoryBreakdown.map((c) => {
                           const categoryColors: Record<string, string> = {
-                            'PROJECT_MATERIAL': '#d97706',
-                            'SHARED_TOOL': '#8b5cf6',
-                            'DAILY_EXPENSE': '#f43f5e',
-                            'SERVICE': '#06b6d4',
-                            'TRANSPORT': '#ec4899',
-                            'OTHER': '#6b7280',
+                            'PROJECT_MATERIAL': '#f97316',       // Orange
+                            'SHARED_TOOL': '#8b5cf6',         // Purple
+                            'DAILY_EXPENSE': '#f43f5e',       // Rose
+                            'SERVICE': '#06b6d4',             // Cyan
+                            'TRANSPORT': '#ec4899',           // Pink
+                            'OTHER': '#71717a',               // Zinc
                           };
                           return {
                             label: catLabel[c.category] || c.category,
                             value: c.total,
-                            color: categoryColors[c.category.toUpperCase()] || '#6b7280'
+                            color: categoryColors[c.category.toUpperCase()] || '#71717a'
                           };
                         })}
                         subtitle="Total Spent"
@@ -482,21 +499,23 @@ export default function FinancePage() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md transition-all duration-300">
-                  <CardHeader className="pb-3"><CardTitle className="text-sm font-bold">Assets Overview</CardTitle></CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-3 gap-3 mb-3">
-                      <div className="text-center p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800">
-                        <p className="text-xl font-black text-zinc-800 dark:text-zinc-200">{overview.assetSummary.total}</p>
-                        <p className="text-xs font-bold text-zinc-400 uppercase">Total</p>
+                <Card className="glass-panel">
+                  <CardHeader className="pb-3 border-b border-zinc-200/40 dark:border-zinc-800/40">
+                    <CardTitle className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Assets Overview</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6 text-left">
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      <div className="text-center p-3 rounded-xl bg-zinc-500/5 border border-zinc-200/20 dark:border-zinc-800/20">
+                        <p className="text-lg font-bold text-zinc-800 dark:text-zinc-200">{overview.assetSummary.total}</p>
+                        <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-0.5">Total</p>
                       </div>
-                      <div className="text-center p-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/20">
-                        <p className="text-xl font-black text-amber-600">{overview.assetSummary.assigned}</p>
-                        <p className="text-xs font-bold text-amber-500 uppercase">In Use</p>
+                      <div className="text-center p-3 rounded-xl bg-orange-500/5 border border-orange-500/10">
+                        <p className="text-lg font-bold text-orange-500">{overview.assetSummary.assigned}</p>
+                        <p className="text-[9px] font-bold text-orange-400 uppercase tracking-wider mt-0.5">Assigned</p>
                       </div>
-                      <div className="text-center p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/20">
-                        <p className="text-xl font-black text-emerald-600">{overview.assetSummary.available}</p>
-                        <p className="text-xs font-bold text-emerald-500 uppercase">Free</p>
+                      <div className="text-center p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+                        <p className="text-lg font-bold text-emerald-600 dark:text-emerald-450">{overview.assetSummary.available}</p>
+                        <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider mt-0.5">Free</p>
                       </div>
                     </div>
                     <div className="space-y-2 pt-2">
@@ -891,16 +910,17 @@ const colorMap: Record<string, { bg: string; text: string }> = {
   amber: { bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-400' },
 };
 
-function KpiCard({ label, value, icon: Icon, color, sub }: { label: string; value: string; icon: any; color: string; sub: string }) {
-  const c = colorMap[color] || colorMap.zinc;
+function KpiCard({ label, value, icon: Icon, iconColor, sub }: { label: string; value: string; icon: any; iconColor: string; sub: string }) {
   return (
-    <div className={`rounded-xl p-4 ${c.bg} border border-zinc-100 dark:border-zinc-800`}>
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{label}</p>
-        <Icon className={`w-4 h-4 ${c.text}`} />
+    <div className="glass-panel p-4 text-left hover:-translate-y-0.5 transition-all duration-300">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">{label}</p>
+        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${iconColor}`}>
+          <Icon className="w-3.5 h-3.5" />
+        </div>
       </div>
-      <p className={`text-lg font-bold ${c.text}`}>{value}</p>
-      <p className="text-xs text-zinc-400 mt-0.5">{sub}</p>
+      <p className="text-sm font-semibold text-zinc-900 dark:text-white tracking-tight">{value}</p>
+      <p className="text-[9px] font-medium text-zinc-400 dark:text-zinc-500 mt-2">{sub}</p>
     </div>
   );
 }

@@ -270,54 +270,56 @@ export default function ExpensesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 max-w-7xl mx-auto pb-12 text-left">
       {/* Header Panel */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-2 border-b border-zinc-200/40 dark:border-zinc-800/40">
+        <div className="text-left">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">
             Expenses Ledger
           </h1>
-          <p className="text-zinc-500 dark:text-zinc-400">
-            Log financial expenses, materials receipts, and process approvals.
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            Log financial expenditures, upload material receipts, and approve field cash transactions.
           </p>
         </div>
 
         {/* Dialog Trigger */}
         {activeTab === 'ledger' && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger render={<Button className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold shadow-md shadow-amber-500/10" />}>
-              <Plus className="w-4 h-4 mr-2" />
-              Log Expense
+            <DialogTrigger asChild>
+              <Button className="bg-zinc-900 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-900 border border-zinc-950 shadow-sm rounded-lg text-xs font-semibold px-4 py-2 hover:bg-zinc-800 dark:hover:bg-zinc-200">
+                <Plus className="w-4 h-4 mr-2 text-orange-500" />
+                Log Expense
+              </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Log Purchase Expense</DialogTitle>
-                <DialogDescription>
+            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto glass-panel p-6">
+              <DialogHeader className="text-left mb-4">
+                <DialogTitle className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white">Log Purchase Expense</DialogTitle>
+                <DialogDescription className="text-xs text-zinc-400 font-medium">
                   Record site expenses and receipt metadata.
                 </DialogDescription>
               </DialogHeader>
 
               {mutateError && (
-                <Alert variant="destructive">
+                <Alert variant="destructive" className="mb-4">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Error</AlertTitle>
                   <AlertDescription>{mutateError}</AlertDescription>
                 </Alert>
               )}
 
-              <form onSubmit={handleSubmit(handleCreateExpense)} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Expense Title *</Label>
+              <form onSubmit={handleSubmit(handleCreateExpense)} className="space-y-4 text-left">
+                <div className="space-y-1.5">
+                  <Label htmlFor="title" className="text-xs text-zinc-400 font-medium">Expense Title *</Label>
                   <Input id="title" placeholder="Concrete supplier payment" {...register('title')} />
-                  {errors.title && <p className="text-xs text-destructive font-medium">{errors.title.message}</p>}
+                  {errors.title && <p className="text-[10px] text-rose-500 font-medium">{errors.title.message}</p>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category *</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="category" className="text-xs text-zinc-400 font-medium">Category *</Label>
                     <select 
                       id="category" 
-                      className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950"
+                      className="flex h-8 w-full rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs focus-visible:outline-none focus-visible:border-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
                       {...register('category')}
                     >
                       <option value="MATERIAL">Material</option>
@@ -328,37 +330,37 @@ export default function ExpensesPage() {
                       <option value="MISCELLANEOUS">Miscellaneous</option>
                     </select>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="amount">Amount (LKR) *</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="amount" className="text-xs text-zinc-400 font-medium">Amount (LKR) *</Label>
                     <Input id="amount" type="number" placeholder="50000" {...register('amount')} />
-                    {errors.amount && <p className="text-xs text-destructive font-medium">{errors.amount.message}</p>}
+                    {errors.amount && <p className="text-[10px] text-rose-500 font-medium">{errors.amount.message}</p>}
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="expenseDate">Expense Date *</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="expenseDate" className="text-xs text-zinc-400 font-medium">Expense Date *</Label>
                   <Input id="expenseDate" type="date" {...register('expenseDate')} />
-                  {errors.expenseDate && <p className="text-xs text-destructive font-medium">{errors.expenseDate.message}</p>}
+                  {errors.expenseDate && <p className="text-[10px] text-rose-500 font-medium">{errors.expenseDate.message}</p>}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="description">Remarks / Description</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="description" className="text-xs text-zinc-400 font-medium">Remarks / Description</Label>
                   <textarea 
                     id="description" 
                     placeholder="Provide details regarding the supplier invoice..."
-                    className="flex min-h-[80px] w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950"
+                    className="flex min-h-[80px] w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs focus-visible:outline-none focus-visible:border-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
                     {...register('description')}
                   />
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                <div className="flex justify-end gap-2 pt-4 border-t border-zinc-200/40 dark:border-zinc-800/40">
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
                     Cancel
                   </Button>
-                  <Button type="submit" className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold" disabled={isSubmitting}>
+                  <Button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold" disabled={isSubmitting}>
                     {isSubmitting ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                         Logging...
                       </>
                     ) : (
@@ -373,7 +375,7 @@ export default function ExpensesPage() {
       </div>
 
       {/* Tabs navigation */}
-      <div className="flex items-center border-b border-zinc-200 dark:border-zinc-800 overflow-x-auto gap-2 pb-px">
+      <div className="flex bg-zinc-100/50 dark:bg-zinc-800/40 p-1.5 rounded-xl border border-zinc-200/50 dark:border-zinc-800/60 overflow-x-auto gap-1 w-max">
         {[
           { id: 'ledger', label: 'Financial Ledger', icon: Landmark },
           { id: 'approvals', label: `Pending Approvals (${pendingApprovals.length})`, icon: ShieldCheck }
@@ -384,13 +386,13 @@ export default function ExpensesPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
                 isActive 
-                  ? 'border-amber-500 text-amber-600 dark:text-amber-500 font-semibold' 
-                  : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                  ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 border border-zinc-200/60 dark:border-zinc-800 shadow-sm' 
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 border border-transparent'
               }`}
             >
-              <Icon className="w-4.5 h-4.5" />
+              <Icon className="w-3.5 h-3.5" />
               <span>{tab.label}</span>
             </button>
           );
@@ -402,14 +404,14 @@ export default function ExpensesPage() {
         {activeTab === 'ledger' && (
           <div className="space-y-4">
             {/* Filter controls */}
-            <div className="flex items-center gap-3 p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm">
+            <div className="flex items-center gap-3 p-4 bg-white/50 dark:bg-zinc-900/30 border border-zinc-200/40 dark:border-zinc-800/50 rounded-2xl shadow-sm glass-panel text-left">
               <SlidersHorizontal className="w-4 h-4 text-zinc-400 flex-shrink-0" />
-              <Label htmlFor="projectSelect" className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Select Project</Label>
+              <Label htmlFor="projectSelect" className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Select Project</Label>
               <select
                 id="projectSelect"
                 value={selectedProjectId}
                 onChange={(e) => setSelectedProjectId(e.target.value)}
-                className="max-w-xs h-9 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500 dark:border-zinc-800 dark:bg-zinc-950"
+                className="max-w-xs h-8 rounded-lg border border-zinc-200 bg-white px-3 py-1 text-xs focus-visible:outline-none focus-visible:border-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
               >
                 <option value="ALL">All Demo Expenses</option>
                 {projectsList.map((p) => (
@@ -421,42 +423,46 @@ export default function ExpensesPage() {
             </div>
 
             {isLedgerLoading ? (
-              <div className="flex h-32 items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+              <div className="grid grid-cols-1 gap-4">
+                <div className="h-48 rounded-xl bg-white/50 dark:bg-zinc-900/50 shimmer-bg" />
               </div>
             ) : (
-              <Card className="border-zinc-200 dark:border-zinc-800">
-                <CardHeader>
-                  <CardTitle className="text-base">Logged Ledger Expenses</CardTitle>
+              <Card className="glass-panel">
+                <CardHeader className="border-b border-zinc-200/40 dark:border-zinc-800/40 text-left">
+                  <CardTitle className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Logged Ledger Expenses</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-6">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
+                    <table className="w-full text-xs text-left">
                       <thead>
-                        <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 text-xs font-bold uppercase tracking-wider">
-                          <th className="pb-3 font-semibold">Expense title</th>
-                          <th className="pb-3 font-semibold">Category</th>
-                          <th className="pb-3 font-semibold">Amount (LKR)</th>
-                          <th className="pb-3 font-semibold">Date</th>
-                          <th className="pb-3 font-semibold">Submitter</th>
-                          <th className="pb-3 font-semibold">Status</th>
+                        <tr className="border-b border-zinc-200/60 dark:border-zinc-800/80 text-zinc-400 font-bold uppercase tracking-wider">
+                          <th className="pb-3.5 font-semibold">Expense title</th>
+                          <th className="pb-3.5 font-semibold">Category</th>
+                          <th className="pb-3.5 font-semibold">Amount (LKR)</th>
+                          <th className="pb-3.5 font-semibold">Date</th>
+                          <th className="pb-3.5 font-semibold">Submitter</th>
+                          <th className="pb-3.5 font-semibold">Status</th>
                         </tr>
                       </thead>
                       <tbody>
                         {expenses.map((exp) => (
-                          <tr key={exp.id} className="border-b border-zinc-100 dark:border-zinc-900 last:border-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/10">
-                            <td className="py-3.5">
+                          <tr key={exp.id} className="border-b border-zinc-200/20 dark:border-zinc-800/20 last:border-0 hover:bg-zinc-50/20 dark:hover:bg-zinc-900/10 transition-colors">
+                            <td className="py-3.5 text-left">
                               <div>
-                                <div className="font-semibold text-zinc-800 dark:text-zinc-200">{exp.title}</div>
-                                {exp.description && <span className="text-xs text-zinc-400 font-medium">{exp.description}</span>}
+                                <div className="font-semibold text-zinc-850 dark:text-zinc-200">{exp.title}</div>
+                                {exp.description && <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">{exp.description}</span>}
                               </div>
                             </td>
-                            <td className="py-3.5 text-zinc-500 text-xs">{exp.category}</td>
-                            <td className="py-3.5 font-bold text-zinc-900 dark:text-white">LKR {exp.amount.toLocaleString()}</td>
-                            <td className="py-3.5 text-zinc-500 text-xs">{new Date(exp.expenseDate).toLocaleDateString()}</td>
-                            <td className="py-3.5 text-zinc-500 text-xs">{exp.submittedBy?.firstName} {exp.submittedBy?.lastName}</td>
+                            <td className="py-3.5 text-zinc-500 font-semibold uppercase tracking-wider text-[9px]">{exp.category}</td>
+                            <td className="py-3.5 font-bold text-zinc-850 dark:text-zinc-200">LKR {exp.amount.toLocaleString()}</td>
+                            <td className="py-3.5 text-zinc-500 font-medium">{new Date(exp.expenseDate).toLocaleDateString()}</td>
+                            <td className="py-3.5 text-zinc-500 font-medium">{exp.submittedBy?.firstName} {exp.submittedBy?.lastName}</td>
                             <td className="py-3.5">
-                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full uppercase ${getStatusBadgeColor(exp.status)}`}>
+                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                                exp.status === 'APPROVED' || exp.status === 'PAID' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+                                exp.status === 'PENDING' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
+                                'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                              }`}>
                                 {exp.status}
                               </span>
                             </td>
@@ -480,53 +486,55 @@ export default function ExpensesPage() {
                 <AlertDescription>Your role does not have authorization to approve expenses.</AlertDescription>
               </Alert>
             ) : isPendingLoading ? (
-              <div className="flex h-32 items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[...Array(2)].map((_, i) => (
+                  <div key={i} className="h-48 rounded-xl bg-white/50 dark:bg-zinc-900/50 shimmer-bg" />
+                ))}
               </div>
             ) : pendingApprovals.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-center space-y-3">
-                <FileCheck2 className="w-10 h-10 text-zinc-300" />
+              <div className="flex flex-col items-center justify-center py-16 bg-white/50 dark:bg-zinc-900/30 border border-zinc-200/40 dark:border-zinc-800/50 rounded-2xl text-center space-y-3 glass-panel">
+                <FileCheck2 className="w-8 h-8 text-zinc-400" />
                 <div>
-                  <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">No pending approvals</p>
-                  <p className="text-xs text-zinc-500 mt-1">Excellent! All logged expenses are processed.</p>
+                  <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">No pending approvals</p>
+                  <p className="text-[10px] text-zinc-400 mt-1">Excellent! All logged expenses are processed.</p>
                 </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {pendingApprovals.map((exp) => (
-                  <Card key={exp.id} className="border-zinc-200 dark:border-zinc-800 hover:shadow-md transition-shadow relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-1.5 h-full bg-amber-500" />
+                  <Card key={exp.id} className="glass-panel relative overflow-hidden text-left hover:-translate-y-0.5 transition-all duration-300">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-orange-500" />
                     <CardHeader className="pb-2 pl-6">
                       <div className="flex justify-between items-baseline gap-2 mb-1">
-                        <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                        <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
                           {exp.project?.code} • {exp.category}
                         </span>
-                        <span className="text-xs text-zinc-500">
+                        <span className="text-[9px] text-zinc-450 font-medium">
                           {new Date(exp.expenseDate).toLocaleDateString()}
                         </span>
                       </div>
-                      <CardTitle className="text-lg">{exp.title}</CardTitle>
+                      <CardTitle className="text-sm font-semibold text-zinc-900 dark:text-white">{exp.title}</CardTitle>
                     </CardHeader>
-                    <CardContent className="pl-6 space-y-4">
+                    <CardContent className="pl-6 space-y-4 pt-2">
                       {exp.description && (
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">
                           {exp.description}
                         </p>
                       )}
 
-                      <div className="flex justify-between items-baseline border-y border-zinc-100 dark:border-zinc-900 py-3">
-                        <span className="text-zinc-400 text-xs font-semibold">Total Amount</span>
-                        <span className="text-xl font-bold text-rose-500">LKR {exp.amount.toLocaleString()}</span>
+                      <div className="flex justify-between items-baseline border-y border-zinc-200/20 dark:border-zinc-850/40 py-3">
+                        <span className="text-zinc-400 text-[10px] font-bold uppercase tracking-wider">Total Amount</span>
+                        <span className="text-base font-bold text-rose-500">LKR {exp.amount.toLocaleString()}</span>
                       </div>
 
-                      <div className="flex justify-between items-center text-xs text-zinc-500">
-                        <span>Submitted by: <strong className="text-zinc-700 dark:text-zinc-300">{exp.submittedBy?.firstName} {exp.submittedBy?.lastName}</strong></span>
+                      <div className="flex justify-between items-center text-[10px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider">
+                        <span>Submitted by: <strong className="text-zinc-700 dark:text-zinc-300 font-semibold">{exp.submittedBy?.firstName} {exp.submittedBy?.lastName}</strong></span>
                       </div>
 
                       {/* Approval buttons */}
                       {rejectingExpenseId === exp.id ? (
-                        <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-900">
-                          <Label htmlFor="rejectReason" className="text-xs">Reason for Rejection *</Label>
+                        <div className="space-y-2 pt-3 border-t border-zinc-200/20 dark:border-zinc-800/30">
+                          <Label htmlFor="rejectReason" className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Reason for Rejection *</Label>
                           <Input 
                             id="rejectReason" 
                             placeholder="e.g. Budget cap exceeded, duplicate invoice" 
@@ -543,25 +551,25 @@ export default function ExpensesPage() {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex gap-2 justify-end pt-2 border-t border-zinc-100 dark:border-zinc-900">
+                        <div className="flex gap-2 justify-end pt-3 border-t border-zinc-200/20 dark:border-zinc-800/30">
                           <Button 
                             variant="outline" 
                             size="sm" 
                             onClick={() => setRejectingExpenseId(exp.id)} 
-                            className="border-zinc-200 dark:border-zinc-800 text-rose-600 hover:bg-rose-50/50"
+                            className="border-zinc-200 dark:border-zinc-800 text-rose-600 hover:bg-rose-500/10"
                             disabled={approveMutation.isPending}
                           >
-                            <X className="w-4 h-4 mr-1.5" />
+                            <X className="w-3.5 h-3.5 mr-1.5" />
                             Reject
                           </Button>
                           <Button 
                             variant="default" 
                             size="sm" 
                             onClick={() => handleApprove(exp.id)} 
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm"
                             disabled={approveMutation.isPending}
                           >
-                            <Check className="w-4 h-4 mr-1.5" />
+                            <Check className="w-3.5 h-3.5 mr-1.5" />
                             Approve
                           </Button>
                         </div>

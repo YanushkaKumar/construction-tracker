@@ -367,54 +367,60 @@ export default function TasksPage() {
   // ── Render ───────────────────────────────────────
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-8 max-w-7xl mx-auto pb-12 text-left">
       {/* Header */}
-      <div className="p-6 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 to-zinc-500 dark:from-white dark:to-zinc-400 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-lg shadow-amber-500/20">
-              <CheckSquare className="w-5 h-5" />
-            </div>
-            Site Tasks
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-2 border-b border-zinc-200/40 dark:border-zinc-800/40">
+        <div className="text-left">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white flex items-center gap-3">
+            <CheckSquare className="w-6 h-6 text-orange-500" />
+            Site Tasks Scheduler
           </h1>
-          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mt-2 ml-1">Create, assign, and track tasks across all your projects.</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            Create, assign, schedule milestone check-ins, and track workflows across active construction sites.
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* View toggles */}
-          <Button
-            variant={activeView === 'all-tasks' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setActiveView('all-tasks')}
-            className={`text-xs rounded-xl ${activeView === 'all-tasks' ? 'bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-950' : 'border-zinc-200 dark:border-zinc-800'}`}
-          >
-            <ListTodo className="w-4 h-4 mr-1.5" />
-            List View
-          </Button>
-          <Button
-            variant={activeView === 'kanban' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => {
-              setActiveView('kanban');
-              if (!selectedProjectId && projectsList.length > 0) setSelectedProjectId(projectsList[0].id);
-            }}
-            className={`text-xs rounded-xl ${activeView === 'kanban' ? 'bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-950' : 'border-zinc-200 dark:border-zinc-800'}`}
-          >
-            <KanbanSquare className="w-4 h-4 mr-1.5" />
-            Kanban
-          </Button>
+          {/* Segmented View Selector */}
+          <div className="flex bg-zinc-100/50 dark:bg-zinc-800/40 p-1 rounded-lg border border-zinc-200/50 dark:border-zinc-800/60 mr-2">
+            <button
+              onClick={() => setActiveView('all-tasks')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-semibold transition-all duration-200 ${
+                activeView === 'all-tasks'
+                  ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 border border-zinc-200/45 dark:border-zinc-800 shadow-sm'
+                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+              }`}
+            >
+              <ListTodo className="w-3.5 h-3.5" />
+              <span>List View</span>
+            </button>
+            <button
+              onClick={() => {
+                setActiveView('kanban');
+                if (!selectedProjectId && projectsList.length > 0) setSelectedProjectId(projectsList[0].id);
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-semibold transition-all duration-200 ${
+                activeView === 'kanban'
+                  ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 border border-zinc-200/45 dark:border-zinc-800 shadow-sm'
+                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+              }`}
+            >
+              <KanbanSquare className="w-3.5 h-3.5" />
+              <span>Kanban</span>
+            </button>
+          </div>
 
           {/* Add Task button */}
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="bg-amber-500 text-zinc-950 hover:bg-amber-600 text-xs font-semibold rounded-xl">
-                <Plus className="w-4 h-4 mr-1" />
+              <Button className="bg-zinc-900 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-900 border border-zinc-950 shadow-sm rounded-lg text-xs font-semibold px-4 py-2 hover:bg-zinc-800 dark:hover:bg-zinc-200">
+                <Plus className="w-4 h-4 mr-2 text-orange-500" />
                 Add Task
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Create New Task</DialogTitle>
-                <DialogDescription>Add a task to one of your projects.</DialogDescription>
+            <DialogContent className="sm:max-w-lg glass-panel p-6">
+              <DialogHeader className="text-left mb-4">
+                <DialogTitle className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white">Create New Task</DialogTitle>
+                <DialogDescription className="text-xs text-zinc-400 font-medium font-medium">Add a task to one of your projects.</DialogDescription>
               </DialogHeader>
               <TaskForm
                 projects={projectsList}
@@ -430,13 +436,13 @@ export default function TasksPage() {
       </div>
 
       {/* Project filter (shared between views) */}
-      <div className="flex items-center gap-3 p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm">
-        <Label htmlFor="projectFilter" className="text-xs font-bold text-zinc-500 uppercase tracking-wider whitespace-nowrap">Filter by Project</Label>
+      <div className="flex items-center gap-3 p-4 bg-white/50 dark:bg-zinc-900/30 border border-zinc-200/40 dark:border-zinc-800/50 rounded-2xl shadow-sm glass-panel text-left">
+        <Label htmlFor="projectFilter" className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider whitespace-nowrap">Filter by Project</Label>
         <select
           id="projectFilter"
           value={selectedProjectId}
           onChange={(e) => setSelectedProjectId(e.target.value)}
-          className="max-w-xs h-9 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-zinc-800 dark:bg-zinc-950"
+          className="max-w-xs h-8 rounded-lg border border-zinc-200 bg-white px-3 py-1 text-xs focus-visible:outline-none focus-visible:border-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
         >
           <option value="">All Projects</option>
           {projectsList.map((p) => (
@@ -447,55 +453,63 @@ export default function TasksPage() {
 
       {/* ── LIST VIEW ─────────────────────────────── */}
       {activeView === 'all-tasks' && (
-        <Card className="border-zinc-200 dark:border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-lg">All Tasks</CardTitle>
-            <CardDescription>{allTasks.length} task{allTasks.length !== 1 ? 's' : ''} found</CardDescription>
+        <Card className="glass-panel">
+          <CardHeader className="border-b border-zinc-200/40 dark:border-zinc-800/40 text-left">
+            <CardTitle className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">All Active Tasks</CardTitle>
+            <CardDescription className="text-zinc-500 mt-1">{allTasks.length} task{allTasks.length !== 1 ? 's' : ''} found</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6 text-left">
             {isAllTasksLoading ? (
-              <div className="flex h-32 items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+              <div className="grid grid-cols-1 gap-4">
+                <div className="h-32 rounded-xl bg-white/50 dark:bg-zinc-900/50 shimmer-bg" />
               </div>
             ) : allTasks.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
-                <CheckSquare className="w-12 h-12 text-zinc-200 dark:text-zinc-700" />
-                <p className="text-sm font-bold text-zinc-500">No tasks yet</p>
-                <p className="text-xs text-zinc-400">Click &quot;Add Task&quot; to create your first task.</p>
+              <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
+                <CheckSquare className="w-8 h-8 text-zinc-400" />
+                <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">No tasks yet</p>
+                <p className="text-[10px] text-zinc-400">Click &quot;Add Task&quot; to create your first task.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {allTasks.map((task) => (
                   <div
                     key={task.id}
-                    className="p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-amber-500/30 transition-colors"
+                    className="p-4 bg-white/40 dark:bg-zinc-950/20 rounded-xl border border-zinc-200/50 dark:border-zinc-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:-translate-y-0.5 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-200"
                   >
                     {/* Task Info */}
                     <div className="space-y-1.5 flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-bold text-zinc-400 uppercase">
+                        <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
                           {task.project?.code || '—'} • {task.project?.name || 'Unknown'}
                         </span>
-                        <span className={`text-xs font-bold px-1.5 py-0.5 rounded-md ${getPriorityColor(task.priority)}`}>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                          task.priority === 'URGENT' ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400' :
+                          task.priority === 'HIGH' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
+                          'bg-zinc-100 text-zinc-650 dark:bg-zinc-800/80 dark:text-zinc-450'
+                        }`}>
                           {task.priority}
                         </span>
-                        <span className={`text-xs font-bold px-1.5 py-0.5 rounded-md ${getStatusBadge(task.status)}`}>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                          task.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+                          task.status === 'IN_PROGRESS' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
+                          'bg-zinc-100 text-zinc-650 dark:bg-zinc-800/85 dark:text-zinc-450'
+                        }`}>
                           {task.status.replace(/_/g, ' ')}
                         </span>
                       </div>
-                      <h4 className="font-bold text-sm text-zinc-800 dark:text-zinc-100 truncate">{task.title}</h4>
+                      <h4 className="font-semibold text-xs text-zinc-850 dark:text-zinc-100 truncate">{task.title}</h4>
                       {task.description && (
-                        <p className="text-xs text-zinc-500 line-clamp-1">{task.description}</p>
+                        <p className="text-xs text-zinc-450 dark:text-zinc-400 line-clamp-1 leading-relaxed font-medium">{task.description}</p>
                       )}
-                      <div className="flex items-center gap-3 text-xs text-zinc-400">
+                      <div className="flex items-center gap-3 text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">
                         {task.assignee && (
                           <span className="flex items-center gap-1">
-                            <User className="w-3 h-3 text-amber-500" />
+                            <User className="w-3.5 h-3.5 text-orange-500" />
                             {task.assignee.firstName} {task.assignee.lastName}
                           </span>
                         )}
                         {task.dueDate && (
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 font-medium text-zinc-400">
                             <Calendar className="w-3 h-3" />
                             Due: {new Date(task.dueDate).toLocaleDateString()}
                           </span>
@@ -509,7 +523,7 @@ export default function TasksPage() {
                         value={task.status}
                         disabled={statusMutation.isPending}
                         onChange={(e) => statusMutation.mutate({ taskId: task.id, status: e.target.value })}
-                        className="w-32 h-8 rounded-lg border border-zinc-200 bg-white px-2 text-xs font-semibold dark:border-zinc-800 dark:bg-zinc-950 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                        className="w-28 h-8 rounded-lg border border-zinc-200 bg-white px-2 text-xs font-medium dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 focus:outline-none"
                       >
                         {STATUSES.map((s) => (
                           <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
@@ -518,7 +532,7 @@ export default function TasksPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-zinc-400 hover:text-amber-600"
+                        className="h-8 w-8 text-zinc-400 hover:text-orange-500 hover:bg-zinc-550/5"
                         onClick={() => setEditingTask(task)}
                       >
                         <Pencil className="w-3.5 h-3.5" />
@@ -526,7 +540,7 @@ export default function TasksPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-zinc-400 hover:text-rose-600"
+                        className="h-8 w-8 text-zinc-400 hover:text-rose-500 hover:bg-zinc-550/5"
                         onClick={() => setDeletingTask(task)}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -542,42 +556,48 @@ export default function TasksPage() {
 
       {/* ── KANBAN VIEW ───────────────────────────── */}
       {activeView === 'kanban' && (
-        <div className="space-y-4">
+        <div className="space-y-4 text-left">
           {isKanbanLoading ? (
-            <div className="flex h-64 items-center justify-center">
-              <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-64 rounded-2xl bg-white/50 dark:bg-zinc-900/50 shimmer-bg" />
+              ))}
             </div>
           ) : !kanbanProjectId ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
-              <KanbanSquare className="w-12 h-12 text-zinc-200 dark:text-zinc-700" />
-              <p className="text-sm font-bold text-zinc-500">No projects found</p>
-              <p className="text-xs text-zinc-400">Create a project first, then add tasks to it.</p>
+            <div className="flex flex-col items-center justify-center py-16 text-center space-y-3 glass-panel">
+              <KanbanSquare className="w-8 h-8 text-zinc-400" />
+              <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">No projects found</p>
+              <p className="text-[10px] text-zinc-400">Create a project first, then add tasks to it.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 overflow-x-auto pb-4">
               {(Object.keys(kanbanColumns) as Array<keyof typeof kanbanColumns>).map((colKey) => {
                 const columnTasks = kanbanColumns[colKey];
                 return (
-                  <div key={colKey} className="flex flex-col min-w-[220px] bg-zinc-100/50 dark:bg-zinc-900/20 border border-zinc-200/60 dark:border-zinc-800/80 rounded-2xl p-3 min-h-[400px]">
-                    <div className="flex items-center justify-between gap-2 mb-3 border-b border-zinc-200 dark:border-zinc-800 pb-2">
-                      <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
+                  <div key={colKey} className="flex flex-col min-w-[220px] bg-zinc-100/30 dark:bg-zinc-900/10 border border-zinc-200/40 dark:border-zinc-800/60 rounded-2xl p-3 min-h-[420px]">
+                    <div className="flex items-center justify-between gap-2 mb-3 border-b border-zinc-200/30 dark:border-zinc-800/40 pb-2">
+                      <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
                         {colKey.replace(/_/g, ' ')}
                       </span>
-                      <span className="text-xs font-bold bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-2 py-0.5 rounded-full">
+                      <span className="text-[9px] font-bold bg-zinc-200/60 dark:bg-zinc-800/80 text-zinc-500 dark:text-zinc-400 px-2 py-0.5 rounded-full">
                         {columnTasks.length}
                       </span>
                     </div>
 
                     <div className="space-y-3 flex-1 overflow-y-auto">
                       {columnTasks.map((task) => (
-                        <Card key={task.id} className="border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-shadow">
+                        <Card key={task.id} className="border-zinc-200/60 dark:border-zinc-850/80 shadow-sm hover:-translate-y-0.5 transition-all duration-200 bg-white/80 dark:bg-zinc-900/60">
                           <CardContent className="p-3 space-y-2">
                             <div className="flex justify-between items-start gap-1">
-                              <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md ${getPriorityColor(task.priority)}`}>
+                              <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                                task.priority === 'URGENT' ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400' :
+                                task.priority === 'HIGH' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
+                                'bg-zinc-100 text-zinc-650 dark:bg-zinc-800/80 dark:text-zinc-450'
+                              }`}>
                                 {task.priority}
                               </span>
                               <div className="flex gap-0.5">
-                                <button onClick={() => setEditingTask(task)} className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-amber-500 transition-colors">
+                                <button onClick={() => setEditingTask(task)} className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-orange-500 transition-colors">
                                   <Pencil className="w-3 h-3" />
                                 </button>
                                 <button onClick={() => setDeletingTask(task)} className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-rose-500 transition-colors">
@@ -585,18 +605,18 @@ export default function TasksPage() {
                                 </button>
                               </div>
                             </div>
-                            <h5 className="text-xs font-bold text-zinc-800 dark:text-zinc-100 line-clamp-2">{task.title}</h5>
-                            <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-zinc-100 dark:border-zinc-900 text-xs text-zinc-500">
+                            <h5 className="text-[11px] font-semibold text-zinc-850 dark:text-zinc-100 line-clamp-2 leading-relaxed">{task.title}</h5>
+                            <div className="flex items-center justify-between gap-2 pt-2 border-t border-zinc-200/20 dark:border-zinc-800/30 text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">
                               {task.assignee ? (
                                 <span className="flex items-center gap-1">
-                                  <User className="w-3 h-3 text-amber-500" />
+                                  <User className="w-3 h-3 text-orange-500" />
                                   {task.assignee.firstName} {task.assignee.lastName.charAt(0)}.
                                 </span>
                               ) : (
-                                <span className="text-zinc-400 italic">Unassigned</span>
+                                <span className="text-zinc-400 dark:text-zinc-500 italic lowercase">unassigned</span>
                               )}
                               {task.dueDate && (
-                                <span className="flex items-center gap-0.5">
+                                <span className="flex items-center gap-0.5 text-zinc-400 font-medium lowercase">
                                   <Calendar className="w-3 h-3 text-zinc-400" />
                                   {new Date(task.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                                 </span>
@@ -605,7 +625,7 @@ export default function TasksPage() {
                             <select
                               value={task.status}
                               onChange={(e) => statusMutation.mutate({ taskId: task.id, status: e.target.value })}
-                              className="w-full h-7 mt-1 rounded border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 px-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
+                              className="w-full h-7 mt-1.5 rounded border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 px-1.5 text-[10px] text-zinc-650 dark:text-zinc-300 focus:outline-none"
                             >
                               {STATUSES.map((s) => (
                                 <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
@@ -625,10 +645,10 @@ export default function TasksPage() {
 
       {/* ── EDIT DIALOG ───────────────────────────── */}
       <Dialog open={!!editingTask} onOpenChange={(open) => { if (!open) setEditingTask(null); }}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Edit Task</DialogTitle>
-            <DialogDescription>Update the task details below.</DialogDescription>
+        <DialogContent className="sm:max-w-lg glass-panel p-6">
+          <DialogHeader className="text-left mb-4">
+            <DialogTitle className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white">Edit Task</DialogTitle>
+            <DialogDescription className="text-xs text-zinc-400 font-medium">Update the task details below.</DialogDescription>
           </DialogHeader>
           {editingTask && (
             <TaskForm
@@ -646,10 +666,10 @@ export default function TasksPage() {
 
       {/* ── DELETE CONFIRMATION ────────────────────── */}
       <Dialog open={!!deletingTask} onOpenChange={(open) => { if (!open) setDeletingTask(null); }}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Delete Task</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="sm:max-w-sm glass-panel p-6">
+          <DialogHeader className="text-left mb-4">
+            <DialogTitle className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white">Delete Task</DialogTitle>
+            <DialogDescription className="text-xs text-zinc-400 font-medium">
               Are you sure you want to delete &quot;{deletingTask?.title}&quot;? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>

@@ -7,6 +7,7 @@ Welcome to the comprehensive technical documentation for **BuildTrack**, a full-
 This directory contains all the foundational and technical knowledge required to run, maintain, and scale the project.
 
 ### 1. Overview & Setup
+- [Overall System Guide](./OVERALL_GUIDE.md)
 - [01 Project Overview](./01-Project-Overview.md)
 - [02 System Architecture](./02-System-Architecture.md)
 - [03 Folder Structure](./03-Folder-Structure.md)
