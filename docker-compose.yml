@@ -43,6 +43,8 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
+      - APP_URL=${APP_URL}
+      - API_URL=${API_URL}
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}?schema=public
       - REDIS_HOST=redis
       - REDIS_PORT=6379
