@@ -153,3 +153,5 @@ jobs:
             IMAGE_TAG=${{ github.sha }} docker compose pull
             IMAGE_TAG=${{ github.sha }} docker compose up -d
             IMAGE_TAG=${{ github.sha }} docker compose exec -T api npx prisma@6.14.0 migrate deploy --schema=prisma/schema
+            IMAGE_TAG=${{ github.sha }} docker compose restart nginx
+            docker image prune -f
