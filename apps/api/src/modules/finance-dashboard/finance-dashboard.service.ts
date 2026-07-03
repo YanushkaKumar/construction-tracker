@@ -52,6 +52,23 @@ export class FinanceDashboardService {
       _sum: { amount: true },
     });
 
+    const totalExpensesResult = await this.prisma.expense.aggregate({
+      where: { project: { companyId }, status: { in: ['APPROVED', 'PAID'] } },
+      _sum: { amount: true },
+    });
+
+    const totalRepaymentsResult = await this.prisma.bankLoanRepayment.aggregate({
+      where: { bankLoan: { companyId } },
+      _sum: { amount: true },
+    });
+
+    const totalAdvance = Number(totalAdvanceResult._sum.amount || 0);
+    const totalSpent = Number(totalSpentResult._sum.amount || 0);
+    const totalExpenses = Number(totalExpensesResult._sum.amount || 0);
+    const totalRepayments = Number(totalRepaymentsResult._sum.amount || 0);
+
+    const consolidatedSpent = totalSpent + totalExpenses + totalRepayments;
+
     // Total budget across all projects
     const totalBudget = projects.reduce((sum, p) => sum + Number(p.budgetEstimate || 0), 0);
 
@@ -136,9 +153,9 @@ export class FinanceDashboardService {
     return {
       companyTotals: {
         totalBudget,
-        totalAdvance: Number(totalAdvanceResult._sum.amount || 0),
-        totalSpent: Number(totalSpentResult._sum.amount || 0),
-        balance: Number(totalAdvanceResult._sum.amount || 0) - Number(totalSpentResult._sum.amount || 0),
+        totalAdvance,
+        totalSpent: consolidatedSpent,
+        balance: totalAdvance - consolidatedSpent,
       },
       projectBreakdown: projectBreakdown.sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance)),
       categoryBreakdown: categoryBreakdown.map((c: any) => ({
@@ -173,7 +190,7 @@ export class FinanceDashboardService {
       },
     });
 
-    const [advances, allocations] = await Promise.all([
+    const [advances, allocations, expenses] = await Promise.all([
       this.prisma.projectAdvance.aggregate({
         where: { projectId, status: { in: ['RECEIVED', 'PARTIAL_RETURN'] } },
         _sum: { amount: true },
@@ -184,10 +201,15 @@ export class FinanceDashboardService {
         _sum: { amount: true },
         _count: true,
       }),
+      this.prisma.expense.aggregate({
+        where: { projectId, status: { in: ['APPROVED', 'PAID'] } },
+        _sum: { amount: true },
+        _count: true,
+      }),
     ]);
 
     const totalAdvance = Number(advances._sum.amount || 0);
-    const totalSpent = Number(allocations._sum.amount || 0);
+    const totalSpent = Number(allocations._sum.amount || 0) + Number(expenses._sum.amount || 0);
     const budgetEstimate = Number(project?.budgetEstimate || 0);
 
     // Category breakdown for this project
@@ -202,6 +224,16 @@ export class FinanceDashboardService {
     for (const alloc of categorySpending) {
       const cat = alloc.purchase.category;
       categoryMap[cat] = (categoryMap[cat] || 0) + Number(alloc.amount);
+    }
+
+    // Add field expenses to category breakdown
+    const projectExpenses = await this.prisma.expense.findMany({
+      where: { projectId, status: { in: ['APPROVED', 'PAID'] } },
+      select: { category: true, amount: true }
+    });
+    for (const exp of projectExpenses) {
+      const cat = exp.category;
+      categoryMap[cat] = (categoryMap[cat] || 0) + Number(exp.amount);
     }
 
     // Task progress
@@ -226,7 +258,7 @@ export class FinanceDashboardService {
       balance: totalAdvance - totalSpent,
       remainingToReceive: Math.max(budgetEstimate - totalAdvance, 0),
       advanceCount: advances._count,
-      purchaseCount: allocations._count,
+      purchaseCount: allocations._count + expenses._count,
       utilizationPercent: totalAdvance > 0 ? Math.round((totalSpent / totalAdvance) * 100) : 0,
       budgetUtilization: budgetEstimate > 0 ? Math.round((totalSpent / budgetEstimate) * 100) : 0,
       workDonePercent: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : (project?.progressPercent || 0),
@@ -241,7 +273,7 @@ export class FinanceDashboardService {
    * Per-project transaction ledger with running balance
    */
   async getProjectLedger(projectId: string) {
-    const [advances, allocations] = await Promise.all([
+    const [advances, allocations, expenses] = await Promise.all([
       this.prisma.projectAdvance.findMany({
         where: { projectId },
         include: {
@@ -258,6 +290,13 @@ export class FinanceDashboardService {
             },
           },
         },
+      }),
+      this.prisma.expense.findMany({
+        where: { projectId, status: { in: ['APPROVED', 'PAID'] } },
+        include: {
+          submittedBy: { select: { id: true, firstName: true, lastName: true } },
+        },
+        orderBy: { expenseDate: 'asc' },
       }),
     ]);
 
@@ -292,6 +331,21 @@ export class FinanceDashboardService {
         purchaseTotalAmount: Number(alloc.purchase.totalAmount),
         user: alloc.purchase.purchasedBy,
         notes: alloc.notes,
+      });
+    }
+
+    for (const exp of expenses) {
+      ledgerEntries.push({
+        id: exp.id,
+        type: 'EXPENSE',
+        date: exp.expenseDate,
+        description: exp.title,
+        category: exp.category,
+        amountIn: 0,
+        amountOut: Number(exp.amount),
+        user: exp.submittedBy,
+        notes: exp.description || null,
+        status: exp.status,
       });
     }
 

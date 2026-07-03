@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { 
   Package, Plus, Loader2, AlertCircle, Truck, Store, Layers,
-  AlertTriangle, SlidersHorizontal, FolderDot
+  AlertTriangle, SlidersHorizontal, FolderDot, Sparkles, Star
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
@@ -72,11 +72,11 @@ const requestSchema = z.object({
 type RequestFormValues = z.infer<typeof requestSchema>;
 
 const statusMeta: Record<string, { label: string; bgClass: string; textClass: string }> = {
-  PENDING: { label: 'Pending', bgClass: 'bg-warning-subtle', textClass: 'text-warning' },
-  APPROVED: { label: 'Approved', bgClass: 'bg-info-subtle', textClass: 'text-info' },
-  ORDERED: { label: 'Ordered', bgClass: 'bg-info-subtle', textClass: 'text-info' },
-  DELIVERED: { label: 'Delivered', bgClass: 'bg-success-subtle', textClass: 'text-success' },
-  CANCELLED: { label: 'Cancelled', bgClass: 'bg-danger-subtle', textClass: 'text-danger' },
+  PENDING: { label: 'Pending', bgClass: 'bg-warning-subtle/10 border-warning/25', textClass: 'text-warning' },
+  APPROVED: { label: 'Approved', bgClass: 'bg-info-subtle/10 border-info/25', textClass: 'text-info' },
+  ORDERED: { label: 'Ordered', bgClass: 'bg-info-subtle/10 border-info/25', textClass: 'text-info' },
+  DELIVERED: { label: 'Delivered', bgClass: 'bg-success-subtle/10 border-success/25', textClass: 'text-success' },
+  CANCELLED: { label: 'Cancelled', bgClass: 'bg-danger-subtle/10 border-danger/25', textClass: 'text-danger' },
 };
 
 export default function MaterialsPage() {
@@ -184,45 +184,47 @@ export default function MaterialsPage() {
     createRequestMutation.mutate(values);
   };
 
-  const selectStyle = "h-8 rounded-lg border border-border/60 bg-transparent px-3 py-1 text-xs outline-none focus-visible:border-foreground/30 font-semibold";
+  const selectStyle = "h-8.5 rounded-xl border border-border/25 bg-background px-3 py-1 text-xs outline-none focus-visible:border-foreground/30 font-semibold";
+  const inputStyle = "flex h-10 w-full rounded-xl border border-border/40 bg-background/40 px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 font-semibold";
+  const textareaStyle = "flex min-h-[60px] w-full rounded-xl border border-border/40 bg-background/40 px-3 py-2 text-sm outline-none focus-visible:border-foreground/30 resize-none placeholder:text-muted-foreground/50 font-semibold";
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12 text-left stagger-children">
+    <div className="space-y-4 pb-12 text-left stagger-children">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-        <div>
-          <h1 className="text-headline text-foreground">Materials & Procurement</h1>
-          <p className="text-caption mt-1">Monitor inventories, map suppliers, and handle material requests.</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border/25 pb-5">
+        <div className="text-left select-none">
+          <h1 className="text-3xl md:text-4xl lg:text-[40px] font-semibold tracking-tight text-foreground/90">Materials & Procurement</h1>
+          <p className="text-xs text-muted-foreground mt-0.5 font-normal">Monitor site inventories, map external suppliers, and track requisition status.</p>
         </div>
 
         {activeTab === 'requests' && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="font-semibold h-10 rounded-xl transition-all shadow-sm">
                 <Plus className="w-4 h-4 mr-1.5" />
                 Request Materials
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Submit Procurement Request</DialogTitle>
-                <DialogDescription>Select material items and quantities to request for the project.</DialogDescription>
+            <DialogContent className="sm:max-w-md bg-card border border-border/30 rounded-2xl p-5 text-left shadow-elevated">
+              <DialogHeader className="border-b border-border/15 pb-3.5 mb-3.5">
+                <DialogTitle className="text-sm font-bold text-foreground">Submit Procurement Requisition</DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5 font-medium">Request construction supplies or raw materials for the target workspace.</DialogDescription>
               </DialogHeader>
 
               {mutateError && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{mutateError}</AlertDescription>
+                <Alert variant="destructive" className="bg-danger-subtle border-danger/30 text-danger-foreground rounded-xl mb-4">
+                  <AlertCircle className="h-4 w-4 text-danger" />
+                  <AlertTitle className="text-xs font-bold uppercase tracking-wider">Requisition Error</AlertTitle>
+                  <AlertDescription className="text-xs font-semibold">{mutateError}</AlertDescription>
                 </Alert>
               )}
 
-              <form onSubmit={handleSubmit(handleCreateRequest)} className="space-y-4">
+              <form onSubmit={handleSubmit(handleCreateRequest)} className="space-y-4 font-semibold text-left">
                 <div className="space-y-1.5">
-                  <Label htmlFor="materialId" className="text-caption">Material Item *</Label>
+                  <Label htmlFor="materialId" className="text-xs font-semibold text-foreground/80">Material Item *</Label>
                   <select 
                     id="materialId" 
-                    className="flex h-9 w-full rounded-lg border border-border/60 bg-transparent px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 font-medium"
+                    className="flex h-10 w-full rounded-xl border border-border/40 bg-background/40 px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 font-semibold"
                     {...register('materialId')}
                   >
                     <option value="">Select Material...</option>
@@ -232,14 +234,14 @@ export default function MaterialsPage() {
                       </option>
                     ))}
                   </select>
-                  {errors.materialId && <p className="text-[10px] text-destructive font-medium">{errors.materialId.message}</p>}
+                  {errors.materialId && <p className="text-[10px] text-danger font-bold">{errors.materialId.message}</p>}
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="supplierId" className="text-caption">Preferred Supplier</Label>
+                  <Label htmlFor="supplierId" className="text-xs font-semibold text-foreground/80">Preferred Supplier</Label>
                   <select 
                     id="supplierId" 
-                    className="flex h-9 w-full rounded-lg border border-border/60 bg-transparent px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 font-medium"
+                    className="flex h-10 w-full rounded-xl border border-border/40 bg-background/40 px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 font-semibold"
                     {...register('supplierId')}
                   >
                     <option value="">Select Supplier...</option>
@@ -252,29 +254,28 @@ export default function MaterialsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="quantity" className="text-caption">Quantity *</Label>
-                  <Input id="quantity" type="number" step="any" placeholder="e.g. 50" {...register('quantity')} />
-                  {errors.quantity && <p className="text-[10px] text-destructive font-medium">{errors.quantity.message}</p>}
+                  <Label htmlFor="quantity" className="text-xs font-semibold text-foreground/80">Quantity *</Label>
+                  <Input id="quantity" type="number" step="any" placeholder="e.g. 50" {...register('quantity')} className={inputStyle} />
+                  {errors.quantity && <p className="text-[10px] text-danger font-bold">{errors.quantity.message}</p>}
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="notes" className="text-caption">Delivery Notes / Remarks</Label>
+                  <Label htmlFor="notes" className="text-xs font-semibold text-foreground/80">Delivery Notes / Remarks</Label>
                   <textarea 
                     id="notes" 
-                    placeholder="Deliver to site office. Casting priority."
-                    rows={3}
-                    className="w-full rounded-lg border border-border/60 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 resize-none placeholder:text-muted-foreground/60"
+                    placeholder="Deliver to site storage bay. Cast deadline priority."
                     {...register('notes')}
+                    className={textareaStyle}
                   />
                 </div>
 
-                <div className="flex justify-end gap-2 pt-3 border-t border-border/40">
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
+                <div className="flex justify-end gap-2.5 pt-4 border-t border-border/15 select-none">
+                  <Button type="button" variant="outline" className="rounded-xl h-10 px-4 text-xs font-semibold" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isSubmitting}>
+                  <Button type="submit" className="font-semibold h-10 rounded-xl text-xs px-4" disabled={isSubmitting}>
                     {isSubmitting ? (
-                      <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Requesting…</>
+                      <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Requesting…</>
                     ) : (
                       'Submit Requisition'
                     )}
@@ -287,7 +288,7 @@ export default function MaterialsPage() {
       </div>
 
       {/* Segmented Switcher */}
-      <div className="flex bg-accent/40 p-1 rounded-xl border border-border/40 overflow-x-auto gap-1 w-max">
+      <div className="flex bg-accent/25 p-1 rounded-xl border border-border/25 overflow-x-auto gap-1 w-max select-none">
         {[
           { id: 'requests', label: 'Procurement Requests', icon: Truck },
           { id: 'inventory', label: 'Inventory Stock', icon: Layers },
@@ -299,13 +300,13 @@ export default function MaterialsPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[15px] font-semibold transition-all duration-200 ${
                 isActive 
-                  ? 'bg-card text-foreground border border-border/40 shadow-sm' 
+                  ? 'bg-card text-foreground border border-border/20 shadow-sm' 
                   : 'text-muted-foreground hover:text-foreground border border-transparent'
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon className="w-4 h-4" />
               <span>{tab.label}</span>
             </button>
           );
@@ -313,20 +314,20 @@ export default function MaterialsPage() {
       </div>
 
       {/* Tab Panels */}
-      <div className="pt-2">
+      <div className="pt-1 text-left">
         {activeTab === 'requests' && (
           <div className="space-y-4">
             {/* Filter controls */}
-            <div className="flex items-center gap-3 p-4 bg-accent/20 border border-border/30 rounded-2xl">
+            <div className="flex items-center gap-3 p-3.5 bg-accent/15 border border-border/20 rounded-xl select-none text-left">
               <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
-              <Label htmlFor="projectSelect" className="text-label text-muted-foreground/60 whitespace-nowrap">Select Project</Label>
+              <Label htmlFor="projectSelect" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 whitespace-nowrap font-mono">Filter Workspace</Label>
               <select
                 id="projectSelect"
                 value={selectedProjectId}
                 onChange={(e) => setSelectedProjectId(e.target.value)}
-                className="max-w-xs h-8 rounded-lg border border-border/60 bg-transparent px-3 py-1 text-xs outline-none focus-visible:border-foreground/30 font-semibold"
+                className={selectStyle + ' max-w-xs h-9'}
               >
-                <option value="ALL">All Demo Requisitions</option>
+                <option value="ALL">All Company Requisitions</option>
                 {projectsList.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.code} - {p.name}
@@ -338,39 +339,39 @@ export default function MaterialsPage() {
             {isRequestsLoading ? (
               <div className="space-y-3">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-16 rounded-xl bg-accent/20 shimmer-bg" />
+                  <div key={i} className="h-16 rounded-xl bg-accent/15 border border-border/20 shimmer-bg" />
                 ))}
               </div>
             ) : (
-              <Card>
-                <CardContent className="p-6">
+              <Card className="glass-panel border-border/30 shadow-panel">
+                <CardContent className="p-4">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-xs text-left">
+                    <table className="w-full text-[15px] text-left border-collapse font-semibold">
                       <thead>
-                        <tr className="border-b border-border/40 text-muted-foreground/60 font-semibold uppercase tracking-wider">
-                          <th className="pb-3 pl-2">Material Item</th>
-                          <th className="pb-3">Project Code</th>
-                          <th className="pb-3">Quantity</th>
-                          <th className="pb-3 text-right">Cost Estimate</th>
-                          <th className="pb-3">Supplier</th>
-                          <th className="pb-3 pr-2">Approval Status</th>
+                        <tr className="border-b border-border/25 text-muted-foreground/50 font-bold uppercase tracking-wider text-[11px] font-mono select-none">
+                          <th className="pb-2.5 pl-2">Material Item</th>
+                          <th className="pb-2.5">Project Code</th>
+                          <th className="pb-2.5">Quantity</th>
+                          <th className="pb-2.5 text-right">Cost Estimate</th>
+                          <th className="pb-2.5">Supplier</th>
+                          <th className="pb-2.5 pr-2 text-center">Approval Status</th>
                         </tr>
                       </thead>
                       <tbody>
                         {requests.map((req, i) => {
-                          const stat = statusMeta[req.status] || { label: req.status, bgClass: 'bg-accent', textClass: 'text-muted-foreground' };
+                          const stat = statusMeta[req.status] || { label: req.status, bgClass: 'bg-accent/40', textClass: 'text-muted-foreground/80' };
                           return (
-                            <tr key={i} className="border-b border-border/20 last:border-0 hover:bg-accent/20 transition-colors">
-                              <td className="py-3.5 pl-2 font-medium text-foreground">{req.material.name}</td>
-                              <td className="py-3.5 text-muted-foreground">{req.project?.code || 'PRJ-001'}</td>
-                              <td className="py-3.5 text-foreground font-medium">{req.quantity} {req.material.unit}</td>
-                              <td className="py-3.5 text-right font-semibold text-foreground text-financial">LKR {(req.totalPrice || 0).toLocaleString()}</td>
-                              <td className="py-3.5 text-muted-foreground">{req.supplier?.name || '—'}</td>
-                              <td className="py-3.5 pr-2">
+                            <tr key={i} className="border-b border-border/15 last:border-0 hover:bg-accent/15 transition-colors">
+                              <td className="py-3 pl-2 font-bold text-foreground">{req.material.name}</td>
+                              <td className="py-3 text-muted-foreground/80 font-bold uppercase font-mono">{req.project?.code || 'PRJ-001'}</td>
+                              <td className="py-3 text-foreground font-bold">{req.quantity} {req.material.unit}</td>
+                              <td className="py-3 text-right font-black text-foreground font-mono text-financial">LKR {(req.totalPrice || 0).toLocaleString()}</td>
+                              <td className="py-3 text-muted-foreground/80">{req.supplier?.name || '—'}</td>
+                              <td className="py-3 pr-2 text-center select-none">
                                 <select 
                                   value={req.status}
                                   onChange={(e) => handleStatusChange(req.id, e.target.value)}
-                                  className={`text-[10px] font-bold px-2 py-0.5 rounded border border-border/40 outline-none ${stat.bgClass} ${stat.textClass}`}
+                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border border-border/20 outline-none ${stat.bgClass} ${stat.textClass} font-mono`}
                                 >
                                   <option value="PENDING">Pending</option>
                                   <option value="APPROVED">Approved</option>
@@ -392,11 +393,11 @@ export default function MaterialsPage() {
         )}
 
         {activeTab === 'inventory' && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-in slide-in-from-bottom-2 duration-300">
             {isMaterialsLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-40 rounded-xl bg-accent/20 shimmer-bg" />
+                  <div key={i} className="h-40 rounded-xl bg-accent/15 border border-border/20 shimmer-bg" />
                 ))}
               </div>
             ) : (
@@ -404,38 +405,38 @@ export default function MaterialsPage() {
                 {materials.map((m) => {
                   const isLow = m.currentStock <= m.minimumStock;
                   return (
-                    <Card key={m.id} className={`relative overflow-hidden transition-all duration-200 hover:shadow-panel ${isLow ? 'ring-1 ring-warning/30 bg-warning-subtle/5' : ''}`}>
-                      {isLow && <span className="absolute top-0 bottom-0 left-0 w-[3px] bg-warning" />}
-                      <CardContent className="p-5 pl-6 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-label text-muted-foreground/50 text-[9px]">{m.category || 'Inventory'}</span>
+                    <Card key={m.id} className={`relative overflow-hidden transition-all duration-200 hover:shadow-panel border-border/25 bg-card/65 backdrop-blur-xl ${isLow ? 'ring-1 ring-danger/25 bg-danger-subtle/5' : ''}`}>
+                      {isLow && <span className="absolute top-0 bottom-0 left-0 w-[3px] bg-danger" />}
+                      <CardContent className="p-4 pl-5 space-y-4 font-semibold text-left">
+                        <div className="flex items-center justify-between select-none">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50 font-mono">{m.category || 'Inventory'}</span>
                           {isLow && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-warning bg-warning-subtle px-2 py-0.5 rounded-full uppercase tracking-wider">
-                              <AlertTriangle className="w-2.5 h-2.5" />
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-danger bg-danger-subtle/10 border border-danger/25 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                              <AlertTriangle className="w-3 h-3" />
                               Low Stock
                             </span>
                           )}
                         </div>
                         
                         <div>
-                          <h4 className="text-xs font-semibold text-foreground">{m.name}</h4>
+                          <h4 className="text-[18px] lg:text-[20px] font-bold text-foreground leading-snug">{m.name}</h4>
                         </div>
 
-                        <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
-                          <span className="text-caption">Current Stock</span>
-                          <span className="text-xl font-bold text-foreground text-financial">
-                            {m.currentStock} <span className="text-xs text-muted-foreground font-semibold uppercase">{m.unit}</span>
+                        <div className="flex justify-between items-baseline border-b border-border/15 pb-2">
+                          <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider font-mono">Current Stock</span>
+                          <span className="text-[20px] font-black text-foreground font-mono text-financial">
+                            {m.currentStock} <span className="text-[11px] text-muted-foreground font-bold uppercase">{m.unit}</span>
                           </span>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 text-[10px]">
+                        <div className="grid grid-cols-2 gap-2 text-[13px] font-semibold text-muted-foreground/75 font-mono select-none">
                           <div>
-                            <span className="text-muted-foreground/60 block uppercase font-bold text-[8px]">Min Limit</span>
-                            <span className="font-semibold text-foreground/80">{m.minimumStock} {m.unit}</span>
+                            <span className="text-muted-foreground/45 block uppercase font-bold text-[9px] tracking-wider mb-0.5">Min Limit</span>
+                            <span className="text-foreground/90 font-bold">{m.minimumStock} {m.unit}</span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground/60 block uppercase font-bold text-[8px]">Est. Cost</span>
-                            <span className="font-semibold text-foreground/80 text-financial">LKR {m.unitPrice.toLocaleString()}</span>
+                            <span className="text-muted-foreground/45 block uppercase font-bold text-[9px] tracking-wider mb-0.5">Unit Cost</span>
+                            <span className="text-foreground/90 font-bold text-financial">LKR {m.unitPrice.toLocaleString()}</span>
                           </div>
                         </div>
                       </CardContent>
@@ -448,43 +449,45 @@ export default function MaterialsPage() {
         )}
 
         {activeTab === 'suppliers' && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-in slide-in-from-bottom-2 duration-300">
             {isSuppliersLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[...Array(2)].map((_, i) => (
-                  <div key={i} className="h-40 rounded-xl bg-accent/20 shimmer-bg" />
+                  <div key={i} className="h-40 rounded-xl bg-accent/15 border border-border/20 shimmer-bg" />
                 ))}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {suppliers.map((s) => (
-                  <Card key={s.id} className="relative overflow-hidden hover:shadow-panel transition-all duration-200">
+                  <Card key={s.id} className="relative overflow-hidden hover:shadow-panel transition-all duration-200 border-border/25 bg-card/65 backdrop-blur-xl">
                     <span className="absolute top-0 bottom-0 left-0 w-[3px] bg-success" />
-                    <CardContent className="p-5 pl-6 space-y-3.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-info font-bold text-financial">★ {s.rating || 5}.0 Rating</span>
-                        <span className="text-[9px] font-bold bg-success-subtle text-success px-2 py-0.5 rounded-full uppercase tracking-wider">Active</span>
+                    <CardContent className="p-4 pl-5 space-y-3.5 font-semibold text-left">
+                      <div className="flex items-center justify-between select-none">
+                        <span className="text-[13px] text-success font-black text-financial flex items-center gap-1 font-mono">
+                          <Star className="w-3.5 h-3.5 text-success fill-success" /> {s.rating || 5}.0 rating
+                        </span>
+                        <span className="text-[10px] font-bold bg-success-subtle text-success px-2 py-0.5 rounded-full border border-success/20 uppercase tracking-wider font-mono">Active supplier</span>
                       </div>
                       
-                      <h4 className="text-xs font-semibold text-foreground">{s.name}</h4>
+                      <h4 className="text-[18px] lg:text-[20px] font-bold text-foreground">{s.name}</h4>
                       
-                      <div className="space-y-1 text-xs text-muted-foreground/80 border-t border-border/10 pt-3">
+                      <div className="space-y-1 text-[15px] text-muted-foreground/80 border-t border-border/15 pt-3 leading-relaxed">
                         <div>
-                          <strong className="text-foreground/70 font-semibold">Contact:</strong> {s.contactPerson || '—'}
+                          <strong className="text-foreground/75 font-semibold">Contact:</strong> {s.contactPerson || '—'}
                         </div>
                         <div>
-                          <strong className="text-foreground/70 font-semibold">Phone:</strong> {s.phone || '—'}
+                          <strong className="text-foreground/75 font-semibold">Phone:</strong> {s.phone || '—'}
                         </div>
                         {s.email && (
                           <div>
-                            <strong className="text-foreground/70 font-semibold">Email:</strong> {s.email}
+                            <strong className="text-foreground/75 font-semibold">Email:</strong> {s.email}
                           </div>
                         )}
                       </div>
 
-                      <div className="pt-2.5 flex flex-wrap gap-1 border-t border-border/10">
+                      <div className="pt-2.5 flex flex-wrap gap-1 border-t border-border/15 select-none font-mono">
                         {s.materialTypes.map((cat, idx) => (
-                          <span key={idx} className="bg-accent/40 border border-border/30 text-muted-foreground/80 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">
+                          <span key={idx} className="bg-accent/40 border border-border/25 text-muted-foreground/80 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wide">
                             {cat}
                           </span>
                         ))}

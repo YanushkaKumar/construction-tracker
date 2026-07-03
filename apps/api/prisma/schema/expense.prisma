@@ -39,6 +39,7 @@ model Expense {
   project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   submittedBy User    @relation(fields: [submittedById], references: [id])
   approvedBy  User?   @relation("ExpenseApprover", fields: [approvedById], references: [id])
+  allocations FundingAllocation[]
 
   @@index([projectId])
   @@index([status])

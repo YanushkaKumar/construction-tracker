@@ -62,6 +62,7 @@ model Project {
 
   // Subcontractor relations
   subcontractorContracts SubcontractorContract[]
+  fundingSources         FundingSource[]
 
   @@unique([companyId, code])
   @@index([companyId])

@@ -98,64 +98,67 @@ export function BankLoansTab() {
     setRepayDlg(true);
   };
 
+  const selectStyle = "h-8.5 rounded-xl border border-border/25 bg-background px-3 py-1 text-xs outline-none focus-visible:border-foreground/30 font-semibold";
+  const inputStyle = "flex h-10 w-full rounded-xl border border-border/40 bg-background/40 px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 font-semibold";
+
   return (
-    <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
-      <div className="flex justify-between items-center bg-white dark:bg-zinc-950 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+    <div className="space-y-4 animate-in slide-in-from-bottom-2 duration-300">
+      <div className="flex justify-between items-center bg-card/65 backdrop-blur-xl p-4 rounded-2xl border border-border/25 shadow-surface text-left select-none">
         <div>
-          <h2 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-[18px] lg:text-[20px] font-bold text-foreground flex items-center gap-2">
             <Landmark className="w-5 h-5 text-indigo-500" />
             Company Bank Loans
             {(isFetching || createLoan.isPending || createRepayment.isPending || delLoan.isPending || deleteRepayment.isPending) && (
-              <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
             )}
           </h2>
-          <p className="text-xs text-zinc-500 mt-1">Manage external financing, track loan drawdowns, and record repayments.</p>
+          <p className="text-[13px] text-muted-foreground font-semibold mt-0.5">Manage external financing, track loan drawdowns, and record repayments.</p>
         </div>
         <Dialog open={dlg} onOpenChange={setDlg}>
           <DialogTrigger asChild>
-            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20 rounded-xl">
-              <Plus className="w-4 h-4 mr-2" /> Add Loan
+            <Button className="bg-foreground text-background hover:bg-foreground/90 font-semibold h-9 px-3.5 rounded-xl text-xs transition-all shadow-sm">
+              <Plus className="w-4 h-4 mr-1.5" /> Add Loan
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md rounded-2xl">
-            <DialogHeader>
-              <DialogTitle>Add New Bank Loan</DialogTitle>
-              <DialogDescription>Record a new loan facility from a bank or institution.</DialogDescription>
+          <DialogContent className="max-w-md rounded-2xl bg-card border border-border/30 p-5 text-left shadow-elevated">
+            <DialogHeader className="border-b border-border/15 pb-3.5 mb-3.5">
+              <DialogTitle className="text-sm font-bold">Add New Bank Loan</DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5">Record a new loan facility from a bank or institution.</DialogDescription>
             </DialogHeader>
-            {err && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{err}</AlertDescription></Alert>}
-            <form onSubmit={form.handleSubmit(v => { setErr(null); createLoan.mutate(v); })} className="space-y-4 pt-2">
-              <div>
-                <Label className="text-xs font-semibold">Bank / Institution Name</Label>
-                <Input placeholder="e.g. Commercial Bank" className="mt-1.5" {...form.register('bankName')} />
+            {err && <Alert variant="destructive" className="bg-danger-subtle border-danger/30 text-danger-foreground rounded-xl mb-4"><AlertCircle className="h-4 w-4" /><AlertDescription className="text-xs">{err}</AlertDescription></Alert>}
+            <form onSubmit={form.handleSubmit(v => { setErr(null); createLoan.mutate(v); })} className="space-y-4 pt-1 font-semibold text-left">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-foreground/80">Bank / Institution Name *</Label>
+                <Input placeholder="e.g. Commercial Bank" {...form.register('bankName')} className={inputStyle} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs font-semibold">Loan Amount (LKR)</Label>
-                  <Input type="number" className="mt-1.5" {...form.register('loanAmount')} />
+              <div className="grid grid-cols-2 gap-3.5">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-foreground/80">Loan Amount (LKR) *</Label>
+                  <Input type="number" {...form.register('loanAmount')} className={inputStyle} />
                 </div>
-                <div>
-                  <Label className="text-xs font-semibold">Interest Rate (%)</Label>
-                  <Input type="number" step="0.1" className="mt-1.5" {...form.register('interestRate')} />
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-foreground/80">Interest Rate (%) *</Label>
+                  <Input type="number" step="0.1" {...form.register('interestRate')} className={inputStyle} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs font-semibold">Received Date</Label>
-                  <Input type="date" className="mt-1.5" {...form.register('receivedDate')} />
+              <div className="grid grid-cols-2 gap-3.5">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-foreground/80">Received Date *</Label>
+                  <Input type="date" {...form.register('receivedDate')} className={inputStyle} />
                 </div>
-                <div>
-                  <Label className="text-xs font-semibold">Status</Label>
-                  <select className="flex h-10 w-full mt-1.5 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950" {...form.register('status')}>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-foreground/80">Status</Label>
+                  <select className="flex h-10 w-full rounded-xl border border-border/40 bg-background/40 px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 font-semibold" {...form.register('status')}>
                     <option value="ACTIVE">Active</option>
                     <option value="PAID_OFF">Paid Off</option>
                     <option value="DEFAULTED">Defaulted</option>
                   </select>
                 </div>
               </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                <Button type="button" variant="ghost" onClick={() => setDlg(false)}>Cancel</Button>
-                <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl" disabled={createLoan.isPending}>
-                  {createLoan.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : 'Save Loan'}
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-border/15">
+                <Button type="button" variant="outline" className="rounded-xl h-9 text-xs font-bold" onClick={() => setDlg(false)}>Cancel</Button>
+                <Button type="submit" className="bg-foreground text-background hover:bg-foreground/90 rounded-xl h-9 text-xs font-bold" disabled={createLoan.isPending}>
+                  {createLoan.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : 'Save Loan'}
                 </Button>
               </div>
             </form>
@@ -165,43 +168,43 @@ export function BankLoansTab() {
 
       {/* Repayment Dialog */}
       <Dialog open={repayDlg} onOpenChange={setRepayDlg}>
-        <DialogContent className="max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+        <DialogContent className="max-w-md rounded-2xl bg-card border border-border/30 p-5 text-left shadow-elevated">
+          <DialogHeader className="border-b border-border/15 pb-3.5 mb-3.5">
+            <DialogTitle className="flex items-center gap-2 text-sm font-bold">
               <Coins className="w-5 h-5 text-emerald-500" />
               Record Loan Repayment
             </DialogTitle>
-            <DialogDescription>Add a repayment to reduce the outstanding debt balance of this loan.</DialogDescription>
+            <DialogDescription className="text-xs text-muted-foreground mt-0.5">Add a repayment to reduce the outstanding debt balance of this loan.</DialogDescription>
           </DialogHeader>
-          {repayErr && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{repayErr}</AlertDescription></Alert>}
+          {repayErr && <Alert variant="destructive" className="bg-danger-subtle border-danger/30 text-danger-foreground rounded-xl mb-4"><AlertCircle className="h-4 w-4" /><AlertDescription className="text-xs">{repayErr}</AlertDescription></Alert>}
           <form onSubmit={repayForm.handleSubmit(v => { 
             if (repayLoanId) {
               setRepayErr(null);
               createRepayment.mutate({ loanId: repayLoanId, values: v });
             }
-          })} className="space-y-4 pt-2">
-            <div>
-              <Label className="text-xs font-semibold">Repayment Amount (LKR) *</Label>
-              <Input type="number" placeholder="500000" className="mt-1.5" {...repayForm.register('amount')} />
+          })} className="space-y-4 pt-1 font-semibold text-left">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground/80">Repayment Amount (LKR) *</Label>
+              <Input type="number" placeholder="500000" {...repayForm.register('amount')} className={inputStyle} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs font-semibold">Payment Date *</Label>
-                <Input type="date" className="mt-1.5" {...repayForm.register('paymentDate')} />
+            <div className="grid grid-cols-2 gap-3.5">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-foreground/80">Payment Date *</Label>
+                <Input type="date" {...repayForm.register('paymentDate')} className={inputStyle} />
               </div>
-              <div>
-                <Label className="text-xs font-semibold">Reference No. / Cheque No.</Label>
-                <Input placeholder="REF-1092" className="mt-1.5" {...repayForm.register('referenceNo')} />
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-foreground/80">Reference No. / Cheque No.</Label>
+                <Input placeholder="REF-1092" {...repayForm.register('referenceNo')} className={inputStyle} />
               </div>
             </div>
-            <div>
-              <Label className="text-xs font-semibold">Notes</Label>
-              <Input placeholder="Principal repayment, monthly installment, etc." className="mt-1.5" {...repayForm.register('notes')} />
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground/80">Notes</Label>
+              <Input placeholder="Principal repayment, monthly installment, etc." {...repayForm.register('notes')} className={inputStyle} />
             </div>
-            <div className="flex justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-              <Button type="button" variant="ghost" onClick={() => setRepayDlg(false)}>Cancel</Button>
-              <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl" disabled={createRepayment.isPending}>
-                {createRepayment.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : 'Record Payment'}
+            <div className="flex justify-end gap-2.5 pt-4 border-t border-border/15">
+              <Button type="button" variant="outline" className="rounded-xl h-9 text-xs font-bold" onClick={() => setRepayDlg(false)}>Cancel</Button>
+              <Button type="submit" className="bg-foreground text-background hover:bg-foreground/90 rounded-xl h-9 text-xs font-bold" disabled={createRepayment.isPending}>
+                {createRepayment.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : 'Record Payment'}
               </Button>
             </div>
           </form>
@@ -209,143 +212,119 @@ export function BankLoansTab() {
       </Dialog>
 
       {isLoading ? (
-        <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-zinc-400" /></div>
+        <div className="flex justify-center p-12"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="grid grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 gap-4">
           {(loans || []).map(loan => {
-            const progress = loan.loanAmount > 0 ? (loan.spent / loan.loanAmount) * 100 : 0;
             const outstanding = loan.outstandingDebt ?? loan.loanAmount;
             
             return (
-              <Card key={loan.id} className="overflow-hidden border-zinc-200 dark:border-zinc-800 rounded-3xl bg-white dark:bg-zinc-950 hover:shadow-xl transition-all duration-300">
-                <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500" />
-                <CardContent className="p-6 space-y-6">
+              <Card key={loan.id} className="overflow-hidden glass-panel border-border/30 rounded-2xl relative shadow-panel text-left hover:border-border/60 transition-all duration-300">
+                <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500" />
+                <CardContent className="p-5 space-y-4">
                   <div className="flex justify-between items-start flex-wrap gap-4">
                     <div>
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <Building className="w-5 h-5 text-indigo-500" />
-                        <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-100">{loan.bankName}</h3>
+                      <div className="flex items-center gap-2 mb-1.5 select-none">
+                        <Building className="w-4.5 h-4.5 text-indigo-500" />
+                        <h3 className="font-bold text-[18px] lg:text-[20px] text-foreground">{loan.bankName}</h3>
                       </div>
-                      <span className="text-xs text-zinc-500 font-semibold bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded-lg">
+                      <span className="text-[11px] text-muted-foreground/60 font-semibold bg-accent/40 border border-border/25 px-2.5 py-0.5 rounded-lg select-none font-mono">
                         Received: {new Date(loan.receivedDate).toLocaleDateString()} • {loan.interestRate}% Interest
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${
-                        loan.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-500' : 
-                        loan.status === 'PAID_OFF' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-450' :
-                        'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-450'
+                    <div className="flex items-center gap-2 select-none">
+                      <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wider font-mono ${
+                        loan.status === 'ACTIVE' ? 'bg-success-subtle/10 border border-success/25 text-success' : 
+                        loan.status === 'PAID_OFF' ? 'bg-info-subtle/10 border border-info/25 text-info' :
+                        'bg-danger-subtle/10 border border-danger/25 text-danger'
                       }`}>
                         {loan.status.replace('_', ' ')}
                       </span>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-400 hover:text-rose-600 hover:bg-rose-50/50" onClick={() => delLoan.mutate(loan.id)}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-danger/60 hover:text-danger hover:bg-danger-subtle rounded-lg" onClick={() => delLoan.mutate(loan.id)}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
 
                   {/* Financial Grid */}
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 p-4 rounded-xl bg-accent/15 border border-border/20 font-semibold select-none">
                     <div>
-                      <p className="text-xs uppercase font-black text-zinc-400 mb-1 tracking-wider">Total Loan Facility</p>
-                      <p className="font-extrabold text-sm text-zinc-800 dark:text-zinc-200">{fmt(loan.loanAmount)}</p>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground/50 mb-0.5 tracking-wider font-mono">Total Facility</p>
+                      <p className="text-[15px] font-bold text-foreground font-mono">{fmt(loan.loanAmount)}</p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase font-black text-amber-500 mb-1 tracking-wider">Total Spent (Drawn)</p>
-                      <p className="font-extrabold text-sm text-amber-600">{fmt(loan.spent)}</p>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground/50 mb-0.5 tracking-wider font-mono">Outstanding</p>
+                      <p className="text-[15px] font-bold text-foreground font-mono">{fmt(outstanding)}</p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase font-black text-indigo-500 mb-1 tracking-wider">Remaining Balance</p>
-                      <p className="font-extrabold text-sm text-indigo-650">{fmt(loan.balance)}</p>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground/50 mb-0.5 tracking-wider font-mono">Advances Spent</p>
+                      <p className="text-[15px] font-bold text-success font-mono">{fmt(loan.spent ?? 0)}</p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase font-black text-emerald-500 mb-1 tracking-wider">Total Repaid</p>
-                      <p className="font-extrabold text-sm text-emerald-600">{fmt(loan.repaid || 0)}</p>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground/50 mb-0.5 tracking-wider font-mono">Purchases Spent</p>
+                      <p className="text-[15px] font-bold text-danger font-mono">{fmt(loan.spentPurchases ?? 0)}</p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase font-black text-rose-500 mb-1 tracking-wider">Outstanding Debt</p>
-                      <p className="font-extrabold text-base text-rose-600">{fmt(outstanding)}</p>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground/50 mb-0.5 tracking-wider font-mono">Repaid Amount</p>
+                      <p className="text-[15px] font-bold text-info font-mono">{fmt(loan.repaidAmount ?? 0)}</p>
                     </div>
                   </div>
 
-                  {/* Progress Indicator */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs font-bold">
-                      <span className="text-zinc-500 uppercase tracking-wider text-xs">Fund Drawdown Utilization</span>
-                      <span className="text-indigo-600 dark:text-indigo-400">{progress.toFixed(1)}%</span>
-                    </div>
-                    <div className="h-2.5 w-full bg-zinc-200/50 dark:bg-zinc-800/50 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-emerald-500 to-indigo-600 rounded-full transition-all duration-500" 
-                        style={{ width: `${Math.min(progress, 100)}%` }} 
-                      />
-                    </div>
-                  </div>
+                  {loan.notes && (
+                    <p className="text-[13px] text-muted-foreground font-semibold leading-relaxed">{loan.notes}</p>
+                  )}
 
-                  {/* Actions Bar */}
-                  <div className="flex gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                  {/* Accordion / Details toggle */}
+                  <div className="pt-2 border-t border-border/15 flex items-center justify-between gap-4 select-none">
                     <Button 
-                      size="sm" 
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md shadow-emerald-500/10"
-                      onClick={() => handleOpenRepay(loan.id)}
-                    >
-                      <Coins className="w-3.5 h-3.5 mr-1.5" />
-                      Record Repayment
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="text-xs font-bold rounded-xl border-zinc-200/80 hover:bg-zinc-50"
+                      variant="ghost" 
+                      className="text-xs font-bold hover:bg-accent/40 text-muted-foreground hover:text-foreground rounded-lg h-8 px-2.5 flex items-center gap-1.5"
                       onClick={() => setExpandedLoanId(expandedLoanId === loan.id ? null : loan.id)}
                     >
-                      <History className="w-3.5 h-3.5 mr-1.5" />
-                      {expandedLoanId === loan.id ? 'Hide Repayments' : 'Repayment History'}
+                      <History className="w-3.5 h-3.5" />
+                      {expandedLoanId === loan.id ? 'Hide Statement' : 'View Statement'}
                     </Button>
+
+                    {loan.status === 'ACTIVE' && (
+                      <Button className="bg-foreground text-background hover:bg-foreground/90 font-bold h-8 px-3 rounded-lg text-xs shadow-sm flex items-center gap-1" onClick={() => handleOpenRepay(loan.id)}>
+                        <Coins className="w-3.5 h-3.5" /> Record Repayment
+                      </Button>
+                    )}
                   </div>
 
-                  {/* Repayment History Dropdown */}
+                  {/* Expanded Repayments Log */}
                   {expandedLoanId === loan.id && (
-                    <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-850 space-y-3 animate-in slide-in-from-top-2">
-                      <h4 className="text-xs font-extrabold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <History className="w-3.5 h-3.5" /> Repayment Transactions
-                      </h4>
+                    <div className="pt-4 border-t border-border/15 space-y-3.5">
+                      <h4 className="text-[13px] font-bold text-foreground">Facility Repayment Statement</h4>
                       <div className="overflow-x-auto">
-                        <table className="w-full text-xs text-left">
+                        <table className="w-full text-[15px] text-left font-semibold">
                           <thead>
-                            <tr className="border-b border-zinc-200 dark:border-zinc-800 text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                              <th className="pb-2">Payment Date</th>
-                              <th className="pb-2">Reference No.</th>
+                            <tr className="border-b border-border/25 text-muted-foreground/50 font-bold uppercase tracking-wider text-[10px] font-mono select-none">
+                              <th className="pb-2">Date</th>
+                              <th className="pb-2">Reference</th>
                               <th className="pb-2">Notes</th>
-                              <th className="pb-2 text-right">Amount</th>
-                              <th className="pb-2 text-right"></th>
+                              <th className="pb-2 text-right">Repayment Out</th>
+                              <th className="pb-2 pr-2 text-right">Actions</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {loan.repayments && loan.repayments.length > 0 ? (
-                              loan.repayments.map((rep: any) => (
-                                <tr key={rep.id} className="border-b border-zinc-100 dark:border-zinc-900 last:border-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/10">
-                                  <td className="py-2.5 font-medium text-zinc-700 dark:text-zinc-300">
-                                    {new Date(rep.paymentDate).toLocaleDateString()}
-                                  </td>
-                                  <td className="py-2.5 text-zinc-500 font-semibold">{rep.referenceNo || 'N/A'}</td>
-                                  <td className="py-2.5 text-zinc-500">{rep.notes || '—'}</td>
-                                  <td className="py-2.5 text-right font-bold text-emerald-600">{fmt(Number(rep.amount))}</td>
-                                  <td className="py-2.5 text-right">
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className="h-6 w-6 text-rose-400 hover:text-rose-600 hover:bg-rose-50"
-                                      onClick={() => deleteRepayment.mutate(rep.id)}
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </Button>
-                                  </td>
-                                </tr>
-                              ))
-                            ) : (
+                            {(loan.repayments || []).map((r: any) => (
+                              <tr key={r.id} className="border-b border-border/15 last:border-0 hover:bg-accent/15 transition-colors">
+                                <td className="py-2 text-muted-foreground/80 font-mono">{new Date(r.paymentDate).toLocaleDateString()}</td>
+                                <td className="py-2 text-foreground font-mono">{r.referenceNo || '—'}</td>
+                                <td className="py-2 text-muted-foreground/75 font-normal">{r.notes || '—'}</td>
+                                <td className="py-2 text-right font-black text-info font-mono">{fmt(r.amount)}</td>
+                                <td className="py-2 pr-2 text-right">
+                                  <button className="text-muted-foreground/60 hover:text-danger p-1 transition-colors rounded hover:bg-danger/10" onClick={() => deleteRepayment.mutate(r.id)}>
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                            {(!loan.repayments || loan.repayments.length === 0) && (
                               <tr>
-                                <td colSpan={5} className="py-6 text-center text-zinc-400 italic">
-                                  No repayments recorded yet for this loan.
+                                <td colSpan={5} className="py-6 text-center text-muted-foreground/60 italic text-[15px] font-normal select-none">
+                                  No repayments have been recorded for this facility.
                                 </td>
                               </tr>
                             )}
@@ -359,10 +338,10 @@ export function BankLoansTab() {
             );
           })}
           {(!loans || loans.length === 0) && (
-            <div className="py-16 text-center text-zinc-500 flex flex-col items-center border-2 border-dashed border-zinc-350 dark:border-zinc-800 rounded-3xl bg-zinc-50/20">
-              <Landmark className="w-10 h-10 text-zinc-300 dark:text-zinc-700 mb-3 animate-bounce" />
-              <p className="font-bold text-sm text-zinc-700 dark:text-zinc-350">No bank loans registered.</p>
-              <p className="text-xs text-zinc-500 mt-1">Add a loan to track external financing and project drawdowns.</p>
+            <div className="flex flex-col items-center justify-center py-16 text-center glass-panel border-border/30 rounded-2xl select-none">
+              <Landmark className="w-8 h-8 text-muted-foreground/20 mb-3 animate-pulse-soft" />
+              <p className="text-sm font-bold text-foreground mb-1">No Bank Loan Records</p>
+              <p className="text-xs text-muted-foreground font-semibold max-w-xs leading-relaxed">Add a new bank loan facility to record external debt capital allocations.</p>
             </div>
           )}
         </div>

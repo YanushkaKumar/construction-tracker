@@ -41,6 +41,7 @@ model Company {
   assets        Asset[]
   bankLoans     BankLoan[]
   subcontractors Subcontractor[]
+  fundingSources FundingSource[]
 
   @@map("companies")
 }

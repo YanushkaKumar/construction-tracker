@@ -23,10 +23,4 @@ export class AttendanceController {
   findByProject(@Param('projectId') projectId: string, @Query('date') date?: string) {
     return this.attendanceService.findByProject(projectId, date);
   }
-
-  @Get('workers/payroll-summary')
-  @ApiOperation({ summary: 'Get payroll summary' })
-  payrollSummary(@CompanyId() companyId: string, @Query('startDate') startDate: string, @Query('endDate') endDate: string) {
-    return this.attendanceService.getPayrollSummary(companyId, startDate, endDate);
-  }
 }

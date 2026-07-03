@@ -5,7 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   Building2, MapPin, User, Calendar, ArrowLeft, Phone, Mail, 
-  Plus, Loader2, CheckSquare, FileSpreadsheet, Landmark, AlertCircle
+  Plus, Loader2, CheckSquare, FileSpreadsheet, Landmark, AlertCircle,
+  Clock, ShieldAlert, Sparkles, TrendingUp
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
 import { BOQTab } from './components/BOQTab';
 import { DonutChart, ProgressBar } from '@/components/ui/custom-charts';
+import { cn } from '@/lib/utils';
 
 interface ProjectMember {
   id: string;
@@ -43,6 +45,9 @@ interface ProjectDetails {
   startDate?: string;
   endDate?: string;
   members: ProjectMember[];
+  totalAdvance?: number;
+  totalSpent?: number;
+  remainingAdvance?: number;
   _count: {
     tasks: number;
     expenses: number;
@@ -73,7 +78,7 @@ export default function ProjectDetailsPage() {
   const { id } = useParams() as { id: string };
   const [activeTab, setActiveTab] = useState<string>('overview');
 
-  const { data, isLoading, error } = useQuery<ProjectDetails>({
+  const { data: project, isLoading } = useQuery<ProjectDetails>({
     queryKey: ['project', id],
     queryFn: async () => {
       const response = await apiClient.get(`/projects/${id}`);
@@ -100,14 +105,12 @@ export default function ProjectDetailsPage() {
     retry: 1,
   });
 
-  const project = data;
-
   if (isLoading || !project) {
     return (
-      <div className="flex h-[50vh] items-center justify-center">
+      <div className="flex h-[50vh] items-center justify-center font-semibold">
         <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          <span className="text-caption">Loading project workspace…</span>
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <span className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground/60 font-mono">Loading project workspace…</span>
         </div>
       </div>
     );
@@ -147,91 +150,132 @@ export default function ProjectDetailsPage() {
   const meta = statusMeta[project.status] || { label: project.status, dotClass: '' };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12 text-left stagger-children">
+    <div className="space-y-4 pb-12 text-left stagger-children">
       {/* ═══ Header/Navigation ═══ */}
-      <div className="space-y-3">
-        <Link href="/projects" className="inline-flex items-center text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
+      <div className="flex flex-col gap-2 border-b border-border/25 pb-4">
+        <Link href="/projects" className="inline-flex items-center text-[13px] font-bold uppercase tracking-wider text-muted-foreground/60 hover:text-foreground transition-colors select-none font-mono">
+          <ArrowLeft className="w-4 h-4 mr-1.5" />
           Back to Projects
         </Link>
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          <div className="text-left">
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-label text-muted-foreground/50">{project.code}</span>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="text-left select-none">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[13px] font-bold text-muted-foreground/50 font-mono">{project.code}</span>
               <div className="flex items-center gap-1.5">
                 <span className={`status-dot ${meta.dotClass}`} />
-                <span className="text-[10px] font-medium text-muted-foreground">{meta.label}</span>
+                <span className="text-[13px] font-semibold text-muted-foreground">{meta.label}</span>
               </div>
             </div>
-            <h1 className="text-display text-foreground">{project.name}</h1>
+            <h1 className="text-3xl md:text-4xl lg:text-[40px] font-semibold tracking-tight text-foreground/90">{project.name}</h1>
           </div>
         </div>
       </div>
 
       {/* ═══ Overview Layout ═══ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Core Summary */}
-        <Card className="lg:col-span-2">
-          <CardContent className="p-6 space-y-6">
+        <Card className="lg:col-span-2 glass-panel border-border/30 shadow-panel">
+          <CardContent className="p-5 space-y-4 font-semibold">
             <div>
-              <h3 className="text-label text-muted-foreground/60 mb-2">Project Summary</h3>
-              <p className="text-xs text-foreground/80 leading-relaxed">{project.description || 'No description provided.'}</p>
+              <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/60 mb-1.5 select-none">Project Scope</h3>
+              <p className="text-[15px] lg:text-[16px] text-foreground/80 leading-relaxed">{project.description || 'No description provided.'}</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
-              <ProgressBar value={project.progressPercent} label="Construction Progress" showLabel height={4} />
-              <ProgressBar
-                value={budgetPercent}
-                label="Financial Budget Spent"
-                showLabel
-                height={4}
-                color={budgetPercent > 90 ? 'oklch(0.63 0.22 25)' : undefined}
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1.5">
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-[13px] text-muted-foreground select-none">
+                  <span>Construction Progress</span>
+                  <span className="text-foreground font-mono">{project.progressPercent}%</span>
+                </div>
+                <ProgressBar value={project.progressPercent} height={4} />
+              </div>
+              
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-[13px] text-muted-foreground select-none">
+                  <span>Financial Budget Spent ({budgetPercent}%)</span>
+                  <span className="text-foreground font-mono">LKR {project.budgetActual.toLocaleString()} / {project.budgetEstimate.toLocaleString()}</span>
+                </div>
+                <ProgressBar
+                  value={budgetPercent}
+                  height={4}
+                  color={budgetPercent > 90 ? 'oklch(0.63 0.22 25)' : undefined}
+                />
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-border/40">
-              <div>
-                <span className="text-label text-muted-foreground/50 text-[9px]">Start Date</span>
-                <p className="text-xs font-semibold text-foreground mt-0.5">{project.startDate ? new Date(project.startDate).toLocaleDateString() : 'N/A'}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-4 border-t border-border/15 select-none">
+              <div className="p-2.5 bg-accent/15 border border-border/20 rounded-xl">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50 font-mono">Start Date</span>
+                <p className="text-[13px] font-bold text-foreground mt-0.5">{project.startDate ? new Date(project.startDate).toLocaleDateString() : 'N/A'}</p>
               </div>
-              <div>
-                <span className="text-label text-muted-foreground/50 text-[9px]">Completion Target</span>
-                <p className="text-xs font-semibold text-foreground mt-0.5">{project.endDate ? new Date(project.endDate).toLocaleDateString() : 'N/A'}</p>
+              <div className="p-2.5 bg-accent/15 border border-border/20 rounded-xl">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50 font-mono">Target Date</span>
+                <p className="text-[13px] font-bold text-foreground mt-0.5">{project.endDate ? new Date(project.endDate).toLocaleDateString() : 'N/A'}</p>
               </div>
-              <div>
-                <span className="text-label text-muted-foreground/50 text-[9px]">Budget Limit</span>
-                <p className="text-xs font-semibold text-foreground mt-0.5 text-financial">LKR {(project.budgetEstimate / 1000000).toFixed(1)}M</p>
+              <div className="p-2.5 bg-accent/15 border border-border/20 rounded-xl">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50 font-mono">Budget Limit</span>
+                <p className="text-[13px] font-bold text-foreground mt-0.5 text-financial font-mono">LKR {(project.budgetEstimate / 1000000).toFixed(1)}M</p>
               </div>
-              <div>
-                <span className="text-label text-muted-foreground/50 text-[9px]">Expenses Logged</span>
-                <p className="text-xs font-semibold text-foreground mt-0.5 text-financial">LKR {(project.budgetActual / 1000000).toFixed(1)}M</p>
+              <div className="p-2.5 bg-accent/15 border border-border/20 rounded-xl">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50 font-mono">Expenses Logged</span>
+                <p className="text-[13px] font-bold text-foreground mt-0.5 text-financial font-mono">LKR {(project.budgetActual / 1000000).toFixed(1)}M</p>
+              </div>
+            </div>
+
+            {/* Funding Status Sub-banner */}
+            <div className="mt-4 pt-4 border-t border-border/15 grid grid-cols-1 sm:grid-cols-3 gap-3.5 select-none text-left">
+              <div className="p-3 bg-indigo-500/5 border border-indigo-500/15 rounded-xl">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-indigo-400 font-mono">Funding Received (Advances)</span>
+                <p className="text-[15px] font-black text-indigo-400 mt-1 font-mono leading-none">
+                  LKR {(project.totalAdvance || 0).toLocaleString()}
+                </p>
+              </div>
+              <div className="p-3 bg-danger-subtle/10 border border-danger/15 rounded-xl">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-danger font-mono font-semibold">Funding Consumed</span>
+                <p className="text-[15px] font-black text-danger mt-1 font-mono leading-none">
+                  LKR {(project.totalSpent || 0).toLocaleString()}
+                </p>
+              </div>
+              <div className={cn(
+                'p-3 border rounded-xl',
+                (project.remainingAdvance || 0) >= 0 
+                  ? 'bg-success-subtle/10 border-success/15' 
+                  : 'bg-danger-subtle/10 border-danger/15'
+              )}>
+                <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 font-mono">Funding Remaining</span>
+                <p className={cn(
+                  'text-[15px] font-black mt-1 font-mono leading-none',
+                  (project.remainingAdvance || 0) >= 0 ? 'text-success' : 'text-danger'
+                )}>
+                  LKR {(project.remainingAdvance || 0).toLocaleString()}
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Stakeholders & Client */}
-        <Card>
-          <CardContent className="p-6 space-y-5">
-            <h3 className="text-label text-muted-foreground/60">Contact & Stakeholders</h3>
+        <Card className="glass-panel border-border/30 shadow-panel">
+          <CardContent className="p-5 space-y-4 font-semibold text-left">
+            <h3 className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground/60 select-none">Contact & Crew</h3>
             
-            <div className="p-3.5 bg-accent/40 rounded-xl space-y-2 border border-border/30">
-              <div className="text-label text-muted-foreground/50 text-[9px] flex items-center gap-1.5">
+            <div className="p-3 bg-accent/20 rounded-xl space-y-2 border border-border/25">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50 flex items-center gap-1.5 select-none font-mono">
                 <User className="w-3.5 h-3.5 text-muted-foreground/75" />
                 Client details
               </div>
-              <div className="font-semibold text-xs text-foreground">{project.clientName || 'N/A'}</div>
+              <div className="font-bold text-[15px] text-foreground">{project.clientName || 'N/A'}</div>
               {(project.clientPhone || project.clientEmail) && (
-                <div className="space-y-1 text-[10px] text-muted-foreground/70 border-t border-border/30 pt-2 mt-1">
+                <div className="space-y-1 text-[13px] text-muted-foreground/75 border-t border-border/15 pt-2 mt-1 font-medium font-mono select-none">
                   {project.clientPhone && (
                     <div className="flex items-center gap-1.5">
-                      <Phone className="w-3 h-3 text-muted-foreground/40" />
+                      <Phone className="w-3.5 h-3.5 text-muted-foreground/45" />
                       <span>{project.clientPhone}</span>
                     </div>
                   )}
                   {project.clientEmail && (
                     <div className="flex items-center gap-1.5">
-                      <Mail className="w-3 h-3 text-muted-foreground/40" />
+                      <Mail className="w-3.5 h-3.5 text-muted-foreground/45" />
                       <span>{project.clientEmail}</span>
                     </div>
                   )}
@@ -239,20 +283,20 @@ export default function ProjectDetailsPage() {
               )}
             </div>
 
-            <div className="space-y-2">
-              <span className="text-label text-muted-foreground/50 text-[9px]">Assigned Site Crew</span>
-              <div className="space-y-1.5">
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50 select-none font-mono">Assigned Site Crew</span>
+              <div className="space-y-1 pr-1 max-h-[120px] overflow-y-auto scrollbar-thin">
                 {project.members.length > 0 ? project.members.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between text-xs p-2 bg-accent/30 rounded-lg">
-                    <span className="font-medium text-foreground/80">
+                  <div key={member.id} className="flex items-center justify-between text-[13px] p-2 bg-accent/15 border border-border/20 rounded-xl font-bold">
+                    <span className="text-foreground/80">
                       {member.user.firstName} {member.user.lastName}
                     </span>
-                    <span className="text-[9px] font-semibold px-2 py-0.5 rounded bg-card text-muted-foreground uppercase border border-border/20">
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-card text-muted-foreground uppercase border border-border/15 tracking-wider font-mono">
                       {member.projectRole}
                     </span>
                   </div>
                 )) : (
-                  <p className="text-caption text-center py-2">No site crew assigned</p>
+                  <p className="text-[13px] italic text-center py-2 text-muted-foreground font-normal">No crew assigned</p>
                 )}
               </div>
             </div>
@@ -261,7 +305,7 @@ export default function ProjectDetailsPage() {
       </div>
 
       {/* ═══ Segmented View Tabs ═══ */}
-      <div className="flex items-center bg-accent/40 p-1 rounded-xl border border-border/40 overflow-x-auto gap-1">
+      <div className="flex items-center bg-accent/25 p-1 rounded-xl border border-border/25 overflow-x-auto gap-1 select-none">
         {[
           { id: 'overview', label: 'Overview', icon: Building2 },
           { id: 'boq', label: 'BOQ Estimates', icon: FileSpreadsheet },
@@ -275,13 +319,13 @@ export default function ProjectDetailsPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[15px] font-semibold transition-all duration-200 ${
                 isActive 
-                  ? 'bg-card text-foreground border border-border/40 shadow-sm' 
+                  ? 'bg-card text-foreground border border-border/20 shadow-sm' 
                   : 'text-muted-foreground hover:text-foreground border border-transparent'
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon className="w-4 h-4" />
               <span>{tab.label}</span>
             </button>
           );
@@ -289,56 +333,55 @@ export default function ProjectDetailsPage() {
       </div>
 
       {/* ═══ Tab Panel Content ═══ */}
-      <div className="pt-2">
+      <div className="pt-1">
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
-              <CardContent className="p-6 space-y-4">
-                <h3 className="text-label text-muted-foreground/60">Location & Mapping</h3>
-                <div className="flex items-start gap-2 text-xs">
-                  <MapPin className="w-4 h-4 text-muted-foreground/40 flex-shrink-0 mt-0.5" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <Card className="lg:col-span-2 glass-panel border-border/30">
+              <CardContent className="p-5 space-y-4 font-semibold text-left">
+                <h3 className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground/60 text-left select-none">Location & Geotags</h3>
+                <div className="flex items-start gap-2.5 text-[15px]">
+                  <MapPin className="w-4.5 h-4.5 text-muted-foreground/45 flex-shrink-0 mt-0.5" />
                   <div>
-                    <div className="font-semibold text-foreground">{project.location || 'Colombo, Sri Lanka'}</div>
-                    <span className="text-caption">Coordinates: 6.9107° N, 79.8612° E</span>
+                    <div className="font-bold text-foreground">{project.location || 'Colombo, Sri Lanka'}</div>
+                    <span className="text-[11px] text-muted-foreground/60 font-semibold font-mono">Geocoded Coordinates: 6.9107° N, 79.8612° E</span>
                   </div>
                 </div>
-                <div className="aspect-video bg-accent/10 rounded-xl overflow-hidden relative flex items-center justify-center border border-border/40">
+                <div className="aspect-video bg-accent/10 rounded-xl overflow-hidden relative flex items-center justify-center border border-border/25 select-none">
                   <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-foreground/5 via-transparent to-transparent opacity-60" />
-                  <span className="text-[10px] text-muted-foreground/50 font-semibold z-10 uppercase tracking-wider">Map View Interface</span>
+                  <span className="text-[10px] text-muted-foreground/50 font-bold z-10 uppercase tracking-wider font-mono">Map View Interface Connected</span>
                 </div>
               </CardContent>
             </Card>
 
-            <div className="space-y-6">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-label text-muted-foreground/60 mb-5">Expense Breakdown</h3>
+            <div className="space-y-4">
+              <Card className="glass-panel border-border/30">
+                <CardContent className="p-5 font-semibold">
                   {chartData.length > 0 ? (
-                    <DonutChart data={chartData} subtitle="Spent" />
+                    <DonutChart data={chartData} title="Capital Allocation" subtitle="Spent" />
                   ) : (
-                    <div className="py-12 text-center text-caption uppercase">
+                    <div className="py-12 text-center text-[10px] text-muted-foreground uppercase font-bold tracking-wider select-none font-mono">
                       No expenses logged yet
                     </div>
                   )}
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardContent className="p-6 space-y-4">
-                  <h3 className="text-label text-muted-foreground/60">Logs Summary</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3.5 bg-accent/30 rounded-xl border border-border/30">
-                      <div className="text-xl font-bold text-foreground text-financial">{project._count.tasks}</div>
-                      <div className="text-[9px] text-muted-foreground/50 font-bold uppercase mt-0.5">Tasks Scheduled</div>
+              <Card className="glass-panel border-border/30">
+                <CardContent className="p-5 space-y-4 font-semibold text-left">
+                  <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/60 select-none">Operational Logs</h3>
+                  <div className="grid grid-cols-2 gap-3.5 select-none">
+                    <div className="p-3 bg-accent/15 border border-border/20 rounded-xl text-left font-mono">
+                      <div className="text-[20px] font-semibold text-foreground/90">{project._count.tasks}</div>
+                      <div className="text-[10px] text-muted-foreground/50 font-semibold uppercase tracking-wider mt-0.5">Tasks Scheduled</div>
                     </div>
-                    <div className="p-3.5 bg-accent/30 rounded-xl border border-border/30">
-                      <div className="text-xl font-bold text-foreground text-financial">{project._count.dailyReports}</div>
-                      <div className="text-[9px] text-muted-foreground/50 font-bold uppercase mt-0.5">Logs Filed</div>
+                    <div className="p-3 bg-accent/15 border border-border/20 rounded-xl text-left font-mono">
+                      <div className="text-[20px] font-semibold text-foreground/90">{project._count.dailyReports}</div>
+                      <div className="text-[10px] text-muted-foreground/50 font-semibold uppercase tracking-wider mt-0.5">Daily Logs Filed</div>
                     </div>
                   </div>
-                  <div className="text-[10px] text-muted-foreground/70 p-3.5 bg-accent/40 border border-border/40 rounded-xl flex gap-2 leading-relaxed">
-                    <AlertCircle className="w-3.5 h-3.5 text-muted-foreground/60 flex-shrink-0 mt-0.5" />
-                    <p>Site engineers must log worker registers daily by 5:00 PM for audit purposes.</p>
+                  <div className="text-[13px] text-muted-foreground/75 p-3 bg-accent/20 border border-border/20 rounded-xl flex gap-2 leading-relaxed font-semibold text-left select-none">
+                    <AlertCircle className="w-4 h-4 text-muted-foreground/65 flex-shrink-0 mt-0.5" />
+                    <p>Subcontractors and crews must update task timelines daily before site checks.</p>
                   </div>
                 </CardContent>
               </Card>
@@ -351,49 +394,49 @@ export default function ProjectDetailsPage() {
         )}
 
         {activeTab === 'tasks' && (
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="text-label text-muted-foreground/60 mb-4">Task Schedule</h3>
+          <Card className="glass-panel border-border/30 shadow-panel text-left">
+            <CardContent className="p-5 font-semibold">
+              <h3 className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground/60 mb-4 select-none">Site Task Schedule</h3>
               <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left">
+                <table className="w-full text-[15px] text-left">
                   <thead>
-                    <tr className="border-b border-border/40 text-muted-foreground/60 font-semibold uppercase tracking-wider">
-                      <th className="pb-3 font-semibold">Task Detail</th>
-                      <th className="pb-3 font-semibold">Status</th>
-                      <th className="pb-3 font-semibold">Priority</th>
-                      <th className="pb-3 font-semibold">Assignee</th>
-                      <th className="pb-3 font-semibold">Due Date</th>
+                    <tr className="border-b border-border/25 text-muted-foreground/50 font-semibold uppercase tracking-wider text-[11px] select-none font-mono">
+                      <th className="pb-2.5 pl-2 font-bold">Task Detail</th>
+                      <th className="pb-2.5 font-bold">Status</th>
+                      <th className="pb-2.5 font-bold">Priority</th>
+                      <th className="pb-2.5 font-bold">Assignee</th>
+                      <th className="pb-2.5 pr-2 font-bold">Due Date</th>
                     </tr>
                   </thead>
                   <tbody>
                     {isTasksLoading ? (
                       <tr><td colSpan={5} className="py-8 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" /></td></tr>
                     ) : tasksList.length > 0 ? tasksList.map((task: any) => (
-                      <tr key={task.id} className="border-b border-border/20 last:border-0 hover:bg-accent/20 transition-colors">
-                        <td className="py-3.5 font-medium text-foreground">{task.title}</td>
-                        <td className="py-3.5">
-                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
-                            task.status === 'COMPLETED' ? 'bg-success-subtle text-success' :
-                            task.status === 'IN_PROGRESS' ? 'bg-warning-subtle text-warning' :
-                            'bg-accent text-muted-foreground'
+                      <tr key={task.id} className="border-b border-border/15 last:border-0 hover:bg-accent/15 transition-colors font-bold">
+                        <td className="py-3 pl-2 text-foreground">{task.title}</td>
+                        <td className="py-3">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wide uppercase font-mono ${
+                            task.status === 'COMPLETED' ? 'bg-success-subtle/10 border border-success/25 text-success' :
+                            task.status === 'IN_PROGRESS' ? 'bg-warning-subtle/10 border border-warning/25 text-warning' :
+                            'bg-accent/40 border border-border/25 text-muted-foreground'
                           }`}>
                             {task.status}
                           </span>
                         </td>
-                        <td className="py-3.5">
-                          <span className={`text-[9px] font-bold uppercase tracking-wider ${
+                        <td className="py-3">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider font-mono ${
                             task.priority === 'URGENT' ? 'text-danger' :
                             task.priority === 'HIGH' ? 'text-warning' :
-                            'text-muted-foreground'
+                            'text-muted-foreground/75'
                           }`}>
                             {task.priority}
                           </span>
                         </td>
-                        <td className="py-3.5 text-muted-foreground font-medium">{task.assignee ? `${task.assignee.firstName} ${task.assignee.lastName}` : 'Unassigned'}</td>
-                        <td className="py-3.5 text-muted-foreground font-medium">{new Date(task.dueDate).toLocaleDateString()}</td>
+                        <td className="py-3 text-muted-foreground/80 font-semibold">{task.assignee ? `${task.assignee.firstName} ${task.assignee.lastName}` : 'Unassigned'}</td>
+                        <td className="py-3 pr-2 text-muted-foreground/80 font-mono font-semibold">{new Date(task.dueDate).toLocaleDateString()}</td>
                       </tr>
                     )) : (
-                      <tr><td colSpan={5} className="py-8 text-center text-muted-foreground text-xs italic">No tasks assigned yet.</td></tr>
+                      <tr><td colSpan={5} className="py-8 text-center text-muted-foreground italic text-[15px] font-normal">No tasks registered in this workspace yet.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -403,46 +446,46 @@ export default function ProjectDetailsPage() {
         )}
 
         {activeTab === 'logs' && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {isLogsLoading ? (
-              <div className="flex justify-center p-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+              <div className="flex justify-center p-12"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
             ) : dailyLogsList.length > 0 ? dailyLogsList.map((log: any) => (
-              <Card key={log.id}>
-                <CardContent className="p-6 space-y-3">
-                  <div className="flex items-center justify-between text-xs border-b border-border/30 pb-2">
-                    <span className="font-semibold text-foreground flex items-center gap-1.5">
-                      <FileSpreadsheet className="w-3.5 h-3.5 text-muted-foreground/60" />
+              <Card key={log.id} className="glass-panel border-border/30 text-left">
+                <CardContent className="p-4 space-y-2.5 font-semibold">
+                  <div className="flex items-center justify-between text-[13px] border-b border-border/15 pb-2.5 select-none">
+                    <span className="font-bold text-foreground flex items-center gap-1.5">
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-muted-foreground/45" />
                       Daily Site Log - {new Date(log.reportDate).toLocaleDateString()}
                     </span>
-                    <span className="text-[10px] text-muted-foreground/60 font-semibold uppercase tracking-wider">{log.weatherCondition || 'Sunny'} • {log.workersOnSite || 0} crew on site</span>
+                    <span className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-wider font-mono">{log.weatherCondition || 'Sunny'} • {log.workersOnSite || 0} active crew</span>
                   </div>
-                  <p className="text-xs text-foreground/80 leading-relaxed font-medium">{log.workSummary}</p>
-                  <div className="text-[9px] text-muted-foreground/50 flex items-center gap-1.5 border-t border-border/20 pt-2 font-bold uppercase tracking-wider">
-                    <span>Logged by: <strong className="text-foreground/80 font-semibold">{log.reporter?.firstName} {log.reporter?.lastName}</strong></span>
+                  <p className="text-[15px] text-foreground/80 leading-relaxed">{log.workSummary}</p>
+                  <div className="text-[10px] text-muted-foreground/50 flex items-center gap-1.5 border-t border-border/15 pt-2 font-bold uppercase tracking-wider select-none font-mono">
+                    <span>Logged by: <strong className="text-foreground/85">{log.reporter?.firstName} {log.reporter?.lastName}</strong></span>
                   </div>
                 </CardContent>
               </Card>
             )) : (
-              <div className="py-12 text-center text-muted-foreground text-xs uppercase tracking-wider font-semibold">
-                No daily logs have been submitted yet.
+              <div className="py-12 text-center text-muted-foreground/65 text-[13px] font-bold uppercase tracking-wider glass-panel border-border/30 rounded-xl select-none font-mono">
+                No daily logs have been submitted.
               </div>
             )}
           </div>
         )}
 
         {activeTab === 'expenses' && (
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="text-label text-muted-foreground/60 mb-4">Ledger & Financials</h3>
+          <Card className="glass-panel border-border/30 shadow-panel text-left">
+            <CardContent className="p-5 font-semibold">
+              <h3 className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground/60 mb-4 select-none">Financial Log Ledger</h3>
               <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left">
+                <table className="w-full text-[15px] text-left">
                   <thead>
-                    <tr className="border-b border-border/40 text-muted-foreground/60 font-semibold uppercase tracking-wider">
-                      <th className="pb-3 font-semibold">Title</th>
-                      <th className="pb-3 font-semibold">Category</th>
-                      <th className="pb-3 font-semibold">Amount (LKR)</th>
-                      <th className="pb-3 font-semibold">Logged Date</th>
-                      <th className="pb-3 font-semibold">Approval</th>
+                    <tr className="border-b border-border/25 text-muted-foreground/50 font-semibold uppercase tracking-wider text-[11px] select-none font-mono">
+                      <th className="pb-2.5 pl-2 font-bold">Item Description</th>
+                      <th className="pb-2.5 font-bold">Allocation Category</th>
+                      <th className="pb-2.5 font-bold">Amount (LKR)</th>
+                      <th className="pb-2.5 font-bold">Logged Date</th>
+                      <th className="pb-2.5 pr-2 font-bold">Verification</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -455,18 +498,18 @@ export default function ProjectDetailsPage() {
                       const amount = allocation ? Number(allocation.amount) : Number(exp.totalAmount);
                       
                       return (
-                        <tr key={exp.id} className="border-b border-border/20 last:border-0 hover:bg-accent/20 transition-colors">
-                          <td className="py-3.5">
-                            <div className="text-left">
-                              <div className="font-semibold text-foreground">{exp.title}</div>
-                              <span className="text-[10px] text-muted-foreground/50 font-medium">By {exp.purchasedBy?.firstName} {exp.purchasedBy?.lastName}</span>
+                        <tr key={exp.id} className="border-b border-border/15 last:border-0 hover:bg-accent/15 transition-colors font-bold">
+                          <td className="py-3 pl-2">
+                            <div>
+                              <div className="font-bold text-foreground">{exp.title}</div>
+                              <span className="text-[10px] text-muted-foreground/60 font-semibold font-mono">By {exp.purchasedBy?.firstName} {exp.purchasedBy?.lastName}</span>
                             </div>
                           </td>
-                          <td className="py-3.5 text-muted-foreground font-semibold uppercase tracking-wider text-[9px]">{catLabel[exp.category] || exp.category}</td>
-                          <td className="py-3.5 font-bold text-foreground text-financial">LKR {amount.toLocaleString()}</td>
-                          <td className="py-3.5 text-muted-foreground font-medium">{new Date(exp.purchaseDate).toLocaleDateString()}</td>
-                          <td className="py-3.5">
-                            <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-success-subtle text-success tracking-wider uppercase">
+                          <td className="py-3 text-muted-foreground/75 font-bold uppercase tracking-wider text-[10px] font-mono">{catLabel[exp.category] || exp.category}</td>
+                          <td className="py-3 font-bold text-foreground text-financial font-mono">LKR {amount.toLocaleString()}</td>
+                          <td className="py-3 text-muted-foreground/80 font-semibold font-mono">{new Date(exp.purchaseDate).toLocaleDateString()}</td>
+                          <td className="py-3 pr-2">
+                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-success-subtle/10 border border-success/25 text-success tracking-wider uppercase font-mono select-none">
                               APPROVED
                             </span>
                           </td>
@@ -475,8 +518,8 @@ export default function ProjectDetailsPage() {
                     })}
                     {(!isPurchasesLoading && (!projectPurchases || projectPurchases.length === 0)) && (
                       <tr>
-                        <td colSpan={5} className="py-8 text-center text-muted-foreground text-xs italic">
-                          No expenses recorded yet.
+                        <td colSpan={5} className="py-8 text-center text-muted-foreground italic text-[15px] font-normal">
+                          No budget expenses recorded in this ledger.
                         </td>
                       </tr>
                     )}

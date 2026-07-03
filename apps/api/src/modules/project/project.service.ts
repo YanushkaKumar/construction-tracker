@@ -59,7 +59,34 @@ export class ProjectService {
       },
     });
     if (!project) throw new NotFoundException('Project not found');
-    return project;
+
+    const advanceAggregate = await this.prisma.projectAdvance.aggregate({
+      where: { projectId: id, status: 'RECEIVED' },
+      _sum: { amount: true }
+    });
+    const totalAdvance = Number(advanceAggregate._sum.amount || 0);
+
+    const purchaseAllocationAggregate = await this.prisma.purchaseAllocation.aggregate({
+      where: { projectId: id },
+      _sum: { amount: true }
+    });
+    const totalPurchaseSpent = Number(purchaseAllocationAggregate._sum.amount || 0);
+
+    const expenseAggregate = await this.prisma.expense.aggregate({
+      where: { projectId: id, status: { in: ['APPROVED', 'PAID'] } },
+      _sum: { amount: true }
+    });
+    const totalExpenseSpent = Number(expenseAggregate._sum.amount || 0);
+
+    const totalSpent = totalPurchaseSpent + totalExpenseSpent;
+    const remainingAdvance = totalAdvance - totalSpent;
+
+    return {
+      ...project,
+      totalAdvance,
+      totalSpent,
+      remainingAdvance,
+    };
   }
 
   async update(id: string, companyId: string, data: any) {
@@ -99,5 +126,10 @@ export class ProjectService {
     ]);
 
     return { taskStats, totalExpenses: expenseStats._sum.amount || 0, workersOnSiteToday: workerCount.length };
+  }
+
+  async delete(id: string, companyId: string) {
+    await this.findById(id, companyId);
+    return this.prisma.project.delete({ where: { id } });
   }
 }

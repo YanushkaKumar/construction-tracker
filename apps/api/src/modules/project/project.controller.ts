@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { ProjectService } from './project.service';
@@ -40,6 +40,13 @@ export class ProjectController {
   @ApiOperation({ summary: 'Update project' })
   update(@Param('id') id: string, @CompanyId() companyId: string, @Body() data: any) {
     return this.projectService.update(id, companyId, data);
+  }
+
+  @Delete(':id')
+  @RequirePermissions('projects:manage_assigned')
+  @ApiOperation({ summary: 'Delete a project' })
+  remove(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.projectService.delete(id, companyId);
   }
 
   @Get(':id/stats')

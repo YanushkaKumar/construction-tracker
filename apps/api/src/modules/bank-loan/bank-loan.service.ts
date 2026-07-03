@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { BankLoanStatus } from '@prisma/client';
 
@@ -7,16 +7,34 @@ export class BankLoanService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(companyId: string, data: any) {
-    return this.prisma.bankLoan.create({
-      data: {
-        companyId,
-        bankName: data.bankName,
-        loanAmount: data.loanAmount,
-        interestRate: data.interestRate,
-        receivedDate: new Date(data.receivedDate),
-        status: data.status || BankLoanStatus.ACTIVE,
-        notes: data.notes,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const loan = await tx.bankLoan.create({
+        data: {
+          companyId,
+          bankName: data.bankName,
+          loanAmount: data.loanAmount,
+          interestRate: data.interestRate,
+          receivedDate: new Date(data.receivedDate),
+          status: data.status || BankLoanStatus.ACTIVE,
+          notes: data.notes,
+        },
+      });
+
+      const amt = Number(data.loanAmount);
+      await tx.fundingSource.create({
+        data: {
+          companyId,
+          type: 'BANK_LOAN',
+          name: `${data.bankName} - Loan Facility`,
+          openingBalance: amt,
+          currentBalance: amt,
+          originalAmount: amt,
+          remainingAmount: amt,
+          bankLoanId: loan.id,
+        },
+      });
+
+      return loan;
     });
   }
 
@@ -31,7 +49,13 @@ export class BankLoanService {
           select: { totalAmount: true }
         },
         repayments: {
-          select: { amount: true }
+          select: {
+            id: true,
+            amount: true,
+            paymentDate: true,
+            referenceNo: true,
+            notes: true,
+          }
         }
       },
       orderBy: { receivedDate: 'desc' },
@@ -53,8 +77,9 @@ export class BankLoanService {
         interestRate: Number(loan.interestRate),
         spent,
         repaid,
+        repaidAmount: repaid,
         balance,
-        outstandingDebt
+        outstandingDebt,
       };
     });
   }
@@ -93,21 +118,57 @@ export class BankLoanService {
       interestRate: Number(loan.interestRate),
       spent,
       repaid,
+      repaidAmount: repaid,
       balance,
-      outstandingDebt
+      outstandingDebt,
     };
   }
 
   async update(id: string, companyId: string, data: any) {
-    return this.prisma.bankLoan.update({
-      where: { id, companyId },
-      data,
+    return this.prisma.$transaction(async (tx) => {
+      const loan = await tx.bankLoan.findFirst({ where: { id, companyId } });
+      if (!loan) throw new NotFoundException('Bank loan not found');
+
+      const updated = await tx.bankLoan.update({
+        where: { id, companyId },
+        data,
+      });
+
+      if (data.loanAmount !== undefined) {
+        const source = await tx.fundingSource.findFirst({ where: { bankLoanId: id } });
+        if (source) {
+          const amt = Number(data.loanAmount);
+          const difference = amt - Number(source.originalAmount);
+          await tx.fundingSource.update({
+            where: { id: source.id },
+            data: {
+              originalAmount: amt,
+              openingBalance: amt,
+              currentBalance: Number(source.currentBalance) + difference,
+              remainingAmount: Number(source.remainingAmount) + difference,
+            },
+          });
+        }
+      }
+
+      return updated;
     });
   }
 
   async delete(id: string, companyId: string) {
-    return this.prisma.bankLoan.delete({
-      where: { id, companyId },
+    return this.prisma.$transaction(async (tx) => {
+      const source = await tx.fundingSource.findFirst({ where: { bankLoanId: id } });
+      if (source) {
+        const count = await tx.fundingAllocation.count({ where: { fundingSourceId: source.id } });
+        if (count > 0) {
+          throw new BadRequestException('Cannot delete this bank loan as its funds have already been allocated to expenses');
+        }
+        await tx.fundingSource.delete({ where: { id: source.id } });
+      }
+
+      return tx.bankLoan.delete({
+        where: { id, companyId },
+      });
     });
   }
 
@@ -117,14 +178,57 @@ export class BankLoanService {
     });
     if (!loan) throw new NotFoundException('Bank loan not found');
 
-    return this.prisma.bankLoanRepayment.create({
-      data: {
-        bankLoanId: loanId,
-        amount: data.amount,
-        paymentDate: new Date(data.paymentDate),
-        referenceNo: data.referenceNo || null,
-        notes: data.notes || null,
+    const totalRepaidResult = await this.prisma.bankLoanRepayment.aggregate({
+      where: { bankLoanId: loanId },
+      _sum: { amount: true }
+    });
+    const currentRepaid = Number(totalRepaidResult._sum.amount || 0);
+    const outstanding = Number(loan.loanAmount) - currentRepaid;
+    const repaymentAmount = Number(data.amount);
+
+    if (repaymentAmount > outstanding + 0.01) {
+      throw new BadRequestException(
+        `Repayment amount (LKR ${repaymentAmount.toLocaleString()}) exceeds the outstanding balance (LKR ${outstanding.toLocaleString()})`
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      // Find the first Company Cash funding source to deduct repayment from
+      const companyCash = await tx.fundingSource.findFirst({
+        where: { companyId, type: 'COMPANY_CASH' }
+      });
+      if (companyCash) {
+        if (Number(companyCash.currentBalance) < repaymentAmount) {
+          throw new BadRequestException('Insufficient Company Cash to perform loan repayment');
+        }
+        await tx.fundingSource.update({
+          where: { id: companyCash.id },
+          data: {
+            currentBalance: Number(companyCash.currentBalance) - repaymentAmount,
+            remainingAmount: Number(companyCash.remainingAmount) - repaymentAmount,
+          }
+        });
       }
+
+      const repayment = await tx.bankLoanRepayment.create({
+        data: {
+          bankLoanId: loanId,
+          amount: data.amount,
+          paymentDate: new Date(data.paymentDate),
+          referenceNo: data.referenceNo || null,
+          notes: data.notes || null,
+        }
+      });
+
+      const newTotalRepaid = currentRepaid + repaymentAmount;
+      if (newTotalRepaid >= Number(loan.loanAmount) - 0.01) {
+        await tx.bankLoan.update({
+          where: { id: loanId },
+          data: { status: 'PAID_OFF' }
+        });
+      }
+
+      return repayment;
     });
   }
 
@@ -137,8 +241,41 @@ export class BankLoanService {
     });
     if (!repayment) throw new NotFoundException('Repayment not found');
 
-    return this.prisma.bankLoanRepayment.delete({
-      where: { id: repaymentId }
+    return this.prisma.$transaction(async (tx) => {
+      const deletedRepayment = await tx.bankLoanRepayment.delete({
+        where: { id: repaymentId }
+      });
+
+      // Restore repayment amount to Company Cash
+      const companyCash = await tx.fundingSource.findFirst({
+        where: { companyId, type: 'COMPANY_CASH' }
+      });
+      if (companyCash) {
+        await tx.fundingSource.update({
+          where: { id: companyCash.id },
+          data: {
+            currentBalance: Number(companyCash.currentBalance) + Number(deletedRepayment.amount),
+            remainingAmount: Number(companyCash.remainingAmount) + Number(deletedRepayment.amount),
+          }
+        });
+      }
+
+      const loan = await tx.bankLoan.findUnique({
+        where: { id: deletedRepayment.bankLoanId },
+        include: { repayments: { select: { amount: true } } }
+      });
+
+      if (loan) {
+        const totalRepaid = loan.repayments.reduce((acc, curr) => acc + Number(curr.amount), 0);
+        if (totalRepaid < Number(loan.loanAmount) - 0.01 && loan.status === 'PAID_OFF') {
+          await tx.bankLoan.update({
+            where: { id: loan.id },
+            data: { status: 'ACTIVE' }
+          });
+        }
+      }
+
+      return deletedRepayment;
     });
   }
 }

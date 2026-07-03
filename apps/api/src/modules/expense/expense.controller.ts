@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { ExpenseService } from './expense.service';
@@ -40,5 +40,17 @@ export class ExpenseController {
   @ApiOperation({ summary: 'Reject expense' })
   reject(@Param('id') id: string, @CurrentUser() user: JwtPayload, @Body('reason') reason: string) {
     return this.expenseService.reject(id, user.sub, reason);
+  }
+
+  @Patch('expenses/:id')
+  @ApiOperation({ summary: 'Update an expense' })
+  update(@Param('id') id: string, @CompanyId() companyId: string, @Body() data: any) {
+    return this.expenseService.update(id, companyId, data);
+  }
+
+  @Delete('expenses/:id')
+  @ApiOperation({ summary: 'Delete an expense' })
+  remove(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.expenseService.delete(id, companyId);
   }
 }

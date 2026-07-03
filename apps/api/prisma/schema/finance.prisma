@@ -53,6 +53,7 @@ model ProjectAdvance {
   company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   receivedBy User      @relation("AdvanceReceiver", fields: [receivedById], references: [id])
   bankLoan   BankLoan? @relation(fields: [bankLoanId], references: [id], onDelete: SetNull)
+  fundingSource FundingSource?
 
   @@index([projectId])
   @@index([companyId])
@@ -85,6 +86,7 @@ model Purchase {
   allocations PurchaseAllocation[]
   asset       Asset?
   bankLoan    BankLoan?            @relation(fields: [bankLoanId], references: [id], onDelete: SetNull)
+  fundingAllocations FundingAllocation[]
 
   @@index([companyId])
   @@index([category])
@@ -131,6 +133,7 @@ model Asset {
   purchase       Purchase?         @relation(fields: [purchaseId], references: [id])
   currentProject Project?          @relation("AssetCurrentProject", fields: [currentProjectId], references: [id])
   assignments    AssetAssignment[]
+  fundingAllocations FundingAllocation[]
 
   @@index([companyId])
   @@index([currentProjectId])
@@ -177,6 +180,7 @@ model BankLoan {
   advances   ProjectAdvance[]
   purchases  Purchase[]
   repayments BankLoanRepayment[]
+  fundingSource FundingSource?
 
   @@index([companyId])
   @@index([status])

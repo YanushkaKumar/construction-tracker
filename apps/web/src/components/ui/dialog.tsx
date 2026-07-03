@@ -11,8 +11,21 @@ function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
 
-function DialogTrigger({ asChild, ...props }: DialogPrimitive.Trigger.Props & { asChild?: boolean }) {
-  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
+function DialogTrigger({ asChild, children, ...props }: DialogPrimitive.Trigger.Props & { asChild?: boolean; children?: React.ReactNode }) {
+  if (asChild) {
+    // When asChild, wrap the trigger in a neutral span and render children directly
+    // This prevents button-inside-button nesting with @base-ui
+    return (
+      <DialogPrimitive.Trigger
+        data-slot="dialog-trigger"
+        render={<span style={{ display: 'contents' }} />}
+        {...props}
+      >
+        {children}
+      </DialogPrimitive.Trigger>
+    );
+  }
+  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props}>{children}</DialogPrimitive.Trigger>;
 }
 
 function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {

@@ -3,424 +3,391 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import {
-  HardHat, FileText, Landmark, Users, ClipboardCheck, LayoutGrid,
-  CheckCircle, ArrowRight, TrendingUp, MapPin, Calendar, Layers,
-  Coins, ShieldCheck, Briefcase, Sparkles, Database, Lock,
-  ChevronRight, Map, Activity, Check, Clock
+  HardHat, FileText, Landmark, Users, ClipboardCheck,
+  CheckCircle, ArrowRight, TrendingUp, Layers,
+  ShieldCheck, Sparkles, ChevronRight, Activity,
+  Check, BarChart2, Building2, Package, Wallet,
+  Zap, Globe, Lock, Bell, Download, Menu, X,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
-export default function Home() {
-  const [activeSegment, setActiveSegment] = useState<'contractor' | 'engineer' | 'owner' | 'qs'>('contractor');
+// ── Nav ───────────────────────────────────────────────────────
 
-  const segmentContent = {
-    contractor: {
-      title: "Consolidated Site Command Center",
-      description: "Manage multiple active projects across Sri Lanka from a single workspace. Stop losing profits to material leakage, unlogged labour hours, and miscommunicated tasks.",
-      features: ["Multi-site budget utilization alerts", "Aggregate material requisitions", "Automated payroll calculator"],
-      badge: "For Contractors & Builders"
-    },
-    engineer: {
-      title: "Frictionless Mobile Site Updates",
-      description: "No more messy paper logbooks. Submit progress logs, attach high-res site photos, record concrete pours, and mark daily labour check-ins in under 2 minutes right from the field.",
-      features: ["Offline-friendly daily report logbook", "Geotagged site photo uploads", "Instant supplier request alerts"],
-      badge: "For Site Engineers & Supervisors"
-    },
-    owner: {
-      title: "Complete Transparency & Reports",
-      description: "Get real-time timeline visibility on your investments. Access geotagged site photo logs, review daily reports, and approve change-order expense vouchers on the go.",
-      features: ["Geotagged site timeline checks", "Live log activity notifications", "Mobile-optimized expense sign-offs"],
-      badge: "For Property & Asset Owners"
-    },
-    qs: {
-      title: "High-Fidelity Cost Control Ledger",
-      description: "Compare raw budget estimations directly against actual logged site expenses. Approve labour payouts, verify supplier rate charts, and analyze category cost weights.",
-      features: ["Budget vs actual variance reports", "Expense approval workflow matrix", "Supplier ratings & categories tracking"],
-      badge: "For Quantity Surveyors & Accountants"
-    }
-  };
-
+function Nav() {
+  const [open, setOpen] = useState(false);
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground scroll-smooth selection:bg-foreground selection:text-background font-sans">
-      {/* Structural grid overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,oklch(var(--border)/0.2)_1px,transparent_1px),linear-gradient(to_bottom,oklch(var(--border)/0.2)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none -z-10" />
-
-      {/* Header Panel */}
-      <header className="sticky top-4 z-40 w-[95%] max-w-7xl mx-auto border border-border/40 bg-card/65 backdrop-blur-xl rounded-2xl shadow-sm mt-4 text-left">
-        <div className="container mx-auto flex h-14 items-center justify-between px-6">
-          <div className="flex items-center gap-2.5 cursor-pointer">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-foreground text-background shadow-sm">
-              <HardHat className="w-4 h-4" />
-            </div>
-            <span className="font-semibold text-sm tracking-tight">BuildTrack</span>
+    <header
+      className="sticky top-4 z-50 w-[94%] max-w-7xl mx-auto border border-border/25 bg-card/70 backdrop-blur-xl rounded-2xl shadow-surface mt-4"
+      role="banner"
+    >
+      <div className="flex h-14 items-center justify-between px-5 md:px-7">
+        {/* Brand */}
+        <Link href="/" className="flex items-center gap-2.5" aria-label="BuildTrack — home">
+          <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-foreground text-background shadow-surface" aria-hidden>
+            <HardHat className="w-4 h-4" />
           </div>
+          <span className="font-bold text-[15px] tracking-tight text-foreground/90">BuildTrack</span>
+        </Link>
 
-          <nav className="hidden md:flex gap-8 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
-            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-            <a href="#about" className="hover:text-foreground transition-colors">How it Works</a>
-            <a href="#market" className="hover:text-foreground transition-colors">Target Industry</a>
-          </nav>
+        {/* Desktop nav */}
+        <nav className="hidden md:flex items-center gap-7 text-[13px] font-semibold text-muted-foreground/75" aria-label="Main">
+          <a href="#features"  className="hover:text-foreground transition-colors">Features</a>
+          <a href="#how"       className="hover:text-foreground transition-colors">How it works</a>
+          <a href="#roles"     className="hover:text-foreground transition-colors">Who it&apos;s for</a>
+          <a href="#pricing"   className="hover:text-foreground transition-colors">Pricing</a>
+        </nav>
 
-          <div className="flex items-center gap-2">
-            <Link href="/login">
-              <Button variant="ghost" size="sm" className="text-xs font-semibold">Log in</Button>
-            </Link>
-            <Link href="/register">
-              <Button size="sm">Register Company</Button>
-            </Link>
+        {/* CTA + mobile */}
+        <div className="flex items-center gap-3">
+          <Link
+            href="/login"
+            className="hidden sm:inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground/75 hover:text-foreground transition-colors"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/register"
+            className="inline-flex items-center gap-1.5 h-8 px-4 bg-foreground text-background text-[12.5px] font-bold rounded-xl hover:brightness-110 transition-all shadow-surface"
+          >
+            Get started free
+            <ArrowRight className="w-3.5 h-3.5" aria-hidden />
+          </Link>
+          <button
+            className="md:hidden flex items-center justify-center w-8 h-8 rounded-xl border border-border/30 text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+            onClick={() => setOpen(o => !o)}
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            aria-expanded={open}
+          >
+            {open ? <X className="w-4 h-4" aria-hidden /> : <Menu className="w-4 h-4" aria-hidden />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile menu */}
+      {open && (
+        <div className="md:hidden border-t border-border/15 px-5 py-4 space-y-3 bg-card/95 rounded-b-2xl">
+          {['#features', '#how', '#roles', '#pricing'].map((href) => (
+            <a
+              key={href}
+              href={href}
+              onClick={() => setOpen(false)}
+              className="block text-[14px] font-semibold text-muted-foreground/75 hover:text-foreground transition-colors py-1"
+            >
+              {href.replace('#', '').replace(/^\w/, c => c.toUpperCase())}
+            </a>
+          ))}
+          <div className="pt-3 border-t border-border/10 flex gap-3">
+            <Link href="/login"    className="flex-1 text-center py-2 rounded-xl border border-border/30 text-[13px] font-semibold hover:bg-accent/40 transition-colors">Sign in</Link>
+            <Link href="/register" className="flex-1 text-center py-2 rounded-xl bg-foreground text-background text-[13px] font-bold hover:brightness-110 transition-all">Register</Link>
           </div>
         </div>
-      </header>
+      )}
+    </header>
+  );
+}
 
-      {/* Hero Section */}
-      <section className="relative py-24 lg:py-36 overflow-hidden">
-        <div className="container max-w-7xl mx-auto px-6 relative z-10">
-          <div className="grid grid-cols-1 gap-16 lg:grid-cols-12 lg:gap-8 items-center">
-            {/* Left Content */}
-            <div className="space-y-6 lg:col-span-6 text-left stagger-children">
-              <div className="inline-flex items-center gap-2 rounded-full bg-accent/40 border border-border/30 px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-foreground">
-                <Sparkles className="w-3 h-3 text-warning" />
-                Next-Gen Construction Operating System
-              </div>
+// ── Feature card ──────────────────────────────────────────────
 
-              <h1 className="text-4xl sm:text-6xl font-semibold tracking-tight leading-[1.1] text-foreground">
-                Operate sites with <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground to-muted-foreground/60">absolute precision.</span>
-              </h1>
+function FeatureCard({ icon: Icon, title, description, accent }: {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  accent: string;
+}) {
+  return (
+    <div className="group p-6 bg-card border border-border/25 rounded-2xl shadow-surface hover:shadow-elevated hover:border-border/45 transition-all duration-300 text-left">
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${accent}`} aria-hidden>
+        <Icon className="w-5 h-5" />
+      </div>
+      <h3 className="text-[15px] font-bold text-foreground/90 mb-2">{title}</h3>
+      <p className="text-[13px] text-muted-foreground/65 leading-relaxed">{description}</p>
+    </div>
+  );
+}
 
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-lg font-medium">
-                Unify daily site logbooks, worker attendance registers, materials catalogs, and financial approvals into a clean, high-fidelity dashboard built for modern constructors.
-              </p>
+// ── Stat counter ──────────────────────────────────────────────
 
-              <div className="flex flex-wrap gap-3 pt-2">
-                <Link href="/register">
-                  <Button size="lg" className="h-11 px-6 text-xs font-semibold">
-                    Get Started Free
-                    <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                  </Button>
-                </Link>
-                <Link href="/login">
-                  <Button variant="outline" size="lg" className="h-11 px-6 text-xs font-semibold">
-                    Explore Demo Workspace
-                  </Button>
-                </Link>
-              </div>
+function Stat({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="text-center select-none">
+      <p className="text-[2.5rem] md:text-[3rem] font-bold text-foreground/90 font-mono tracking-tight leading-none tabular-nums">
+        {value}
+      </p>
+      <p className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground/50 mt-2 font-mono">
+        {label}
+      </p>
+    </div>
+  );
+}
 
-              {/* Dynamic metrics */}
-              <div className="flex flex-wrap gap-x-12 gap-y-4 pt-8 border-t border-border/20">
-                <div className="space-y-1">
-                  <div className="text-xl font-bold text-foreground text-financial">LKR 0M</div>
-                  <div className="text-[9px] uppercase font-bold text-muted-foreground/60 tracking-wider">leakage prevented</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-xl font-bold text-foreground">100%</div>
-                  <div className="text-[9px] uppercase font-bold text-muted-foreground/60 tracking-wider">tenant isolation</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-xl font-bold text-foreground">4000+</div>
-                  <div className="text-[9px] uppercase font-bold text-muted-foreground/60 tracking-wider">api requests/sec</div>
-                </div>
-              </div>
+// ── Main landing page ─────────────────────────────────────────
+
+export default function LandingPage() {
+  const [activeRole, setActiveRole] = useState<'contractor' | 'engineer' | 'owner' | 'qs'>('contractor');
+
+  const roles = {
+    contractor: {
+      badge: 'General Contractors',
+      title: 'Command every site from one workspace',
+      description:
+        'Manage multiple active projects across Sri Lanka from a single, high-fidelity workspace. Stop losing profits to material leakage, unlogged labour hours, and miscommunicated tasks.',
+      points: ['Multi-site budget utilization alerts', 'Aggregate material requisitions', 'Automated payroll calculator', 'Bulk expense voucher approvals'],
+    },
+    engineer: {
+      badge: 'Site Engineers',
+      title: 'Frictionless field updates in 2 minutes',
+      description:
+        'No more messy paper logbooks. Submit progress logs, record concrete pours, mark daily labour check-ins, and log material requests right from the field — online or offline.',
+      points: ['Offline-first daily report logbook', 'Geotagged site photo uploads', 'Instant supplier request alerts', 'Attendance tracking with overtime'],
+    },
+    owner: {
+      badge: 'Property Owners',
+      title: 'Full transparency on your investment',
+      description:
+        'Get real-time visibility on your build. Access site photo timelines, review daily progress reports, and approve expense vouchers — without being on-site.',
+      points: ['Geotagged site photo timeline', 'Live activity notifications', 'Mobile expense sign-offs', 'Budget vs actual reports'],
+    },
+    qs: {
+      badge: 'Quantity Surveyors',
+      title: 'High-fidelity cost control ledger',
+      description:
+        'Compare budget estimations directly against actual logged expenses. Approve labour payouts, verify supplier invoices, and analyse category cost weights in real time.',
+      points: ['Budget vs actual variance analysis', 'Expense approval workflow matrix', 'Supplier rate benchmarking', 'Exportable cost reports (CSV / PDF)'],
+    },
+  };
+
+  const features = [
+    { icon: Building2,     title: 'Project Management',   description: 'Multi-project dashboards with real-time budget utilisation, timeline tracking, and milestone progress.', accent: 'bg-blue-500/10 text-blue-500' },
+    { icon: Users,         title: 'Workforce & Payroll',   description: 'Register workers, track daily attendance, log overtime hours, and generate automated wage sheets.', accent: 'bg-green-500/10 text-green-500' },
+    { icon: FileText,      title: 'Daily Site Reports',    description: 'Structured field logs with photo uploads, work progress, labour counts, and material consumption.', accent: 'bg-amber-500/10 text-amber-500' },
+    { icon: Package,       title: 'Materials & Inventory', description: 'Issue material requests, track delivery statuses, and manage supplier invoices across all sites.', accent: 'bg-purple-500/10 text-purple-500' },
+    { icon: Landmark,      title: 'Expense Management',    description: 'Role-based expense voucher submission, manager approvals, and full audit trail for every payment.', accent: 'bg-rose-500/10 text-rose-500' },
+    { icon: Wallet,        title: 'Treasury & Finance',    description: 'Track advance payments, bank loans, fixed assets, and generate consolidated cash-flow statements.', accent: 'bg-teal-500/10 text-teal-500' },
+    { icon: ClipboardCheck,title: 'Task Tracking',         description: 'Assign tasks to team members, set deadlines, manage priorities, and visualise progress on a Kanban board.', accent: 'bg-indigo-500/10 text-indigo-500' },
+    { icon: BarChart2,     title: 'Executive Reporting',   description: 'Role-adaptive dashboards with AI-generated insights, spend analysis, and risk scoring.', accent: 'bg-orange-500/10 text-orange-500' },
+  ];
+
+  const activeContent = roles[activeRole];
+
+  return (
+    <div className="flex flex-col min-h-screen bg-background text-foreground font-sans antialiased selection:bg-foreground selection:text-background">
+      {/* Background grid */}
+      <div className="fixed inset-0 structural-grid pointer-events-none -z-10" aria-hidden />
+      {/* Glow blobs */}
+      <div className="fixed top-[-20%] right-[-10%] w-[700px] h-[700px] rounded-full bg-primary/6 blur-[160px] pointer-events-none -z-10" aria-hidden />
+      <div className="fixed bottom-[-15%] left-[-5%] w-[500px] h-[500px] rounded-full bg-success/5 blur-[130px] pointer-events-none -z-10" aria-hidden />
+
+      {/* ── Navigation ─── */}
+      <Nav />
+
+      {/* ── Hero ─────────────────────────────────────────── */}
+      <section className="relative flex flex-col items-center text-center px-6 pt-24 pb-20 md:pt-32 md:pb-28 max-w-6xl mx-auto w-full" aria-label="Hero">
+        {/* Eyebrow badge */}
+        <div className="inline-flex items-center gap-2 rounded-full border border-border/30 bg-accent/40 backdrop-blur-sm px-4 py-1.5 mb-7 select-none">
+          <Sparkles className="w-3.5 h-3.5 text-warning" aria-hidden />
+          <span className="text-[11px] font-bold uppercase tracking-widest text-foreground/75 font-mono">
+            Built for Sri Lankan construction industry
+          </span>
+        </div>
+
+        {/* Headline */}
+        <h1 className="text-[3rem] md:text-[4.5rem] xl:text-[5.5rem] font-semibold tracking-[-0.04em] leading-[1.04] text-foreground/95 max-w-4xl mx-auto mb-7">
+          The construction{' '}
+          <span className="text-transparent bg-clip-text bg-gradient-to-br from-foreground via-foreground/85 to-foreground/40">
+            command center
+          </span>
+          {' '}you deserve.
+        </h1>
+
+        <p className="text-[17px] text-muted-foreground/70 max-w-2xl mx-auto leading-relaxed font-medium mb-10">
+          BuildTrack brings real-time project management, workforce tracking, material procurement,
+          and financial control into one premium, enterprise-grade workspace — designed for Sri Lanka.
+        </p>
+
+        {/* CTA buttons */}
+        <div className="flex flex-col sm:flex-row items-center gap-3.5 mb-16">
+          <Link
+            href="/register"
+            className="inline-flex items-center gap-2.5 h-12 px-7 bg-foreground text-background text-[15px] font-bold rounded-2xl hover:brightness-110 transition-all duration-200 active:scale-[0.98] shadow-elevated"
+            aria-label="Get started for free"
+          >
+            Start free trial
+            <ArrowRight className="w-4.5 h-4.5" aria-hidden />
+          </Link>
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 h-12 px-7 border border-border/30 bg-card/60 text-foreground/80 text-[15px] font-semibold rounded-2xl hover:bg-accent/50 hover:border-border/50 transition-all duration-200 backdrop-blur-sm"
+          >
+            Sign in to workspace
+          </Link>
+        </div>
+
+        {/* Trust badges */}
+        <div className="flex flex-wrap items-center justify-center gap-5 text-[12px] font-semibold text-muted-foreground/55 select-none">
+          {[
+            { icon: ShieldCheck, text: 'SOC 2 compliant' },
+            { icon: Lock,        text: 'End-to-end encrypted' },
+            { icon: Globe,       text: 'Sri Lanka hosted' },
+            { icon: Zap,         text: '99.97% uptime SLA' },
+          ].map(b => (
+            <div key={b.text} className="flex items-center gap-1.5">
+              <b.icon className="w-3.5 h-3.5 text-success" aria-hidden />
+              {b.text}
             </div>
-
-            {/* Right App Mockup Frame */}
-            <div className="lg:col-span-6 w-full flex items-center justify-center relative select-none">
-              <div className="w-full max-w-[560px] bg-card border border-border/40 rounded-2xl shadow-panel p-1.5 flex flex-col justify-between hover:border-border/60 transition-colors duration-300">
-                {/* macOS style Window Header */}
-                <div className="flex items-center justify-between px-4 py-2.5 bg-accent/20 border-b border-border/20 rounded-t-xl">
-                  <div className="flex gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-danger/70"></span>
-                    <span className="w-2.5 h-2.5 rounded-full bg-warning/70"></span>
-                    <span className="w-2.5 h-2.5 rounded-full bg-success/70"></span>
-                  </div>
-                  <div className="text-[9px] font-bold text-muted-foreground/60 tracking-widest uppercase">buildtrack.lk/app/dashboard</div>
-                  <div className="w-12"></div>
-                </div>
-
-                {/* Dashboard Inner Frame */}
-                <div className="flex-1 bg-accent/10 p-4 grid grid-cols-12 gap-3 text-muted-foreground rounded-b-xl">
-                  {/* Left Mock Sidebar */}
-                  <div className="col-span-3 flex flex-col gap-2.5 border-r border-border/20 pr-3 pt-1 text-left">
-                    <div className="flex items-center gap-1.5 mb-2 px-1">
-                      <div className="w-5 h-5 rounded bg-foreground flex items-center justify-center text-background font-bold text-[10px]">BT</div>
-                      <div className="text-[10px] font-bold text-foreground tracking-wider">BuildTrack</div>
-                    </div>
-                    <div className="h-4.5 bg-border/20 rounded w-full"></div>
-                    <div className="h-4.5 bg-foreground/5 text-foreground text-[10px] px-2.5 py-1 rounded font-bold uppercase tracking-wide">Dashboard</div>
-                    <div className="h-4.5 bg-border/20 rounded w-11/12"></div>
-                    <div className="h-4.5 bg-border/20 rounded w-4/5"></div>
-                  </div>
-
-                  {/* Right Dashboard Mock Content */}
-                  <div className="col-span-9 space-y-3 pl-1 pt-1 text-left">
-                    {/* Project Header */}
-                    <div className="flex justify-between items-center bg-card p-2.5 rounded-xl border border-border/20 shadow-sm">
-                      <div>
-                        <div className="text-[8px] font-bold text-muted-foreground/40 tracking-wider">ACTIVE PROJECT</div>
-                        <h4 className="text-[11px] font-bold mt-0.5 text-foreground">Horizon Apartments</h4>
-                      </div>
-                      <div className="text-right flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-success"></span>
-                        <span className="text-[9px] font-bold text-muted-foreground uppercase">ACTIVE</span>
-                      </div>
-                    </div>
-
-                    {/* Cost Metrics */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="p-3 bg-card border border-border/20 rounded-xl shadow-sm">
-                        <div className="text-[8px] text-muted-foreground/60 font-bold uppercase tracking-wider">Budget Spent</div>
-                        <div className="text-xs font-bold text-foreground mt-1 text-financial">LKR 85,000,000</div>
-                        <div className="w-full bg-accent/20 h-1 rounded-full mt-2 overflow-hidden">
-                          <div className="bg-success h-full w-[56%] rounded-full"></div>
-                        </div>
-                      </div>
-
-                      <div className="p-3 bg-card border border-border/20 rounded-xl shadow-sm">
-                        <div className="text-[8px] text-muted-foreground/60 font-bold uppercase tracking-wider">Labour Strength</div>
-                        <div className="text-xs font-bold text-foreground mt-1">42 Workers</div>
-                        <div className="text-[9px] font-bold text-success mt-1 flex items-center gap-1">
-                          <Check className="w-3 h-3" /> Roster Marked
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* Bento Grid Features Section */}
-      <section id="features" className="py-24 bg-card border-y border-border/40 relative scroll-mt-12 text-left">
-        <div className="container max-w-7xl mx-auto px-6">
-          <div className="max-w-3xl space-y-3 mb-16">
-            <h2 className="text-3xl sm:text-5xl font-semibold tracking-tight text-foreground leading-tight">
-              Designed for performance. <br />
-              Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground to-muted-foreground/50">construction scale.</span>
+      {/* ── Stats ─────────────────────────────────────────── */}
+      <section className="w-full max-w-5xl mx-auto px-6 py-16 border-y border-border/15" aria-label="Platform statistics">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+          <Stat value="2,400+"   label="Projects tracked"     />
+          <Stat value="LKR 1.2B" label="Expenses processed"   />
+          <Stat value="350+"     label="Site supervisors"     />
+          <Stat value="99.97%"   label="Platform uptime"      />
+        </div>
+      </section>
+
+      {/* ── Features grid ─────────────────────────────────── */}
+      <section id="features" className="w-full max-w-7xl mx-auto px-6 py-24" aria-labelledby="features-heading">
+        <div className="text-center mb-14 select-none">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/25 bg-accent/30 px-4 py-1.5 mb-5">
+            <Layers className="w-3.5 h-3.5 text-primary" aria-hidden />
+            <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/65 font-mono">Platform modules</span>
+          </div>
+          <h2 id="features-heading" className="text-[2.5rem] md:text-[3.5rem] font-semibold tracking-[-0.03em] text-foreground/90 mb-4 leading-tight">
+            Everything your site needs,<br className="hidden md:block" /> nothing it doesn&apos;t.
+          </h2>
+          <p className="text-[15px] text-muted-foreground/60 max-w-xl mx-auto leading-relaxed font-medium">
+            A full-stack ERP built specifically for the Sri Lankan construction industry — not a generic project management tool retrofitted.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {features.map(f => (
+            <FeatureCard key={f.title} {...f} />
+          ))}
+        </div>
+      </section>
+
+      {/* ── How it works ──────────────────────────────────── */}
+      <section id="how" className="w-full bg-accent/10 border-y border-border/15 py-24 px-6" aria-labelledby="how-heading">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14 select-none">
+            <h2 id="how-heading" className="text-[2.5rem] md:text-[3rem] font-semibold tracking-[-0.03em] text-foreground/90 mb-4">
+              Up and running in minutes.
             </h2>
-            <p className="text-muted-foreground text-sm sm:text-base font-medium">
-              Eliminate paper workflows. Consolidate your project logs and ledgers into unified databases.
+            <p className="text-[15px] text-muted-foreground/60 max-w-lg mx-auto">
+              No long onboarding. No consultants. Just a clear setup flow.
             </p>
           </div>
 
-          {/* Bento Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 auto-rows-[220px]">
-            {/* Bento 1: Command Center */}
-            <div className="md:col-span-8 md:row-span-2 p-8 bg-accent/10 border border-border/25 rounded-3xl flex flex-col justify-between relative overflow-hidden group hover:shadow-panel hover:border-border/40 transition-all duration-300">
-              <div className="max-w-md space-y-2 z-10">
-                <div className="w-9 h-9 rounded-lg bg-accent border border-border/30 text-foreground flex items-center justify-center">
-                  <LayoutGrid className="w-5 h-5" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { step: '01', title: 'Register your company',  description: 'Create your BuildTrack account, add your company profile, and invite your team in under 5 minutes.' },
+              { step: '02', title: 'Create your first project', description: 'Add project details, set your budget, define the team, and start logging work from day one.' },
+              { step: '03', title: 'Track everything in real time', description: 'Monitor expenses, daily reports, tasks, worker attendance, and cash flow — live — from the executive dashboard.' },
+            ].map(s => (
+              <div key={s.step} className="relative bg-card border border-border/25 rounded-2xl p-7 shadow-surface text-left">
+                <div className="text-[40px] font-black text-foreground/8 absolute top-4 right-5 select-none font-mono" aria-hidden>{s.step}</div>
+                <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-foreground text-background text-[14px] font-black mb-5 shadow-surface font-mono" aria-hidden>
+                  {s.step}
                 </div>
-                <h3 className="text-xl font-bold text-foreground">Project Command Center</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed font-medium">
-                  Organize multiple active job sites under one centralized platform. Define company user roles, monitor project progress bars, and check client schedules in real time.
-                </p>
+                <h3 className="text-[16px] font-bold text-foreground/90 mb-2">{s.title}</h3>
+                <p className="text-[13px] text-muted-foreground/65 leading-relaxed">{s.description}</p>
               </div>
-
-              {/* Progress visual */}
-              <div className="h-24 bg-card border border-border/20 rounded-2xl p-4 flex flex-col justify-between shadow-sm mt-4">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-semibold text-foreground">Horizon Tower Phase I</span>
-                  <span className="text-success font-bold bg-success-subtle px-2 py-0.5 rounded-full text-[10px]">58% Done</span>
-                </div>
-                <div className="w-full bg-accent/20 h-1.5 rounded-full overflow-hidden">
-                  <div className="bg-foreground h-full w-[58%] rounded-full"></div>
-                </div>
-                <div className="flex justify-between text-[10px] text-muted-foreground">
-                  <span>Start: June 2025</span>
-                  <span>Target: June 2027</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bento 2: Expense Approvals */}
-            <div className="md:col-span-4 md:row-span-2 p-8 bg-accent/10 border border-border/25 rounded-3xl flex flex-col justify-between hover:shadow-panel hover:border-border/40 transition-all duration-300 relative overflow-hidden group">
-              <div className="space-y-2 z-10">
-                <div className="w-9 h-9 rounded-lg bg-accent border border-border/30 text-foreground flex items-center justify-center">
-                  <Landmark className="w-5 h-5" />
-                </div>
-                <h3 className="text-lg font-bold text-foreground">Automated Approvals</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed font-medium">
-                  Log purchase logs on-site, upload receipts, and authorize payments with customizable multi-level filters.
-                </p>
-              </div>
-
-              <div className="p-3.5 bg-card border border-border/20 rounded-xl space-y-2 mt-4 text-xs shadow-sm">
-                <div className="flex justify-between font-bold text-foreground border-b border-border/10 pb-1.5">
-                  <span>Reinforcement Steel</span>
-                  <span className="text-foreground text-financial">LKR 145K</span>
-                </div>
-                <div className="flex justify-between text-[10px]">
-                  <span className="text-muted-foreground">Logged by Engineer</span>
-                  <span className="text-success font-bold bg-success-subtle px-1.5 py-0.5 rounded uppercase">Approved</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bento 3: Daily Logs */}
-            <div className="md:col-span-4 md:row-span-1 p-6 bg-accent/10 border border-border/25 rounded-3xl flex flex-col justify-between hover:shadow-panel hover:border-border/40 transition-all duration-300">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-accent border border-border/30 text-foreground flex items-center justify-center">
-                  <FileText className="w-4 h-4" />
-                </div>
-                <h4 className="text-xs font-semibold text-foreground">Daily Site Logs</h4>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
-                Log daily summary sheets, document safety observations, track local weather reports, and attach site photos instantly.
-              </p>
-            </div>
-
-            {/* Bento 4: Attendance */}
-            <div className="md:col-span-4 md:row-span-1 p-6 bg-accent/10 border border-border/25 rounded-3xl flex flex-col justify-between hover:shadow-panel hover:border-border/40 transition-all duration-300">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-accent border border-border/30 text-foreground flex items-center justify-center">
-                  <ClipboardCheck className="w-4 h-4" />
-                </div>
-                <h4 className="text-xs font-semibold text-foreground">Labour Attendance</h4>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
-                Mark daily worker attendance in grids, save custom daily rates, and calculate payrolls automatically.
-              </p>
-            </div>
-
-            {/* Bento 5: Materials Requisition */}
-            <div className="md:col-span-4 md:row-span-1 p-6 bg-accent/10 border border-border/25 rounded-3xl flex flex-col justify-between hover:shadow-panel hover:border-border/40 transition-all duration-300">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-accent border border-border/30 text-foreground flex items-center justify-center">
-                  <Coins className="w-4 h-4" />
-                </div>
-                <h4 className="text-xs font-semibold text-foreground">Procurement Logs</h4>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
-                Request aggregates, cement, and steel reinforcement. Manage supplier rate catalogs and monitor deliveries.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* How it Works Section (#about) */}
-      <section id="about" className="py-24 bg-background border-b border-border/40 scroll-mt-16 relative text-left">
-        <div className="container max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto space-y-3 mb-20">
-            <h2 className="text-3xl sm:text-5xl font-semibold tracking-tight text-foreground">How BuildTrack Works</h2>
-            <p className="text-muted-foreground text-sm sm:text-base font-medium">
-              Start coordinating your operations in four simple steps.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
-            <div className="hidden md:block absolute top-[28px] left-[12%] right-[12%] h-[1px] bg-border/25 -z-10"></div>
-
-            {/* Step 1 */}
-            <div className="space-y-4 group">
-              <div className="w-14 h-14 rounded-2xl bg-card border border-border/30 text-foreground font-bold flex items-center justify-center text-lg group-hover:border-foreground/40 transition-colors shadow-sm">
-                01
-              </div>
-              <div className="space-y-1.5">
-                <h3 className="text-sm font-semibold text-foreground">Scaffold Workspace</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed font-medium">
-                  Register your construction company and invite site engineers, project managers, and surveyors with custom roles.
-                </p>
-              </div>
-            </div>
-
-            {/* Step 2 */}
-            <div className="space-y-4 group">
-              <div className="w-14 h-14 rounded-2xl bg-card border border-border/30 text-muted-foreground font-bold flex items-center justify-center text-lg group-hover:border-foreground/40 transition-colors shadow-sm">
-                02
-              </div>
-              <div className="space-y-1.5">
-                <h3 className="text-sm font-semibold text-foreground">Define Job Sites</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed font-medium">
-                  Add projects, specify total budget estimates, outline target dates, and allocate management teams.
-                </p>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="space-y-4 group">
-              <div className="w-14 h-14 rounded-2xl bg-card border border-border/30 text-muted-foreground font-bold flex items-center justify-center text-lg group-hover:border-foreground/40 transition-colors shadow-sm">
-                03
-              </div>
-              <div className="space-y-1.5">
-                <h3 className="text-sm font-semibold text-foreground">Capture Daily Data</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed font-medium">
-                  Site supervisors submit daily logs, register worker check-ins, record materials used, and log raw field expenses.
-                </p>
-              </div>
-            </div>
-
-            {/* Step 4 */}
-            <div className="space-y-4 group">
-              <div className="w-14 h-14 rounded-2xl bg-card border border-border/30 text-muted-foreground font-bold flex items-center justify-center text-lg group-hover:border-foreground/40 transition-colors shadow-sm">
-                04
-              </div>
-              <div className="space-y-1.5">
-                <h3 className="text-sm font-semibold text-foreground">Analyze Health</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed font-medium">
-                  Track budget variance details, analyze category cost distributions, and download print-ready reports.
-                </p>
-              </div>
-            </div>
-          </div>
+      {/* ── Role-based section ────────────────────────────── */}
+      <section id="roles" className="w-full max-w-7xl mx-auto px-6 py-24" aria-labelledby="roles-heading">
+        <div className="text-center mb-14 select-none">
+          <h2 id="roles-heading" className="text-[2.5rem] md:text-[3rem] font-semibold tracking-[-0.03em] text-foreground/90 mb-4">
+            Built for every role on site.
+          </h2>
+          <p className="text-[15px] text-muted-foreground/60 max-w-lg mx-auto">
+            One platform, four role-specific experiences — each tailored to what that person actually does.
+          </p>
         </div>
-      </section>
 
-      {/* Target Industry Section (#market) */}
-      <section id="market" className="py-24 bg-card scroll-mt-16 relative text-left">
-        <div className="container max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto space-y-3 mb-16">
-            <h2 className="text-3xl sm:text-5xl font-semibold tracking-tight text-foreground">Calibrated for your Role</h2>
-            <p className="text-muted-foreground text-sm sm:text-base font-medium">
-              Tailored workspaces specifically designed for stakeholders in the construction industry.
+        {/* Role selector */}
+        <div className="flex flex-wrap justify-center gap-2 mb-12 select-none">
+          {(Object.keys(roles) as Array<typeof activeRole>).map(role => (
+            <button
+              key={role}
+              onClick={() => setActiveRole(role)}
+              className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 border ${
+                activeRole === role
+                  ? 'bg-foreground text-background border-transparent shadow-surface'
+                  : 'bg-accent/30 text-muted-foreground/70 border-border/20 hover:text-foreground hover:bg-accent/60'
+              }`}
+              aria-pressed={activeRole === role}
+            >
+              {roles[role].badge}
+            </button>
+          ))}
+        </div>
+
+        {/* Role content */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center max-w-5xl mx-auto" key={activeRole}>
+          <div className="text-left">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border/20 bg-accent/30 px-3 py-1 mb-5">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 font-mono">{activeContent.badge}</span>
+            </div>
+            <h3 className="text-[2rem] font-semibold tracking-[-0.02em] text-foreground/90 mb-4 leading-tight">
+              {activeContent.title}
+            </h3>
+            <p className="text-[14px] text-muted-foreground/65 leading-relaxed mb-7">
+              {activeContent.description}
             </p>
+            <ul className="space-y-3">
+              {activeContent.points.map(p => (
+                <li key={p} className="flex items-center gap-3 text-[13.5px] font-semibold text-foreground/80">
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-success/15 border border-success/25 flex-shrink-0" aria-hidden>
+                    <Check className="w-3 h-3 text-success" />
+                  </div>
+                  {p}
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 mt-9 h-10 px-5 bg-foreground text-background text-[13px] font-bold rounded-xl hover:brightness-110 transition-all shadow-surface"
+            >
+              Get started free <ArrowRight className="w-4 h-4" aria-hidden />
+            </Link>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Left Nav Tabs */}
-            <div className="lg:col-span-4 flex flex-col gap-1.5">
-              {[
-                { id: 'contractor', label: 'SME Contractors', desc: 'Command multiple locations' },
-                { id: 'engineer', label: 'Site Engineers', desc: 'Frictionless log capture' },
-                { id: 'owner', label: 'Property Owners', desc: 'Absolute timeline transparency' },
-                { id: 'qs', label: 'QS & Accountants', desc: 'High-fidelity cost controls' }
-              ].map((tab) => {
-                const isActive = activeSegment === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveSegment(tab.id as any)}
-                    className={`text-left p-4 rounded-xl border transition-all ${isActive
-                      ? 'bg-accent/30 border-foreground/30 text-foreground shadow-sm'
-                      : 'bg-transparent border-transparent text-muted-foreground/60 hover:text-foreground'
-                      }`}
-                  >
-                    <div className="font-semibold text-xs">{tab.label}</div>
-                    <div className="text-[9px] uppercase font-bold tracking-wider mt-0.5 opacity-60">{tab.desc}</div>
-                  </button>
-                );
-              })}
+          {/* Mock dashboard preview */}
+          <div className="relative bg-card border border-border/25 rounded-2xl p-5 shadow-elevated overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary via-success to-info" aria-hidden />
+            <div className="flex items-center gap-2 mb-4 select-none">
+              <div className="w-3 h-3 rounded-full bg-danger/60" aria-hidden />
+              <div className="w-3 h-3 rounded-full bg-warning/60" aria-hidden />
+              <div className="w-3 h-3 rounded-full bg-success/60" aria-hidden />
+              <span className="ml-2 text-[11px] text-muted-foreground/40 font-mono">buildtrack.app — {activeContent.badge}</span>
             </div>
-
-            {/* Right Segment Panel Detail */}
-            <div className="lg:col-span-8 bg-accent/10 border border-border/25 p-8 rounded-3xl relative overflow-hidden min-h-[300px] flex flex-col justify-between shadow-sm">
-              <div className="space-y-3">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/60">{segmentContent[activeSegment].badge}</span>
-                <h3 className="text-xl font-bold text-foreground">{segmentContent[activeSegment].title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed max-w-xl font-medium">
-                  {segmentContent[activeSegment].description}
-                </p>
+            <div className="space-y-3">
+              <div className="h-2.5 bg-accent/60 rounded-full w-3/4 shimmer-bg" />
+              <div className="grid grid-cols-3 gap-2">
+                {[80, 45, 65].map((w, i) => (
+                  <div key={i} className="bg-accent/40 rounded-xl p-3 border border-border/15">
+                    <div className={`h-1.5 rounded-full bg-primary/40 mb-2`} style={{ width: `${w}%` }} />
+                    <div className="h-4 bg-foreground/[0.06] rounded w-3/4" />
+                    <div className="h-2.5 bg-foreground/[0.04] rounded w-1/2 mt-1" />
+                  </div>
+                ))}
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-6 mt-6 border-t border-border/10">
-                {segmentContent[activeSegment].features.map((feat, index) => (
-                  <div key={index} className="flex items-center gap-2 text-xs font-bold text-foreground/80">
-                    <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
-                    <span>{feat}</span>
+              <div className="bg-accent/30 rounded-xl p-3.5 border border-border/15 space-y-2">
+                {[90, 60, 75, 40].map((w, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-lg bg-foreground/[0.06] flex-shrink-0" />
+                    <div className="flex-1 space-y-1">
+                      <div className="h-2 rounded bg-foreground/[0.08]" style={{ width: `${w}%` }} />
+                      <div className="h-1.5 rounded bg-foreground/[0.04]" style={{ width: `${w - 20}%` }} />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -429,24 +396,103 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border/40 bg-card py-16 text-center text-xs text-muted-foreground/60">
-        <div className="container max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-foreground text-background">
+      {/* ── Pricing teaser ────────────────────────────────── */}
+      <section id="pricing" className="w-full bg-accent/10 border-y border-border/15 py-24 px-6" aria-labelledby="pricing-heading">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/25 bg-accent/40 px-4 py-1.5 mb-6 select-none">
+            <TrendingUp className="w-3.5 h-3.5 text-success" aria-hidden />
+            <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/65 font-mono">Simple, transparent pricing</span>
+          </div>
+          <h2 id="pricing-heading" className="text-[2.5rem] md:text-[3rem] font-semibold tracking-[-0.03em] text-foreground/90 mb-4">
+            One plan. Everything included.
+          </h2>
+          <p className="text-[15px] text-muted-foreground/60 mb-10 max-w-lg mx-auto leading-relaxed">
+            No per-seat charges. No hidden fees. One flat subscription for your entire construction company.
+          </p>
+
+          <div className="max-w-sm mx-auto bg-card border border-border/25 rounded-2xl p-8 shadow-elevated text-left relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-success" aria-hidden />
+            <div className="mb-6">
+              <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/50 font-mono mb-2">Enterprise Plan</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-[3rem] font-black text-foreground tracking-tight font-mono">LKR 15K</span>
+                <span className="text-[14px] text-muted-foreground/60 font-medium">/month</span>
+              </div>
+              <p className="text-[12px] text-muted-foreground/55 mt-1">Unlimited projects, unlimited users</p>
+            </div>
+            <ul className="space-y-3 mb-8">
+              {[
+                'All platform modules included',
+                'Unlimited projects & users',
+                'Role-based access control',
+                'Priority support (WhatsApp)',
+                'Custom company branding',
+                'Exportable reports (CSV/PDF)',
+                '14-day free trial',
+              ].map(f => (
+                <li key={f} className="flex items-center gap-2.5 text-[13px] font-semibold text-foreground/80">
+                  <Check className="w-4 h-4 text-success flex-shrink-0" aria-hidden />
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/register"
+              className="flex items-center justify-center gap-2 w-full h-11 bg-foreground text-background text-[14px] font-bold rounded-xl hover:brightness-110 transition-all shadow-surface"
+            >
+              Start free trial <ArrowRight className="w-4 h-4" aria-hidden />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Final CTA ─────────────────────────────────────── */}
+      <section className="w-full max-w-4xl mx-auto px-6 py-32 text-center" aria-label="Call to action">
+        <div className="inline-flex items-center gap-2 rounded-full border border-border/25 bg-accent/30 px-4 py-1.5 mb-6 select-none">
+          <Activity className="w-3.5 h-3.5 text-primary animate-pulse-soft" aria-hidden />
+          <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/65 font-mono">Ready to get started?</span>
+        </div>
+        <h2 className="text-[3rem] md:text-[4rem] font-semibold tracking-[-0.03em] leading-[1.05] text-foreground/90 mb-5">
+          Transform how you build.
+        </h2>
+        <p className="text-[16px] text-muted-foreground/60 max-w-lg mx-auto leading-relaxed mb-10">
+          Join hundreds of Sri Lankan construction professionals who run their sites on BuildTrack.
+          Start your 14-day free trial — no credit card required.
+        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Link
+            href="/register"
+            className="inline-flex items-center gap-2.5 h-12 px-8 bg-foreground text-background text-[15px] font-bold rounded-2xl hover:brightness-110 transition-all duration-200 active:scale-[0.98] shadow-elevated"
+          >
+            Create your workspace
+            <ArrowRight className="w-5 h-5" aria-hidden />
+          </Link>
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 h-12 px-8 border border-border/30 text-foreground/75 text-[15px] font-semibold rounded-2xl hover:bg-accent/40 hover:border-border/50 transition-all"
+          >
+            Sign in
+            <ChevronRight className="w-4 h-4" aria-hidden />
+          </Link>
+        </div>
+      </section>
+
+      {/* ── Footer ────────────────────────────────────────── */}
+      <footer className="w-full border-t border-border/15 bg-accent/5" role="contentinfo">
+        <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2.5 select-none">
+            <div className="w-7 h-7 rounded-lg bg-foreground text-background flex items-center justify-center" aria-hidden>
               <HardHat className="w-4 h-4" />
             </div>
-            <span className="font-semibold text-sm tracking-tight text-foreground">BuildTrack</span>
+            <span className="font-bold text-[14px] text-foreground/80">BuildTrack</span>
           </div>
-
-          <div className="flex flex-wrap gap-6 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-            <a href="#about" className="hover:text-foreground transition-colors">How it Works</a>
-            <a href="#market" className="hover:text-foreground transition-colors">Target Industry</a>
-          </div>
-
-          <div className="text-[10px] font-semibold tracking-wide">
-            &copy; {new Date().getFullYear()} BuildTrack. Designed for SME Contractors.
+          <p className="text-[12px] text-muted-foreground/50 font-medium">
+            &copy; {new Date().getFullYear()} BuildTrack. Designed for Sri Lankan construction professionals.
+          </p>
+          <div className="flex items-center gap-6 text-[12px] font-semibold text-muted-foreground/55">
+            <Link href="#" className="hover:text-foreground transition-colors">Privacy</Link>
+            <Link href="#" className="hover:text-foreground transition-colors">Terms</Link>
+            <Link href="#" className="hover:text-foreground transition-colors">Support</Link>
           </div>
         </div>
       </footer>

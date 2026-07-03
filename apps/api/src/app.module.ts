@@ -36,8 +36,11 @@ import { FinanceDashboardModule } from './modules/finance-dashboard/finance-dash
 import { BankLoanModule } from './modules/bank-loan/bank-loan.module';
 import { BOQModule } from './modules/boq/boq.module';
 import { SubcontractorModule } from './modules/subcontractor/subcontractor.module';
+import { FundingSourceModule } from './modules/funding-source/funding-source.module';
 
 import { AppController } from './app.controller';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { AuditInterceptor } from './modules/audit/audit.interceptor';
 
 // Configuration
 import { appConfig } from './config/app.config';
@@ -48,6 +51,12 @@ import { notificationConfig } from './config/notification.config';
 
 @Module({
   controllers: [AppController],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
+    },
+  ],
   imports: [
     // ── Configuration ──────────────────────
     ConfigModule.forRoot({
@@ -96,6 +105,7 @@ import { notificationConfig } from './config/notification.config';
     BankLoanModule,
     BOQModule,
     SubcontractorModule,
+    FundingSourceModule,
   ],
 })
 export class AppModule {}

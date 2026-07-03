@@ -6,205 +6,189 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, AlertCircle, ArrowRight, User } from 'lucide-react';
+import { AlertCircle, ArrowRight, User } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 import { apiClient } from '@/lib/api-client';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  email:    z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const router = useRouter();
+  const router  = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError]       = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-  } = useForm<LoginFormValues>({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
+    defaultValues: { email: '', password: '' },
   });
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     setError(null);
-
     try {
       const response = await apiClient.post('/auth/login', data);
       const { user, company, accessToken, refreshToken } = response.data;
-      
-      // Store in Zustand store (include refreshToken for silent refresh)
       setAuth(user, company, accessToken, refreshToken);
-      
-      // Redirect to dashboard
       router.push('/dashboard');
     } catch (err: any) {
-      console.error(err);
-      setError(
-        err.response?.data?.message || 
-        'Invalid email or password. Please try again.'
-      );
+      setError(err.response?.data?.message ?? 'Invalid email or password. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const fillDemoCredentials = (email: string) => {
+  const fillDemo = (email: string) => {
     setValue('email', email);
     setValue('password', 'BuildTrack@2026');
   };
 
   return (
-    <div className="space-y-6 stagger-children">
-      <div className="space-y-2 text-left">
-        <h2 className="text-xl font-bold tracking-tight text-foreground">
+    <div className="space-y-7 stagger-children">
+      {/* Heading */}
+      <div className="space-y-1.5 text-left">
+        <h1 className="text-[26px] font-semibold tracking-tight text-foreground/95 leading-tight">
           Welcome back
-        </h2>
-        <p className="text-xs text-muted-foreground font-medium">
-          Enter your credentials to access your BuildTrack command center.
+        </h1>
+        <p className="text-[13px] text-muted-foreground/65 font-medium">
+          Sign in to your BuildTrack command center.
         </p>
       </div>
 
+      {/* Error alert */}
       {error && (
-        <Alert variant="destructive" className="bg-danger-subtle border-danger/30 text-danger-foreground rounded-xl">
-          <AlertCircle className="h-4 w-4 text-danger" />
-          <AlertTitle className="text-xs font-bold uppercase tracking-wider">Authentication Error</AlertTitle>
-          <AlertDescription className="text-xs font-semibold">{error}</AlertDescription>
-        </Alert>
+        <div className="flex items-start gap-3 p-3.5 bg-danger-subtle border border-danger/25 rounded-xl" role="alert" aria-live="assertive">
+          <AlertCircle className="h-4 w-4 text-danger flex-shrink-0 mt-0.5" aria-hidden />
+          <div>
+            <p className="text-[12px] font-bold text-danger uppercase tracking-wide">Authentication Error</p>
+            <p className="text-[12px] text-danger/80 font-medium mt-0.5">{error}</p>
+          </div>
+        </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-left">
+      {/* Form */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-left" noValidate>
+        {/* Email */}
         <div className="space-y-1.5">
-          <Label htmlFor="email" className="text-xs font-semibold text-foreground/80">Email address</Label>
+          <Label htmlFor="login-email" className="text-[12px] font-semibold text-foreground/80">
+            Email address
+          </Label>
           <Input
-            id="email"
+            id="login-email"
             type="email"
             placeholder="name@company.com"
             disabled={isLoading}
+            autoComplete="email"
             {...register('email')}
-            className={`bg-background/40 border-border/40 text-sm h-10 focus-visible:ring-foreground/20 rounded-xl ${errors.email ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+            className="h-10 rounded-xl border-border/40 bg-accent/20 text-[13px] transition-all"
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? 'login-email-err' : undefined}
           />
           {errors.email && (
-            <p className="text-[10px] font-bold text-danger mt-1">{errors.email.message}</p>
+            <p id="login-email-err" className="text-[11px] font-semibold text-danger" role="alert">
+              {errors.email.message}
+            </p>
           )}
         </div>
 
+        {/* Password */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password" className="text-xs font-semibold text-foreground/80">Password</Label>
-            <Link
-              href="/forgot-password"
-              className="text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors"
-            >
+            <Label htmlFor="login-password" className="text-[12px] font-semibold text-foreground/80">
+              Password
+            </Label>
+            <Link href="/forgot-password" className="text-[11px] font-bold text-muted-foreground/65 hover:text-foreground transition-colors">
               Forgot password?
             </Link>
           </div>
           <Input
-            id="password"
+            id="login-password"
             type="password"
             placeholder="••••••••"
             disabled={isLoading}
+            autoComplete="current-password"
             {...register('password')}
-            className={`bg-background/40 border-border/40 text-sm h-10 focus-visible:ring-foreground/20 rounded-xl ${errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+            className="h-10 rounded-xl border-border/40 bg-accent/20 text-[13px] transition-all"
+            aria-invalid={!!errors.password}
+            aria-describedby={errors.password ? 'login-pw-err' : undefined}
           />
           {errors.password && (
-            <p className="text-[10px] font-bold text-danger mt-1">{errors.password.message}</p>
+            <p id="login-pw-err" className="text-[11px] font-semibold text-danger" role="alert">
+              {errors.password.message}
+            </p>
           )}
         </div>
 
-        <Button type="submit" className="w-full bg-foreground text-background hover:bg-foreground/90 font-semibold h-10 rounded-xl mt-2 transition-colors duration-250" disabled={isLoading}>
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={isLoading}
+          aria-busy={isLoading}
+          className="w-full flex items-center justify-center gap-2.5 h-10 bg-foreground text-background text-[13.5px] font-bold rounded-xl hover:brightness-110 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-surface mt-1"
+        >
           {isLoading ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Logging in...
+              <User className="h-4 w-4 animate-pulse" aria-hidden />
+              Signing in…
             </>
           ) : (
             <>
-              Log in to Workspace
-              <ArrowRight className="ml-2 h-4 w-4" />
+              Sign in to workspace
+              <ArrowRight className="h-4 w-4" aria-hidden />
             </>
           )}
-        </Button>
+        </button>
       </form>
 
-      <div className="relative flex justify-center text-[10px] uppercase my-6 font-bold tracking-widest text-muted-foreground/50">
-        <span className="absolute inset-x-0 top-1/2 -z-10 border-t border-border/20" />
-        <span className="bg-card px-3.5">
-          Quick Access Demo
+      {/* Divider */}
+      <div className="relative flex items-center justify-center">
+        <span className="absolute inset-x-0 border-t border-border/20" />
+        <span className="relative bg-card px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/45">
+          Quick demo access
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-2.5">
-        <button
-          type="button"
-          onClick={() => fillDemoCredentials('owner@lankabuild.lk')}
-          className="flex items-center justify-between text-xs border border-border/30 bg-accent/25 hover:bg-accent/40 rounded-xl p-3 text-left transition-all duration-200 group"
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="w-2 h-2 rounded-full bg-success shadow-sm" />
-            <div>
-              <div className="font-bold text-foreground">Property Owner</div>
-              <div className="text-[10px] text-muted-foreground mt-0.5">owner@lankabuild.lk</div>
+      {/* Demo role buttons */}
+      <div className="grid grid-cols-1 gap-2">
+        {[
+          { label: 'Company Owner',   email: 'owner@lankabuild.lk',    dot: 'bg-success', role: 'Full access'   },
+          { label: 'Project Manager', email: 'pm@lankabuild.lk',       dot: 'bg-info',    role: 'Operations'    },
+          { label: 'Site Engineer',   email: 'engineer@lankabuild.lk', dot: 'bg-warning', role: 'Field access'  },
+        ].map(demo => (
+          <button
+            key={demo.email}
+            type="button"
+            onClick={() => fillDemo(demo.email)}
+            className="flex items-center gap-3 px-3.5 py-2.5 border border-border/25 bg-accent/20 hover:bg-accent/40 hover:border-border/40 rounded-xl text-left transition-all duration-200 group"
+            aria-label={`Use ${demo.label} demo account`}
+          >
+            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${demo.dot}`} aria-hidden />
+            <div className="flex-1 min-w-0">
+              <p className="text-[12.5px] font-bold text-foreground/90">{demo.label}</p>
+              <p className="text-[10.5px] text-muted-foreground/50 font-mono mt-0.5">{demo.email}</p>
             </div>
-          </div>
-          <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:translate-x-0.5 transition-transform" />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => fillDemoCredentials('pm@lankabuild.lk')}
-          className="flex items-center justify-between text-xs border border-border/30 bg-accent/25 hover:bg-accent/40 rounded-xl p-3 text-left transition-all duration-200 group"
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="w-2 h-2 rounded-full bg-info shadow-sm" />
-            <div>
-              <div className="font-bold text-foreground">Project Manager</div>
-              <div className="text-[10px] text-muted-foreground mt-0.5">pm@lankabuild.lk</div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest hidden sm:block">{demo.role}</span>
+              <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-muted-foreground/60 group-hover:translate-x-0.5 transition-all" aria-hidden />
             </div>
-          </div>
-          <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:translate-x-0.5 transition-transform" />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => fillDemoCredentials('engineer@lankabuild.lk')}
-          className="flex items-center justify-between text-xs border border-border/30 bg-accent/25 hover:bg-accent/40 rounded-xl p-3 text-left transition-all duration-200 group"
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="w-2 h-2 rounded-full bg-warning shadow-sm" />
-            <div>
-              <div className="font-bold text-foreground">Site Engineer</div>
-              <div className="text-[10px] text-muted-foreground mt-0.5">engineer@lankabuild.lk</div>
-            </div>
-          </div>
-          <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:translate-x-0.5 transition-transform" />
-        </button>
+          </button>
+        ))}
       </div>
 
-      <div className="text-center text-xs text-muted-foreground font-semibold">
+      {/* Register link */}
+      <p className="text-center text-[12px] text-muted-foreground/60 font-medium">
         Don&apos;t have an account?{' '}
-        <Link
-          href="/register"
-          className="font-bold text-foreground hover:underline ml-1"
-        >
-          Register Company
+        <Link href="/register" className="font-bold text-foreground hover:underline underline-offset-4">
+          Register your company
         </Link>
-      </div>
+      </p>
     </div>
   );
 }

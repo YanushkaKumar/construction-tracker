@@ -1,0 +1,71 @@
+// ============================================
+// Funding Source & Allocation Models
+// ============================================
+
+enum FundingSourceType {
+  PROJECT_ADVANCE
+  BANK_LOAN
+  COMPANY_CASH
+  OWNER_CAPITAL
+  EMERGENCY_LOAN
+  EQUIPMENT_LOAN
+  VEHICLE_LOAN
+  SUPPLIER_CREDIT
+}
+
+enum FundingSourceStatus {
+  ACTIVE
+  CLOSED
+  DEPLETED
+}
+
+model FundingSource {
+  id               String              @id @default(cuid())
+  companyId        String              @map("company_id")
+  type             FundingSourceType
+  name             String
+  openingBalance   Decimal             @map("opening_balance") @db.Decimal(15, 2)
+  currentBalance   Decimal             @map("current_balance") @db.Decimal(15, 2)
+  originalAmount   Decimal             @map("original_amount") @db.Decimal(15, 2)
+  remainingAmount  Decimal             @map("remaining_amount") @db.Decimal(15, 2)
+  status           FundingSourceStatus @default(ACTIVE)
+  projectId        String?             @map("project_id")
+  projectAdvanceId String?             @unique @map("project_advance_id")
+  bankLoanId       String?             @unique @map("bank_loan_id")
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+
+  company        Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  project        Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectAdvance ProjectAdvance?    @relation(fields: [projectAdvanceId], references: [id], onDelete: SetNull)
+  bankLoan       BankLoan?          @relation(fields: [bankLoanId], references: [id], onDelete: SetNull)
+  allocations    FundingAllocation[]
+
+  @@index([companyId])
+  @@index([projectId])
+  @@map("funding_sources")
+}
+
+model FundingAllocation {
+  id              String        @id @default(cuid())
+  fundingSourceId String        @map("funding_source_id")
+  amount          Decimal       @db.Decimal(15, 2)
+  expenseId       String?       @map("expense_id")
+  purchaseId      String?       @map("purchase_id")
+  assetId         String?       @map("asset_id")
+  attendanceId    String?       @map("attendance_id")
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  fundingSource FundingSource @relation(fields: [fundingSourceId], references: [id], onDelete: Cascade)
+  expense       Expense?      @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  purchase      Purchase?     @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  asset         Asset?        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  attendance    Attendance?   @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+
+  @@index([fundingSourceId])
+  @@index([expenseId])
+  @@index([purchaseId])
+  @@index([assetId])
+  @@index([attendanceId])
+  @@map("funding_allocations")
+}

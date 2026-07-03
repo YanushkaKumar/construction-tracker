@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AttendanceHeatmap } from '@/components/ui/custom-charts';
 
 interface Worker {
   id: string;
@@ -60,7 +61,7 @@ type WorkerFormValues = z.infer<typeof workerSchema>;
 export default function WorkersPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'roster' | 'attendance' | 'payroll'>('roster');
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('prj1');
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [attendanceDate, setAttendanceDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [mutateError, setMutateError] = useState<string | null>(null);
@@ -73,6 +74,30 @@ export default function WorkersPage() {
 
   // Attendance state mapping (workerId -> { status, overtime })
   const [attendanceRecords, setAttendanceRecords] = useState<Record<string, { status: string; overtime: number }>>({});
+
+  // Fetch existing attendance records
+  const { data: existingAttendance } = useQuery<any[]>({
+    queryKey: ['attendance', selectedProjectId, attendanceDate],
+    queryFn: async () => {
+      if (selectedProjectId === 'ALL') return [];
+      return (await apiClient.get(`/projects/${selectedProjectId}/attendance?date=${attendanceDate}`)).data;
+    },
+    enabled: selectedProjectId !== 'ALL' && activeTab === 'attendance',
+    retry: 1,
+  });
+
+  // Populate local attendance records state when database query resolves
+  React.useEffect(() => {
+    if (existingAttendance && existingAttendance.length > 0) {
+      const records: Record<string, { status: string; overtime: number }> = {};
+      existingAttendance.forEach((r: any) => {
+        records[r.workerId] = { status: r.status, overtime: r.overtimeHours || 0 };
+      });
+      setAttendanceRecords(records);
+    } else {
+      setAttendanceRecords({});
+    }
+  }, [existingAttendance]);
 
   // Fetch workers list
   const { data: workersData, isLoading: isWorkersLoading } = useQuery<Worker[]>({
@@ -119,15 +144,16 @@ export default function WorkersPage() {
   // Save attendance mutation
   const saveAttendanceMutation = useMutation({
     mutationFn: async (records: any[]) => {
+      if (!selectedProjectId) throw new Error('Please select a project first');
       return (await apiClient.post(`/projects/${selectedProjectId}/attendance`, { records })).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payroll'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      alert('Attendance saved successfully!');
+      setMutateError(null);
     },
     onError: (err: any) => {
-      alert(err.response?.data?.message || 'Failed to save attendance');
+      setMutateError(err.response?.data?.message || 'Failed to save attendance. Ensure a project is selected.');
     }
   });
 
@@ -151,6 +177,13 @@ export default function WorkersPage() {
   const workers = workersData || [];
   const projectsList = projectsData?.data || [];
   const payroll = payrollData || [];
+
+  // Auto-select first project when projects load
+  React.useEffect(() => {
+    if (!selectedProjectId && projectsList.length > 0) {
+      setSelectedProjectId(projectsList[0].id);
+    }
+  }, [projectsList, selectedProjectId]);
 
   const handleRegisterWorker = (values: any) => {
     setMutateError(null);
@@ -177,71 +210,79 @@ export default function WorkersPage() {
     saveAttendanceMutation.mutate(records);
   };
 
-  const selectStyle = "h-8 rounded-lg border border-border/60 bg-transparent px-3 py-1 text-xs outline-none focus-visible:border-foreground/30 font-semibold";
+  // Mock data for contribution heatmap
+  const mockHeatmapData = Array.from({ length: 98 }).map((_, i) => {
+    const date = new Date(Date.now() - (98 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const count = i % 7 === 0 ? 0 : i % 5 === 0 ? 2 : i % 3 === 0 ? 5 : 7;
+    return { date, count };
+  });
+
+  const selectStyle = "h-8.5 rounded-xl border border-border/25 bg-background px-3 py-1 text-xs outline-none focus-visible:border-foreground/30 font-semibold";
+  const inputStyle = "flex h-10 w-full rounded-xl border border-border/40 bg-background/40 px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 font-semibold";
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12 text-left stagger-children">
+    <div className="space-y-4 pb-12 text-left stagger-children">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-        <div>
-          <h1 className="text-headline text-foreground">Workforce</h1>
-          <p className="text-caption mt-1">Manage personnel rosters, register logs, and calculate weekly payrolls.</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border/25 pb-5">
+        <div className="text-left select-none">
+          <h1 className="text-3xl md:text-4xl lg:text-[40px] font-semibold tracking-tight text-foreground/90">Personnel & Wage Ledger</h1>
+          <p className="text-xs text-muted-foreground mt-0.5 font-normal">Manage workforce registries, log daily attendance, and calculate wage sheets.</p>
         </div>
 
         {activeTab === 'roster' && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="font-semibold h-10 rounded-xl transition-all shadow-sm">
                 <Plus className="w-4 h-4 mr-1.5" />
                 Register Worker
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Register Worker Profile</DialogTitle>
-                <DialogDescription>Create a personnel file and define standard wage rates.</DialogDescription>
+            <DialogContent className="sm:max-w-md bg-card border border-border/30 rounded-2xl p-5 text-left shadow-elevated">
+              <DialogHeader className="border-b border-border/15 pb-3.5 mb-3.5">
+                <DialogTitle className="text-sm font-bold text-foreground">Register Worker Profile</DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">Create a personnel file and define standard daily wage rates.</DialogDescription>
               </DialogHeader>
 
               {mutateError && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{mutateError}</AlertDescription>
+                <Alert variant="destructive" className="bg-danger-subtle border-danger/30 text-danger-foreground rounded-xl mb-4">
+                  <AlertCircle className="h-4 w-4 text-danger" />
+                  <AlertTitle className="text-xs font-bold uppercase tracking-wider">Registration Error</AlertTitle>
+                  <AlertDescription className="text-xs font-semibold">{mutateError}</AlertDescription>
                 </Alert>
               )}
 
-              <form onSubmit={handleSubmit(handleRegisterWorker)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
+              <form onSubmit={handleSubmit(handleRegisterWorker)} className="space-y-4 font-semibold text-left">
+                <div className="grid grid-cols-2 gap-3.5">
                   <div className="space-y-1.5">
-                    <Label htmlFor="firstName" className="text-caption">First Name *</Label>
-                    <Input id="firstName" placeholder="Saman" {...register('firstName')} />
-                    {errors.firstName && <p className="text-[10px] text-destructive font-medium">{errors.firstName.message}</p>}
+                    <Label htmlFor="firstName" className="text-xs font-semibold text-foreground/80">First Name *</Label>
+                    <Input id="firstName" placeholder="Saman" {...register('firstName')} className={inputStyle} />
+                    {errors.firstName && <p className="text-[10px] text-danger font-bold">{errors.firstName.message}</p>}
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="lastName" className="text-caption">Last Name *</Label>
-                    <Input id="lastName" placeholder="Kumara" {...register('lastName')} />
-                    {errors.lastName && <p className="text-[10px] text-destructive font-medium">{errors.lastName.message}</p>}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="nic" className="text-caption">NIC Number *</Label>
-                    <Input id="nic" placeholder="881234567V" {...register('nic')} />
-                    {errors.nic && <p className="text-[10px] text-destructive font-medium">{errors.nic.message}</p>}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="phone" className="text-caption">Phone Number</Label>
-                    <Input id="phone" placeholder="+9478..." {...register('phone')} />
+                    <Label htmlFor="lastName" className="text-xs font-semibold text-foreground/80">Last Name *</Label>
+                    <Input id="lastName" placeholder="Kumara" {...register('lastName')} className={inputStyle} />
+                    {errors.lastName && <p className="text-[10px] text-danger font-bold">{errors.lastName.message}</p>}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3.5">
                   <div className="space-y-1.5">
-                    <Label htmlFor="skillType" className="text-caption">Trade / Role *</Label>
+                    <Label htmlFor="nic" className="text-xs font-semibold text-foreground/80">NIC Number *</Label>
+                    <Input id="nic" placeholder="881234567V" {...register('nic')} className={inputStyle} />
+                    {errors.nic && <p className="text-[10px] text-danger font-bold">{errors.nic.message}</p>}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="phone" className="text-xs font-semibold text-foreground/80">Phone Number</Label>
+                    <Input id="phone" placeholder="+9478..." {...register('phone')} className={inputStyle} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3.5">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="skillType" className="text-xs font-semibold text-foreground/80">Trade / Role *</Label>
                     <select 
                       id="skillType" 
-                      className="flex h-9 w-full rounded-lg border border-border/60 bg-transparent px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 font-medium"
+                      className="flex h-10 w-full rounded-xl border border-border/40 bg-background/40 px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 font-semibold"
                       {...register('skillType')}
                     >
                       <option value="Mason">Mason</option>
@@ -254,19 +295,19 @@ export default function WorkersPage() {
                     </select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="dailyRate" className="text-caption">Daily Rate (LKR) *</Label>
-                    <Input id="dailyRate" type="number" {...register('dailyRate')} />
-                    {errors.dailyRate && <p className="text-[10px] text-destructive font-medium">{errors.dailyRate.message}</p>}
+                    <Label htmlFor="dailyRate" className="text-xs font-semibold text-foreground/80">Daily Rate (LKR) *</Label>
+                    <Input id="dailyRate" type="number" {...register('dailyRate')} className={inputStyle} />
+                    {errors.dailyRate && <p className="text-[10px] text-danger font-bold">{errors.dailyRate.message}</p>}
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-3 border-t border-border/40">
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
+                <div className="flex justify-end gap-2.5 pt-4 border-t border-border/15 select-none">
+                  <Button type="button" variant="outline" className="rounded-xl h-10 px-4 text-xs font-semibold" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isSubmitting}>
+                  <Button type="submit" className="font-semibold h-10 rounded-xl text-xs px-4" disabled={isSubmitting}>
                     {isSubmitting ? (
-                      <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Saving…</>
+                      <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Saving…</>
                     ) : (
                       'Save Worker'
                     )}
@@ -278,8 +319,8 @@ export default function WorkersPage() {
         )}
       </div>
 
-      {/* Segmented Switcher */}
-      <div className="flex bg-accent/40 p-1 rounded-xl border border-border/40 overflow-x-auto gap-1 w-max">
+      {/* Segmented Switcher Tab list */}
+      <div className="flex bg-accent/25 p-1 rounded-xl border border-border/25 overflow-x-auto gap-1 w-max select-none">
         {[
           { id: 'roster', label: 'Worker Register', icon: Contact },
           { id: 'attendance', label: 'Attendance Sheet', icon: CalendarCheck },
@@ -291,13 +332,13 @@ export default function WorkersPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[15px] font-semibold transition-all duration-200 ${
                 isActive 
-                  ? 'bg-card text-foreground border border-border/40 shadow-sm' 
+                  ? 'bg-card text-foreground border border-border/20 shadow-sm' 
                   : 'text-muted-foreground hover:text-foreground border border-transparent'
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon className="w-4 h-4" />
               <span>{tab.label}</span>
             </button>
           );
@@ -305,48 +346,48 @@ export default function WorkersPage() {
       </div>
 
       {/* Tab Panels */}
-      <div className="pt-2">
+      <div className="pt-1 text-left">
         {activeTab === 'roster' && (
           <div className="space-y-4">
             {isWorkersLoading ? (
               <div className="space-y-3">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-16 rounded-xl bg-accent/20 shimmer-bg" />
+                  <div key={i} className="h-16 rounded-xl bg-accent/15 border border-border/20 shimmer-bg" />
                 ))}
               </div>
             ) : (
-              <Card>
-                <CardContent className="p-6">
+              <Card className="glass-panel border-border/30 shadow-panel">
+                <CardContent className="p-4">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-xs text-left">
+                    <table className="w-full text-[15px] text-left font-semibold">
                       <thead>
-                        <tr className="border-b border-border/40 text-muted-foreground/60 font-semibold uppercase tracking-wider">
-                          <th className="pb-3 pl-2">Worker Name</th>
-                          <th className="pb-3">NIC number</th>
-                          <th className="pb-3">Contact phone</th>
-                          <th className="pb-3">Trade / Role</th>
-                          <th className="pb-3 text-right">Daily Standard Rate</th>
-                          <th className="pb-3 pr-2">Status</th>
+                        <tr className="border-b border-border/25 text-muted-foreground/50 font-bold uppercase tracking-wider text-[11px] font-mono select-none">
+                          <th className="pb-2.5 pl-2">Worker Name</th>
+                          <th className="pb-2.5">NIC number</th>
+                          <th className="pb-2.5">Contact phone</th>
+                          <th className="pb-2.5">Trade / Role</th>
+                          <th className="pb-2.5 text-right">Daily Wage Rate</th>
+                          <th className="pb-2.5 pr-2 text-center">Status</th>
                         </tr>
                       </thead>
                       <tbody>
                         {workers.map((w) => (
-                          <tr key={w.id} className="border-b border-border/20 last:border-0 hover:bg-accent/20 transition-colors">
-                            <td className="py-3.5 pl-2 font-medium text-foreground">
+                          <tr key={w.id} className="border-b border-border/15 last:border-0 hover:bg-accent/15 transition-colors">
+                            <td className="py-3 pl-2 text-foreground font-bold">
                               {w.firstName} {w.lastName}
                             </td>
-                            <td className="py-3.5 text-muted-foreground">{w.nic || '—'}</td>
-                            <td className="py-3.5 text-muted-foreground">{w.phone || '—'}</td>
-                            <td className="py-3.5">
-                              <span className="bg-accent/40 border border-border/30 text-muted-foreground px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+                            <td className="py-3 text-muted-foreground/80 font-mono">{w.nic || '—'}</td>
+                            <td className="py-3 text-muted-foreground/80 font-mono">{w.phone || '—'}</td>
+                            <td className="py-3">
+                              <span className="bg-accent/40 border border-border/25 text-muted-foreground/80 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider font-mono select-none">
                                 {w.skillType}
                               </span>
                             </td>
-                            <td className="py-3.5 text-right font-bold text-foreground text-financial">LKR {w.dailyRate.toLocaleString()}</td>
-                            <td className="py-3.5 pr-2">
-                              <div className="flex items-center gap-1.5">
-                                <span className="status-dot status-active" />
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase">Active</span>
+                            <td className="py-3 text-right text-foreground font-bold text-financial font-mono">LKR {w.dailyRate.toLocaleString()}</td>
+                            <td className="py-3 pr-2 text-center select-none">
+                              <div className="inline-flex items-center justify-center gap-1.5">
+                                <span className="status-dot status-active animate-pulse-soft" />
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider font-mono">Active</span>
                               </div>
                             </td>
                           </tr>
@@ -362,15 +403,22 @@ export default function WorkersPage() {
 
         {activeTab === 'attendance' && (
           <div className="space-y-4">
+            {/* Heatmap Contribution Graph */}
+            <Card className="glass-panel border-border/30">
+              <CardContent className="p-4">
+                <AttendanceHeatmap data={mockHeatmapData} />
+              </CardContent>
+            </Card>
+
             {/* Filter controls */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-accent/20 border border-border/30 rounded-2xl">
-              <div className="space-y-1.5 text-left">
-                <Label htmlFor="projectSelect" className="text-label text-muted-foreground/60">Select Project</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-accent/15 border border-border/20 rounded-2xl select-none">
+              <div className="space-y-1.5 text-left font-semibold">
+                <Label htmlFor="projectSelect" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Target Project Site</Label>
                 <select
                   id="projectSelect"
                   value={selectedProjectId}
                   onChange={(e) => setSelectedProjectId(e.target.value)}
-                  className="w-full h-8 rounded-lg border border-border/60 bg-transparent px-3 py-1 text-xs outline-none focus-visible:border-foreground/30 font-semibold"
+                  className={selectStyle + ' w-full h-10'}
                 >
                   {projectsList.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -380,35 +428,35 @@ export default function WorkersPage() {
                 </select>
               </div>
 
-              <div className="space-y-1.5 text-left">
-                <Label htmlFor="attendanceDate" className="text-label text-muted-foreground/60">Attendance Date</Label>
+              <div className="space-y-1.5 text-left font-semibold">
+                <Label htmlFor="attendanceDate" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Attendance Date</Label>
                 <Input
                   id="attendanceDate"
                   type="date"
                   value={attendanceDate}
                   onChange={(e) => setAttendanceDate(e.target.value)}
-                  className="w-full h-8 text-xs font-semibold"
+                  className="w-full h-10 text-xs font-semibold bg-background border-border/25"
                 />
               </div>
             </div>
 
             {/* Attendance register list */}
-            <Card>
-              <CardContent className="p-6 space-y-3">
+            <Card className="glass-panel border-border/30">
+              <CardContent className="p-4 space-y-2.5">
                 {workers.map((w) => {
                   const record = attendanceRecords[w.id] || { status: 'ABSENT', overtime: 0 };
                   return (
                     <div 
                       key={w.id} 
-                      className="p-4 bg-accent/10 border border-border/30 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                      className="p-3 bg-card/65 border border-border/15 hover:border-border/30 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 transition-all duration-200"
                     >
-                      <div className="text-left">
-                        <div className="font-semibold text-xs text-foreground">{w.firstName} {w.lastName}</div>
-                        <span className="text-[10px] text-muted-foreground/60 font-semibold uppercase">{w.skillType} • LKR {w.dailyRate.toLocaleString()}/day</span>
+                      <div className="text-left font-bold">
+                        <div className="text-[15px] text-foreground">{w.firstName} {w.lastName}</div>
+                        <span className="text-[11px] text-muted-foreground/60 font-bold uppercase tracking-wider font-mono">{w.skillType} • LKR {w.dailyRate.toLocaleString()}/day</span>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
-                        <div className="flex bg-accent/40 p-0.5 rounded-lg border border-border/40">
+                      <div className="flex flex-wrap items-center gap-3.5 w-full sm:w-auto font-semibold">
+                        <div className="flex bg-accent/25 p-0.5 rounded-lg border border-border/25 select-none">
                           {['PRESENT', 'HALF_DAY', 'ABSENT'].map((status) => {
                             const isSel = record.status === status;
                             return (
@@ -416,12 +464,12 @@ export default function WorkersPage() {
                                 key={status}
                                 type="button"
                                 onClick={() => handleAttendanceChange(w.id, status)}
-                                className={`px-3 py-1 text-[10px] font-bold uppercase rounded-md transition-colors ${
+                                className={`px-2.5 py-1 text-[11px] font-bold uppercase rounded-md transition-all ${
                                   isSel
-                                    ? status === 'PRESENT' ? 'bg-success text-white shadow-sm' :
-                                      status === 'HALF_DAY' ? 'bg-warning text-zinc-950 shadow-sm' :
-                                      'bg-danger text-white shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground'
+                                    ? status === 'PRESENT' ? 'bg-success text-white shadow-sm font-black' :
+                                      status === 'HALF_DAY' ? 'bg-warning text-zinc-950 shadow-sm font-black' :
+                                      'bg-danger text-white shadow-sm font-black'
+                                    : 'text-muted-foreground/60 hover:text-foreground'
                                 }`}
                               >
                                 {status.replace('_', ' ')}
@@ -431,8 +479,8 @@ export default function WorkersPage() {
                         </div>
 
                         {record.status !== 'ABSENT' && (
-                          <div className="flex items-center gap-2">
-                            <Label htmlFor={`ot-${w.id}`} className="text-label text-muted-foreground/60 text-[9px]">OT Hours</Label>
+                          <div className="flex items-center gap-2 select-none font-semibold">
+                            <Label htmlFor={`ot-${w.id}`} className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">OT Hours</Label>
                             <Input
                               id={`ot-${w.id}`}
                               type="number"
@@ -440,7 +488,7 @@ export default function WorkersPage() {
                               max="8"
                               value={record.overtime}
                               onChange={(e) => handleAttendanceChange(w.id, record.status, parseInt(e.target.value) || 0)}
-                              className="w-16 h-8 text-center text-xs"
+                              className="w-14 h-8 text-center text-xs bg-background border-border/25 font-mono"
                             />
                           </div>
                         )}
@@ -449,10 +497,11 @@ export default function WorkersPage() {
                   );
                 })}
 
-                <div className="flex justify-end pt-4 border-t border-border/40">
+                <div className="flex justify-end pt-3.5 border-t border-border/15 select-none">
                   <Button 
                     onClick={submitAttendance}
                     disabled={saveAttendanceMutation.isPending}
+                    className="font-semibold h-9 px-4 rounded-xl text-xs shadow-sm"
                   >
                     {saveAttendanceMutation.isPending ? (
                       <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Saving…</>
@@ -472,26 +521,26 @@ export default function WorkersPage() {
         {activeTab === 'payroll' && (
           <div className="space-y-4">
             {/* Range Pickers */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-accent/20 border border-border/30 rounded-2xl">
-              <div className="space-y-1.5 text-left">
-                <Label htmlFor="payrollStart" className="text-label text-muted-foreground/60">Start Date</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-accent/15 border border-border/20 rounded-2xl select-none">
+              <div className="space-y-1.5 text-left font-semibold">
+                <Label htmlFor="payrollStart" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 font-mono">Range Start Date</Label>
                 <Input
                   id="payrollStart"
                   type="date"
                   value={payrollStart}
                   onChange={(e) => setPayrollStart(e.target.value)}
-                  className="w-full h-8 text-xs font-semibold"
+                  className="w-full h-10 text-xs font-semibold bg-background border-border/25"
                 />
               </div>
 
-              <div className="space-y-1.5 text-left">
-                <Label htmlFor="payrollEnd" className="text-label text-muted-foreground/60">End Date</Label>
+              <div className="space-y-1.5 text-left font-semibold">
+                <Label htmlFor="payrollEnd" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 font-mono">Range End Date</Label>
                 <Input
                   id="payrollEnd"
                   type="date"
                   value={payrollEnd}
                   onChange={(e) => setPayrollEnd(e.target.value)}
-                  className="w-full h-8 text-xs font-semibold"
+                  className="w-full h-10 text-xs font-semibold bg-background border-border/25"
                 />
               </div>
             </div>
@@ -499,37 +548,37 @@ export default function WorkersPage() {
             {isPayrollLoading ? (
               <div className="space-y-3">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-16 rounded-xl bg-accent/20 shimmer-bg" />
+                  <div key={i} className="h-16 rounded-xl bg-accent/15 border border-border/20 shimmer-bg" />
                 ))}
               </div>
             ) : (
-              <Card>
-                <CardContent className="p-6">
+              <Card className="glass-panel border-border/30 shadow-panel">
+                <CardContent className="p-4">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-xs text-left">
+                    <table className="w-full text-[15px] text-left font-semibold">
                       <thead>
-                        <tr className="border-b border-border/40 text-muted-foreground/60 font-semibold uppercase tracking-wider">
-                          <th className="pb-3 pl-2">Worker</th>
-                          <th className="pb-3">Trade / Role</th>
-                          <th className="pb-3">Daily standard Rate</th>
-                          <th className="pb-3">Days Logged</th>
-                          <th className="pb-3">Total OT Hours</th>
-                          <th className="pb-3 pr-2 text-right">Net Earnings</th>
+                        <tr className="border-b border-border/25 text-muted-foreground/50 font-bold uppercase tracking-wider text-[11px] font-mono select-none">
+                          <th className="pb-2.5 pl-2">Worker</th>
+                          <th className="pb-2.5">Trade / Role</th>
+                          <th className="pb-2.5">Daily rate</th>
+                          <th className="pb-2.5">Days Logged</th>
+                          <th className="pb-2.5 text-center">Total OT Hours</th>
+                          <th className="pb-2.5 pr-2 text-right">Net Earnings</th>
                         </tr>
                       </thead>
                       <tbody>
                         {payroll.map((pay, i) => (
-                          <tr key={i} className="border-b border-border/20 last:border-0 hover:bg-accent/20 transition-colors">
-                            <td className="py-3.5 pl-2 font-medium text-foreground">
+                          <tr key={i} className="border-b border-border/15 last:border-0 hover:bg-accent/15 transition-colors">
+                            <td className="py-2.5 pl-2 text-foreground font-bold">
                               {pay.firstName} {pay.lastName}
                             </td>
-                            <td className="py-3.5 text-muted-foreground">{pay.skillType}</td>
-                            <td className="py-3.5 text-muted-foreground text-financial">LKR {pay.dailyRate.toLocaleString()}</td>
-                            <td className="py-3.5 text-muted-foreground">
+                            <td className="py-2.5 text-muted-foreground/80">{pay.skillType}</td>
+                            <td className="py-2.5 text-muted-foreground/80 text-financial font-mono">LKR {pay.dailyRate.toLocaleString()}</td>
+                            <td className="py-2.5 text-muted-foreground/80 font-medium font-sans">
                               {pay.daysPresent} Present {pay.halfDays > 0 && `• ${pay.halfDays} Half Days`}
                             </td>
-                            <td className="py-3.5 text-muted-foreground text-financial">{pay.totalOvertimeHours} Hrs</td>
-                            <td className="py-3.5 pr-2 text-right font-bold text-foreground text-financial">LKR {pay.totalEarnings.toLocaleString()}</td>
+                            <td className="py-2.5 text-muted-foreground/80 text-center text-financial font-mono">{pay.totalOvertimeHours} Hrs</td>
+                            <td className="py-2.5 pr-2 text-right font-black text-foreground text-financial font-mono">LKR {pay.totalEarnings.toLocaleString()}</td>
                           </tr>
                         ))}
                       </tbody>

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 
 @Injectable()
@@ -6,23 +6,49 @@ export class AdvanceService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(projectId: string, companyId: string, receivedById: string, data: any) {
-    return this.prisma.projectAdvance.create({
-      data: {
-        projectId,
-        companyId,
-        receivedById,
-        amount: data.amount,
-        description: data.description,
-        referenceNo: data.referenceNo || null,
-        receivedDate: new Date(data.receivedDate),
-        status: data.status || 'RECEIVED',
-        notes: data.notes || null,
-        bankLoanId: data.bankLoanId || null,
-      },
-      include: {
-        project: { select: { id: true, name: true, code: true } },
-        receivedBy: { select: { id: true, firstName: true, lastName: true } },
-      },
+    const project = await this.prisma.project.findFirst({
+      where: { id: projectId },
+      select: { name: true, code: true },
+    });
+    if (!project) throw new NotFoundException('Project not found');
+
+    return this.prisma.$transaction(async (tx) => {
+      const advance = await tx.projectAdvance.create({
+        data: {
+          projectId,
+          companyId,
+          receivedById,
+          amount: data.amount,
+          description: data.description,
+          referenceNo: data.referenceNo || null,
+          receivedDate: new Date(data.receivedDate),
+          status: data.status || 'RECEIVED',
+          notes: data.notes || null,
+          bankLoanId: data.bankLoanId || null,
+        },
+        include: {
+          project: { select: { id: true, name: true, code: true } },
+          receivedBy: { select: { id: true, firstName: true, lastName: true } },
+        },
+      });
+
+      // Auto-create corresponding FundingSource
+      const amt = Number(data.amount);
+      await tx.fundingSource.create({
+        data: {
+          companyId,
+          type: 'PROJECT_ADVANCE',
+          name: `${project.code} - Client Advance (${data.referenceNo || 'Milestone'})`,
+          openingBalance: amt,
+          currentBalance: amt,
+          originalAmount: amt,
+          remainingAmount: amt,
+          projectId,
+          projectAdvanceId: advance.id,
+        },
+      });
+
+      return advance;
     });
   }
 
@@ -95,13 +121,35 @@ export class AdvanceService {
     if (data.notes !== undefined) updateData.notes = data.notes;
     if (data.bankLoanId !== undefined) updateData.bankLoanId = data.bankLoanId;
 
-    return this.prisma.projectAdvance.update({
-      where: { id },
-      data: updateData,
-      include: {
-        project: { select: { id: true, name: true, code: true } },
-        receivedBy: { select: { id: true, firstName: true, lastName: true } },
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.projectAdvance.update({
+        where: { id },
+        data: updateData,
+        include: {
+          project: { select: { id: true, name: true, code: true } },
+          receivedBy: { select: { id: true, firstName: true, lastName: true } },
+        },
+      });
+
+      // Update corresponding FundingSource
+      if (data.amount !== undefined) {
+        const source = await tx.fundingSource.findFirst({ where: { projectAdvanceId: id } });
+        if (source) {
+          const amt = Number(data.amount);
+          const difference = amt - Number(source.originalAmount);
+          await tx.fundingSource.update({
+            where: { id: source.id },
+            data: {
+              originalAmount: amt,
+              openingBalance: amt,
+              currentBalance: Number(source.currentBalance) + difference,
+              remainingAmount: Number(source.remainingAmount) + difference,
+            },
+          });
+        }
+      }
+
+      return updated;
     });
   }
 
@@ -111,6 +159,19 @@ export class AdvanceService {
     });
     if (!advance) throw new NotFoundException('Advance not found');
 
-    return this.prisma.projectAdvance.delete({ where: { id } });
+    return this.prisma.$transaction(async (tx) => {
+      // Find and delete the corresponding FundingSource
+      const source = await tx.fundingSource.findFirst({ where: { projectAdvanceId: id } });
+      if (source) {
+        // Prevent deleting if it has active allocations
+        const count = await tx.fundingAllocation.count({ where: { fundingSourceId: source.id } });
+        if (count > 0) {
+          throw new BadRequestException('Cannot delete this project advance as it has been allocated to expenses');
+        }
+        await tx.fundingSource.delete({ where: { id: source.id } });
+      }
+
+      return tx.projectAdvance.delete({ where: { id } });
+    });
   }
 }

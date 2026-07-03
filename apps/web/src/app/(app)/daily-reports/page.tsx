@@ -119,55 +119,59 @@ export default function DailyReportsPage() {
     createLogMutation.mutate(values);
   };
 
+  const selectStyle = "h-8.5 rounded-xl border border-border/25 bg-background px-3 py-1 text-xs outline-none focus-visible:border-foreground/30 font-semibold";
+  const inputStyle = "flex h-10 w-full rounded-xl border border-border/40 bg-background/40 px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 font-semibold";
+  const textareaStyle = "flex min-h-[60px] w-full rounded-xl border border-border/40 bg-background/40 px-3 py-2 text-sm outline-none focus-visible:border-foreground/30 resize-none placeholder:text-muted-foreground/50 font-semibold";
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12 text-left stagger-children">
+    <div className="space-y-4 pb-12 text-left stagger-children">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-        <div>
-          <h1 className="text-headline text-foreground">Daily Logs</h1>
-          <p className="text-caption mt-1">Record site registers, weather briefings, and work summaries daily.</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border/25 pb-5">
+        <div className="text-left select-none">
+          <h1 className="text-3xl md:text-4xl lg:text-[40px] font-semibold tracking-tight text-foreground/90">Daily Site Logs</h1>
+          <p className="text-xs text-muted-foreground mt-0.5 font-normal">Record personnel registers, weather conditions, and work summaries daily.</p>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="font-semibold h-10 rounded-xl transition-all shadow-sm">
               <Plus className="w-4 h-4 mr-1.5" />
               Submit Daily Log
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Submit Site Log</DialogTitle>
-              <DialogDescription>Provide key details of operations logged on site today.</DialogDescription>
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto bg-card border border-border/30 rounded-2xl p-5 text-left shadow-elevated">
+            <DialogHeader className="border-b border-border/15 pb-3.5 mb-3.5">
+              <DialogTitle className="text-sm font-bold text-foreground">Submit Site Log</DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5 font-medium font-sans">Provide key details of operations logged on site today.</DialogDescription>
             </DialogHeader>
 
             {mutateError && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{mutateError}</AlertDescription>
+              <Alert variant="destructive" className="bg-danger-subtle border-danger/30 text-danger-foreground rounded-xl mb-4">
+                <AlertCircle className="h-4 w-4 text-danger" />
+                <AlertTitle className="text-xs font-bold uppercase tracking-wider">Logging Error</AlertTitle>
+                <AlertDescription className="text-xs font-semibold">{mutateError}</AlertDescription>
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit(handleCreateLog)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleSubmit(handleCreateLog)} className="space-y-4 font-semibold text-left">
+              <div className="grid grid-cols-2 gap-3.5">
                 <div className="space-y-1.5">
-                  <Label htmlFor="reportDate" className="text-caption">Report Date *</Label>
-                  <Input id="reportDate" type="date" {...register('reportDate')} />
-                  {errors.reportDate && <p className="text-[10px] text-destructive font-medium">{errors.reportDate.message}</p>}
+                  <Label htmlFor="reportDate" className="text-xs font-semibold text-foreground/80">Report Date *</Label>
+                  <Input id="reportDate" type="date" {...register('reportDate')} className={inputStyle} />
+                  {errors.reportDate && <p className="text-[10px] text-danger font-bold">{errors.reportDate.message}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="workersOnSite" className="text-caption">Workers On Site *</Label>
-                  <Input id="workersOnSite" type="number" {...register('workersOnSite')} />
-                  {errors.workersOnSite && <p className="text-[10px] text-destructive font-medium">{errors.workersOnSite.message}</p>}
+                  <Label htmlFor="workersOnSite" className="text-xs font-semibold text-foreground/80">Workers On Site *</Label>
+                  <Input id="workersOnSite" type="number" {...register('workersOnSite')} className={inputStyle} />
+                  {errors.workersOnSite && <p className="text-[10px] text-danger font-bold">{errors.workersOnSite.message}</p>}
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="weatherCondition" className="text-caption">Weather Condition *</Label>
+                <Label htmlFor="weatherCondition" className="text-xs font-semibold text-foreground/80">Weather Condition *</Label>
                 <select 
                   id="weatherCondition" 
-                  className="flex h-9 w-full rounded-lg border border-border/60 bg-transparent px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20"
+                  className="flex h-10 w-full rounded-xl border border-border/40 bg-background/40 px-3 py-1.5 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 font-semibold"
                   {...register('weatherCondition')}
                 >
                   <option value="Sunny">Sunny</option>
@@ -179,46 +183,43 @@ export default function DailyReportsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="workSummary" className="text-caption">Work Summary *</Label>
+                <Label htmlFor="workSummary" className="text-xs font-semibold text-foreground/80">Work Summary *</Label>
                 <textarea 
                   id="workSummary" 
                   placeholder="Completed slab casting of ground floor..."
-                  rows={3}
-                  className="w-full rounded-lg border border-border/60 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 resize-none placeholder:text-muted-foreground/60"
                   {...register('workSummary')}
+                  className={textareaStyle}
                 />
-                {errors.workSummary && <p className="text-[10px] text-destructive font-medium">{errors.workSummary.message}</p>}
+                  {errors.workSummary && <p className="text-[10px] text-danger font-bold">{errors.workSummary.message}</p>}
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="issues" className="text-caption">Issues/Bottlenecks</Label>
+                <Label htmlFor="issues" className="text-xs font-semibold text-foreground/80">Issues/Bottlenecks</Label>
                 <textarea 
                   id="issues" 
                   placeholder="Delays, material shortages..."
-                  rows={2}
-                  className="w-full rounded-lg border border-border/60 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 resize-none placeholder:text-muted-foreground/60"
                   {...register('issues')}
+                  className={textareaStyle}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="safetyNotes" className="text-caption">Safety Notes</Label>
+                <Label htmlFor="safetyNotes" className="text-xs font-semibold text-foreground/80">Safety Notes</Label>
                 <textarea 
                   id="safetyNotes" 
                   placeholder="Scaffolding inspections..."
-                  rows={2}
-                  className="w-full rounded-lg border border-border/60 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/20 resize-none placeholder:text-muted-foreground/60"
                   {...register('safetyNotes')}
+                  className={textareaStyle}
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-border/40">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-border/15 select-none">
+                <Button type="button" variant="outline" className="rounded-xl h-10 px-4 text-xs font-semibold" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" className="font-semibold h-10 rounded-xl text-xs px-4" disabled={isSubmitting}>
                   {isSubmitting ? (
-                    <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Submitting…</>
+                    <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Submitting…</>
                   ) : (
                     'Submit Log'
                   )}
@@ -230,16 +231,16 @@ export default function DailyReportsPage() {
       </div>
 
       {/* Selector Banner */}
-      <div className="flex items-center gap-3 p-4 bg-accent/20 border border-border/30 rounded-2xl">
+      <div className="flex items-center gap-3 p-3.5 bg-accent/15 border border-border/20 rounded-xl select-none text-left">
         <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
-        <Label htmlFor="projectSelect" className="text-label text-muted-foreground/60 whitespace-nowrap">Select Project</Label>
+        <Label htmlFor="projectSelect" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 whitespace-nowrap font-mono font-bold">Filter Workspace</Label>
         <select
           id="projectSelect"
           value={selectedProjectId}
           onChange={(e) => setSelectedProjectId(e.target.value)}
-          className="max-w-xs h-8 rounded-lg border border-border/60 bg-transparent px-3 py-1 text-xs outline-none focus-visible:border-foreground/30"
+          className={selectStyle + ' max-w-xs h-9'}
         >
-          <option value="ALL">All Demo Logs</option>
+          <option value="ALL">All Company Logs</option>
           {projectsList.map((p) => (
             <option key={p.id} value={p.id}>
               {p.code} - {p.name}
@@ -251,75 +252,75 @@ export default function DailyReportsPage() {
       {isLogsLoading && (
         <div className="space-y-4 max-w-4xl">
           {[...Array(2)].map((_, i) => (
-            <div key={i} className="h-44 rounded-xl bg-accent/20 shimmer-bg" />
+            <div key={i} className="h-44 rounded-xl bg-accent/15 border border-border/20 shimmer-bg animate-pulse" />
           ))}
         </div>
       )}
 
       {/* Logs Timeline Feed */}
-      <div className="space-y-4 max-w-4xl">
+      <div className="space-y-3.5 max-w-4xl font-semibold">
         {dailyLogs.length === 0 && !isLogsLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <FolderOpen className="w-8 h-8 text-muted-foreground/20 mb-3" />
-            <p className="text-title text-foreground mb-1">No daily logs found</p>
-            <p className="text-caption">Submit the first site log to catalog progress.</p>
+          <div className="flex flex-col items-center justify-center py-16 text-center select-none glass-panel border-border/30 rounded-2xl">
+            <FolderOpen className="w-8 h-8 text-muted-foreground/20 mb-3 animate-pulse-soft" />
+            <p className="text-sm font-bold text-foreground mb-1">No daily logs found</p>
+            <p className="text-xs text-muted-foreground font-semibold max-w-xs leading-relaxed font-sans">Submit the first site log to catalog progress.</p>
           </div>
         ) : (
           dailyLogs.map((log) => (
-            <Card key={log.id} className="relative overflow-hidden transition-all duration-200 hover:shadow-panel">
-              <span className="absolute top-0 bottom-0 left-0 w-[3px] bg-foreground/60" />
+            <Card key={log.id} className="relative overflow-hidden transition-all duration-200 hover:shadow-panel border-border/25 bg-card/65 backdrop-blur-xl">
+              <span className="absolute top-0 bottom-0 left-0 w-[3px] bg-foreground/50" />
               
-              <CardContent className="p-5 pl-7 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/30 pb-3">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5 text-muted-foreground/50" />
-                    <span className="text-xs font-semibold text-foreground">
+              <CardContent className="p-4 pl-6 space-y-4 text-left">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/15 pb-2.5">
+                  <div className="flex items-center gap-2 select-none">
+                    <Calendar className="w-3.5 h-3.5 text-muted-foreground/45" />
+                    <span className="text-[15px] font-bold text-foreground">
                       {new Date(log.reportDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-4 text-[10px] text-muted-foreground/60 font-semibold uppercase tracking-wider">
+                  <div className="flex flex-wrap items-center gap-4 text-[11px] text-muted-foreground/60 uppercase tracking-wider select-none font-mono font-bold">
                     <span className="inline-flex items-center gap-1.5">
-                      <CloudSun className="w-3.5 h-3.5 text-muted-foreground/40" />
+                      <CloudSun className="w-3.5 h-3.5 text-muted-foreground/45" />
                       Weather: <strong className="text-foreground">{log.weatherCondition}</strong>
                     </span>
                     <span className="inline-flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-muted-foreground/40" />
+                      <Users className="w-3.5 h-3.5 text-muted-foreground/45" />
                       Crew Size: <strong className="text-foreground text-financial">{log.workersOnSite} on site</strong>
                     </span>
                   </div>
                 </div>
                 
-                <div className="space-y-1.5">
-                  <h5 className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider flex items-center gap-1.5">
-                    <ClipboardList className="w-3.5 h-3.5 text-muted-foreground/40" />
+                <div className="space-y-1">
+                  <h5 className="text-[10px] font-bold text-muted-foreground/55 uppercase tracking-wider flex items-center gap-1.5 select-none font-mono">
+                    <ClipboardList className="w-3.5 h-3.5 text-muted-foreground/45" />
                     Work Summary & Progress
                   </h5>
-                  <p className="text-xs text-foreground/80 leading-relaxed font-medium">
+                  <p className="text-[15px] text-foreground/80 leading-relaxed font-medium">
                     {log.workSummary}
                   </p>
                 </div>
 
                 {(log.issues || log.safetyNotes) && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-border/20">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-3.5 border-t border-border/15">
                     {log.issues && (
-                      <div className="p-3 bg-danger-subtle rounded-xl space-y-1.5">
-                        <div className="text-[9px] font-bold text-danger uppercase tracking-wider flex items-center gap-1.5">
+                      <div className="p-3 bg-danger-subtle/10 border border-danger/25 rounded-xl space-y-1">
+                        <div className="text-[10px] font-bold text-danger uppercase tracking-wider flex items-center gap-1.5 select-none font-mono">
                           <ShieldAlert className="w-3.5 h-3.5" />
                           Bottlenecks / Issues
                         </div>
-                        <p className="text-xs text-danger/80 leading-relaxed font-medium">
+                        <p className="text-[15px] text-danger/80 leading-relaxed font-semibold font-sans">
                           {log.issues}
                         </p>
                       </div>
                     )}
 
                     {log.safetyNotes && (
-                      <div className="p-3 bg-success-subtle rounded-xl space-y-1.5">
-                        <div className="text-[9px] font-bold text-success uppercase tracking-wider flex items-center gap-1.5">
+                      <div className="p-3 bg-success-subtle/10 border border-success/25 rounded-xl space-y-1">
+                        <div className="text-[10px] font-bold text-success uppercase tracking-wider flex items-center gap-1.5 select-none font-mono">
                           <ClipboardList className="w-3.5 h-3.5" />
                           Safety Observations
                         </div>
-                        <p className="text-xs text-success/80 leading-relaxed font-medium">
+                        <p className="text-[15px] text-success/80 leading-relaxed font-semibold font-sans">
                           {log.safetyNotes}
                         </p>
                       </div>
@@ -327,8 +328,8 @@ export default function DailyReportsPage() {
                   </div>
                 )}
 
-                <div className="text-caption pt-1 flex items-center justify-between">
-                  <span>Logged by: <strong className="text-foreground/80 font-medium">{log.reporter?.firstName} {log.reporter?.lastName}</strong></span>
+                <div className="text-[13px] text-muted-foreground/70 pt-1 flex items-center justify-between border-t border-border/15 select-none">
+                  <span>Logged by: <strong className="text-foreground/80 font-bold">{log.reporter?.firstName} {log.reporter?.lastName}</strong></span>
                 </div>
               </CardContent>
             </Card>
