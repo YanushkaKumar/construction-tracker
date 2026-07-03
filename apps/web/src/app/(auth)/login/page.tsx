@@ -70,46 +70,46 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+    <div className="space-y-6 stagger-children">
+      <div className="space-y-2 text-left">
+        <h2 className="text-xl font-bold tracking-tight text-foreground">
           Welcome back
         </h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Enter your email and password to access your account
+        <p className="text-xs text-muted-foreground font-medium">
+          Enter your credentials to access your BuildTrack command center.
         </p>
       </div>
 
       {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+        <Alert variant="destructive" className="bg-danger-subtle border-danger/30 text-danger-foreground rounded-xl">
+          <AlertCircle className="h-4 w-4 text-danger" />
+          <AlertTitle className="text-xs font-bold uppercase tracking-wider">Authentication Error</AlertTitle>
+          <AlertDescription className="text-xs font-semibold">{error}</AlertDescription>
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email address</Label>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-left">
+        <div className="space-y-1.5">
+          <Label htmlFor="email" className="text-xs font-semibold text-foreground/80">Email address</Label>
           <Input
             id="email"
             type="email"
             placeholder="name@company.com"
             disabled={isLoading}
             {...register('email')}
-            className={errors.email ? 'border-destructive focus-visible:ring-destructive' : ''}
+            className={`bg-background/40 border-border/40 text-sm h-10 focus-visible:ring-foreground/20 rounded-xl ${errors.email ? 'border-destructive focus-visible:ring-destructive' : ''}`}
           />
           {errors.email && (
-            <p className="text-xs font-medium text-destructive">{errors.email.message}</p>
+            <p className="text-[10px] font-bold text-danger mt-1">{errors.email.message}</p>
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-xs font-semibold text-foreground/80">Password</Label>
             <Link
               href="/forgot-password"
-              className="text-xs font-semibold text-amber-600 hover:text-amber-500 transition-colors"
+              className="text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors"
             >
               Forgot password?
             </Link>
@@ -120,14 +120,14 @@ export default function LoginPage() {
             placeholder="••••••••"
             disabled={isLoading}
             {...register('password')}
-            className={errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}
+            className={`bg-background/40 border-border/40 text-sm h-10 focus-visible:ring-foreground/20 rounded-xl ${errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}`}
           />
           {errors.password && (
-            <p className="text-xs font-medium text-destructive">{errors.password.message}</p>
+            <p className="text-[10px] font-bold text-danger mt-1">{errors.password.message}</p>
           )}
         </div>
 
-        <Button type="submit" className="w-full bg-amber-500 text-zinc-950 hover:bg-amber-600 font-semibold" disabled={isLoading}>
+        <Button type="submit" className="w-full bg-foreground text-background hover:bg-foreground/90 font-semibold h-10 rounded-xl mt-2 transition-colors duration-250" disabled={isLoading}>
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -135,58 +135,72 @@ export default function LoginPage() {
             </>
           ) : (
             <>
-              Log in
+              Log in to Workspace
               <ArrowRight className="ml-2 h-4 w-4" />
             </>
           )}
         </Button>
       </form>
 
-      <div className="relative flex justify-center text-xs uppercase my-6">
-        <span className="absolute inset-x-0 top-1/2 -z-10 border-t border-zinc-200 dark:border-zinc-800" />
-        <span className="bg-white dark:bg-zinc-900 px-2 text-zinc-500 dark:text-zinc-400">
-          Demo Logins (Auto-Fill)
+      <div className="relative flex justify-center text-[10px] uppercase my-6 font-bold tracking-widest text-muted-foreground/50">
+        <span className="absolute inset-x-0 top-1/2 -z-10 border-t border-border/20" />
+        <span className="bg-card px-3.5">
+          Quick Access Demo
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-2">
-        <Button
-          variant="outline"
-          size="sm"
+      <div className="grid grid-cols-1 gap-2.5">
+        <button
           type="button"
           onClick={() => fillDemoCredentials('owner@lankabuild.lk')}
-          className="justify-start text-xs border-zinc-200 hover:border-amber-500 dark:border-zinc-800 hover:bg-amber-50/50 dark:hover:bg-amber-900/20"
+          className="flex items-center justify-between text-xs border border-border/30 bg-accent/25 hover:bg-accent/40 rounded-xl p-3 text-left transition-all duration-200 group"
         >
-          <User className="mr-2 h-3.5 w-3.5 text-amber-500" />
-          <span>Owner: <strong className="text-zinc-700 dark:text-zinc-300">owner@lankabuild.lk</strong></span>
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
+          <div className="flex items-center gap-2.5">
+            <div className="w-2 h-2 rounded-full bg-success shadow-sm" />
+            <div>
+              <div className="font-bold text-foreground">Property Owner</div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">owner@lankabuild.lk</div>
+            </div>
+          </div>
+          <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:translate-x-0.5 transition-transform" />
+        </button>
+
+        <button
           type="button"
           onClick={() => fillDemoCredentials('pm@lankabuild.lk')}
-          className="justify-start text-xs border-zinc-200 hover:border-amber-500 dark:border-zinc-800 hover:bg-amber-50/50 dark:hover:bg-amber-900/20"
+          className="flex items-center justify-between text-xs border border-border/30 bg-accent/25 hover:bg-accent/40 rounded-xl p-3 text-left transition-all duration-200 group"
         >
-          <User className="mr-2 h-3.5 w-3.5 text-amber-500" />
-          <span>Manager: <strong className="text-zinc-700 dark:text-zinc-300">pm@lankabuild.lk</strong></span>
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
+          <div className="flex items-center gap-2.5">
+            <div className="w-2 h-2 rounded-full bg-info shadow-sm" />
+            <div>
+              <div className="font-bold text-foreground">Project Manager</div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">pm@lankabuild.lk</div>
+            </div>
+          </div>
+          <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:translate-x-0.5 transition-transform" />
+        </button>
+
+        <button
           type="button"
           onClick={() => fillDemoCredentials('engineer@lankabuild.lk')}
-          className="justify-start text-xs border-zinc-200 hover:border-amber-500 dark:border-zinc-800 hover:bg-amber-50/50 dark:hover:bg-amber-900/20"
+          className="flex items-center justify-between text-xs border border-border/30 bg-accent/25 hover:bg-accent/40 rounded-xl p-3 text-left transition-all duration-200 group"
         >
-          <User className="mr-2 h-3.5 w-3.5 text-amber-500" />
-          <span>Engineer: <strong className="text-zinc-700 dark:text-zinc-300">engineer@lankabuild.lk</strong></span>
-        </Button>
+          <div className="flex items-center gap-2.5">
+            <div className="w-2 h-2 rounded-full bg-warning shadow-sm" />
+            <div>
+              <div className="font-bold text-foreground">Site Engineer</div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">engineer@lankabuild.lk</div>
+            </div>
+          </div>
+          <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:translate-x-0.5 transition-transform" />
+        </button>
       </div>
 
-      <div className="text-center text-sm text-zinc-500 dark:text-zinc-400">
+      <div className="text-center text-xs text-muted-foreground font-semibold">
         Don&apos;t have an account?{' '}
         <Link
           href="/register"
-          className="font-semibold text-amber-600 hover:text-amber-500 hover:underline"
+          className="font-bold text-foreground hover:underline ml-1"
         >
           Register Company
         </Link>
