@@ -40,6 +40,7 @@ export default function Home() {
     }
   };
 
+
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground scroll-smooth selection:bg-foreground selection:text-background font-sans">
       {/* Structural grid overlay */}
@@ -394,8 +395,8 @@ export default function Home() {
                     key={tab.id}
                     onClick={() => setActiveSegment(tab.id as any)}
                     className={`text-left p-4 rounded-xl border transition-all ${isActive
-                        ? 'bg-accent/30 border-foreground/30 text-foreground shadow-sm'
-                        : 'bg-transparent border-transparent text-muted-foreground/60 hover:text-foreground'
+                      ? 'bg-accent/30 border-foreground/30 text-foreground shadow-sm'
+                      : 'bg-transparent border-transparent text-muted-foreground/60 hover:text-foreground'
                       }`}
                   >
                     <div className="font-semibold text-xs">{tab.label}</div>
