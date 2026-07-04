@@ -620,52 +620,6 @@ function AssetsTab() {
   );
 }
 
-// ── Loans Tab ─────────────────────────────────────────────────
-
-function LoansTab() {
-  const { data, isLoading } = useQuery<BankLoan[]>({
-    queryKey: ['finance-loans'],
-    queryFn: async () => (await apiClient.get('/finance/bank-loans')).data,
-    retry: 1,
-  });
-
-  const loans = data ?? [];
-
-  if (isLoading) return <SkeletonTable rows={4} cols={6} />;
-
-  if (loans.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="w-12 h-12 rounded-2xl bg-accent/50 border border-border/20 flex items-center justify-center mb-4" aria-hidden>
-          <Landmark className="w-6 h-6 text-muted-foreground/30" />
-        </div>
-        <p className="text-[14px] font-semibold text-muted-foreground/60">No bank loans recorded</p>
-        <p className="text-[12px] text-muted-foreground/40 mt-1">Add a loan in the finance settings.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      {loans.map(loan => {
-        const paidPercent = loan.principalAmount > 0
-          ? Math.min(Math.round((loan.paidAmount / loan.principalAmount) * 100), 100)
-          : 0;
-
-        return (
-          <div
-            key={loan.id}
-            className="bg-card border border-border/25 rounded-2xl p-5 shadow-surface text-left"
-          >
-            <div className="flex items-start justify-between mb-4 gap-4">
-              <div>
-                <p className="text-[15px] font-bold text-foreground/90">{loan.lenderName}</p>
-                <p className="text-[12px] text-muted-foreground/55 mt-0.5">
-                  {fmtDate(loan.startDate)} — {loan.endDate ? fmtDate(loan.endDate) : 'Ongoing'}
-                  &nbsp;·&nbsp;{loan.interestRate}% p.a.
-                </p>
-              </div>
-              <StatusBadge status={loan.status} />
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
