@@ -78,7 +78,8 @@ export default function DashboardPage() {
   const queryClient = useQueryClient();
 
   const [selectedRole, setSelectedRole] = useState<string>('');
-  const activeRole = selectedRole || user?.role || 'COMPANY_OWNER';
+  const isOwner = user?.role === 'COMPANY_OWNER';
+  const activeRole = isOwner ? (selectedRole || user?.role || 'COMPANY_OWNER') : (user?.role || 'WORKER');
 
   // 1. Fetch KPI & Activities
   const { data: dashboardRes, isLoading: isDashboardLoading } = useQuery<any>({
@@ -161,22 +162,24 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-shrink-0">
-          {/* Demo Role Switcher Dropdown */}
-          <div className="flex items-center gap-2 bg-accent/20 border border-border/15 rounded-xl px-3 py-1.5">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase font-mono">Switch Role</span>
-            <select
-              value={activeRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              className="bg-transparent text-xs font-bold text-foreground focus:outline-none border-none cursor-pointer"
-            >
-              <option value="COMPANY_OWNER">Company Owner / CEO</option>
-              <option value="PROJECT_MANAGER">Project Manager</option>
-              <option value="SITE_ENGINEER">Site Engineer</option>
-              <option value="QUANTITY_SURVEYOR">Procurement / QS</option>
-              <option value="ACCOUNTANT">Accountant / Finance</option>
-              <option value="WORKER">Worker Supervisor</option>
-            </select>
-          </div>
+          {/* Demo Role Switcher Dropdown - Only visible to COMPANY_OWNER */}
+          {isOwner && (
+            <div className="flex items-center gap-2 bg-accent/20 border border-border/15 rounded-xl px-3 py-1.5">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase font-mono">Switch Role</span>
+              <select
+                value={activeRole}
+                onChange={(e) => setSelectedRole(e.target.value)}
+                className="bg-transparent text-xs font-bold text-foreground focus:outline-none border-none cursor-pointer"
+              >
+                <option value="COMPANY_OWNER">Company Owner / CEO</option>
+                <option value="PROJECT_MANAGER">Project Manager</option>
+                <option value="SITE_ENGINEER">Site Engineer</option>
+                <option value="QUANTITY_SURVEYOR">Procurement / QS</option>
+                <option value="ACCOUNTANT">Accountant / Finance</option>
+                <option value="WORKER">Worker Supervisor</option>
+              </select>
+            </div>
+          )}
           <WeatherWidget />
         </div>
       </div>
