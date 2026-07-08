@@ -620,36 +620,6 @@ function AssetsTab() {
   );
 }
 
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
-              {[
-                { label: 'Principal',  value: fmt(loan.principalAmount), color: 'text-foreground/80' },
-                { label: 'Paid',       value: fmt(loan.paidAmount), color: 'text-success' },
-                { label: 'Balance',    value: fmt(loan.balance), color: loan.balance > 0 ? 'text-danger' : 'text-success' },
-                { label: 'Paid %',     value: `${paidPercent}%`, color: paidPercent >= 100 ? 'text-success' : 'text-muted-foreground/80' },
-              ].map(s => (
-                <div key={s.label} className="text-center p-3 bg-accent/20 rounded-xl border border-border/15">
-                  <p className={cn('text-[16px] font-bold font-mono', s.color)}>{s.value}</p>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/45 mt-0.5">{s.label}</p>
-                </div>
-              ))}
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2 text-[12px] font-semibold text-muted-foreground/60">
-                <span>Repayment Progress</span>
-                <span className="font-mono">{paidPercent}%</span>
-              </div>
-              <ProgressBar value={paidPercent} height={5} />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 // ── Project Ledger Tab ────────────────────────────────────────
 
 function LedgerTab({ overview }: { overview?: FinanceOverview }) {
