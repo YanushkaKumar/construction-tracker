@@ -8,6 +8,10 @@ on:
 
 env:
   NODE_VERSION: '20'
+  AWS_REGION: 'us-east-1'
+  AWS_ACCOUNT_ID: '842549707720'
+  ECR_REGISTRY: '842549707720.dkr.ecr.us-east-1.amazonaws.com'
+  ECS_CLUSTER: 'buildtrack-cluster'
 
 jobs:
   lint:
@@ -96,12 +100,23 @@ jobs:
       - run: npm run build -- --if-present
 
   push-images:
-    name: Build & Push Docker Images
+    name: Build & Push to AWS ECR
     runs-on: ubuntu-latest
     needs: [test-api, test-web]
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -109,49 +124,40 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push API
+      - name: Build and push API to ECR
         uses: docker/build-push-action@v5
         with:
           context: ./apps/api
           file: ./apps/api/Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/build-rack:api-${{ github.sha }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/build-rack:api-latest
+            ${{ env.ECR_REGISTRY }}/buildtrack-api:latest
+            ${{ env.ECR_REGISTRY }}/buildtrack-api:${{ github.sha }}
 
-      - name: Build and push Web
+      - name: Build and push Web to ECR
         uses: docker/build-push-action@v5
         with:
           context: ./apps/web
           file: ./apps/web/Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/build-rack:web-${{ github.sha }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/build-rack:web-latest
+            ${{ env.ECR_REGISTRY }}/buildtrack-web:latest
+            ${{ env.ECR_REGISTRY }}/buildtrack-web:${{ github.sha }}
 
   deploy:
-    name: Deploy to Oracle Cloud
+    name: Deploy to AWS ECS
     runs-on: ubuntu-latest
     needs: push-images
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: SSH and Deploy
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ubuntu
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ~/buildtrack
-            docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p "${{ secrets.DOCKERHUB_TOKEN }}"
-            IMAGE_TAG=${{ github.sha }} docker compose pull
-            IMAGE_TAG=${{ github.sha }} docker compose up -d
-            IMAGE_TAG=${{ github.sha }} docker compose exec -T api npx prisma@6.14.0 migrate deploy --schema=prisma/schema
-            IMAGE_TAG=${{ github.sha }} docker compose restart nginx
-            docker image prune -f
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Trigger Rolling Update in ECS
+        run: |
+          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service buildtrack-api-service --force-new-deployment
+          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service buildtrack-web-service --force-new-deployment
