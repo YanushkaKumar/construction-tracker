@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   HardHat, LayoutDashboard, Building2, CheckSquare, FileText,
   Package, Landmark, Wallet, Users, Settings, LogOut, Menu, X,
-  Bell, BarChart2, Search, ChevronDown, Sparkles, Check,
+  Bell, BarChart2, Search, ChevronDown, Check,
   Sun, Moon, Plus, ChevronRight, AlertTriangle, Info,
   CheckCircle2, XCircle, Clock, Pin, PinOff, HardHatIcon,
 } from 'lucide-react';
@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { CountBadge } from '@/components/ui/badge';
 import { CommandPalette } from '@/components/ui/command-palette';
 import { ToastProvider } from '@/components/ui/toast';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 
@@ -199,8 +199,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setIsMounted(true);
-    if (!isAuthenticated) router.push('/login');
-  }, [isAuthenticated, router]);
+  }, []);
+
+  // Redirect only after the persisted auth store has rehydrated, otherwise a
+  // hard refresh bounces logged-in users to /login
+  useEffect(() => {
+    const verify = () => {
+      if (!useAuthStore.getState().isAuthenticated) router.push('/login');
+    };
+    if (useAuthStore.persist.hasHydrated()) {
+      verify();
+      return;
+    }
+    return useAuthStore.persist.onFinishHydration(verify);
+  }, [router]);
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -244,6 +256,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const notifications = notifData ?? [];
   const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  const queryClient = useQueryClient();
+  const markAllRead = useMutation({
+    mutationFn: async () => (await apiClient.post('/notifications/read-all')).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+  });
+  const markRead = useMutation({
+    mutationFn: async (id: string) => (await apiClient.patch(`/notifications/${id}/read`)).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+  });
 
   const handleLogout = useCallback(() => {
     clearAuth();
@@ -297,7 +319,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="w-12 h-12 rounded-2xl bg-foreground/5 flex items-center justify-center border border-border/20">
             <HardHat className="w-6 h-6 text-muted-foreground/40 animate-pulse-soft" aria-hidden />
           </div>
-          <span className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground/50 font-mono">
+          <span className="text-[12px] font-medium text-muted-foreground/60">
             Loading BuildTrack…
           </span>
         </div>
@@ -355,8 +377,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <p className="text-[13px] font-semibold text-foreground/90 truncate leading-tight">
                     {company?.name ?? 'BuildTrack'}
                   </p>
-                  <p className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest mt-0.5 font-mono">
-                    Enterprise
+                  <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+                    Workspace
                   </p>
                 </div>
               )}
@@ -377,10 +399,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 aria-label="Workspace selector"
               >
                 <div className="flex items-center justify-between px-2 pb-1.5 border-b border-border/10 mb-1.5">
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground/50 tracking-widest select-none">
+                  <span className="text-[11px] font-medium text-muted-foreground select-none">
                     Active workspace
                   </span>
-                  <Sparkles className="w-3 h-3 text-warning" aria-hidden />
                 </div>
                 <button
                   role="option"
@@ -394,7 +415,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <p className="text-[13px] font-semibold text-foreground/90 truncate">
                       {company?.name ?? 'BuildTrack'}
                     </p>
-                    <p className="text-[9px] font-bold text-success uppercase tracking-widest mt-0.5 font-mono">
+                    <p className="text-[11px] font-medium text-success mt-0.5">
                       Active
                     </p>
                   </div>
@@ -417,7 +438,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     marginBottom: sidebarExpanded ? '4px' : 0,
                   }}
                 >
-                  <span className="px-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 select-none font-mono">
+                  <span className="px-3 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/50 select-none">
                     {group.label}
                   </span>
                 </div>
@@ -538,7 +559,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <p className="text-[13px] font-semibold text-foreground/90 truncate leading-tight">
                     {user?.firstName} {user?.lastName}
                   </p>
-                  <p className="text-[10px] text-muted-foreground/55 font-bold uppercase tracking-widest mt-0.5 truncate font-mono">
+                  <p className="text-[11px] text-muted-foreground/60 mt-0.5 truncate">
                     {user?.roleDisplayName}
                   </p>
                 </div>
@@ -581,7 +602,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </div>
                   <div>
                     <p className="text-[13px] font-semibold text-foreground/90">{company?.name ?? 'BuildTrack'}</p>
-                    <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest font-mono">Enterprise</p>
+                    <p className="text-[11px] text-muted-foreground/60">Workspace</p>
                   </div>
                 </div>
                 <Button
@@ -597,7 +618,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <div className="p-4 space-y-5">
                 {navGroups.map(group => (
                   <div key={group.label} className="space-y-1">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 px-3 py-1 select-none font-mono">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/50 px-3 py-1 select-none">
                       {group.label}
                     </p>
                     {group.items.map((item) => {
@@ -674,7 +695,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
                 <div className="flex items-center gap-2">
                   {unreadCount > 0 && (
-                    <Button variant="ghost" size="xs" className="text-[11px]">
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      className="text-[11px]"
+                      onClick={() => markAllRead.mutate()}
+                      loading={markAllRead.isPending}
+                    >
                       Mark all read
                     </Button>
                   )}
@@ -703,9 +730,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     {notifications.slice(0, 20).map(n => (
                       <div
                         key={n.id}
+                        onClick={() => { if (!n.isRead) markRead.mutate(n.id); }}
                         className={cn(
                           'flex items-start gap-3 px-5 py-4 transition-colors',
-                          !n.isRead ? 'bg-primary/3' : 'hover:bg-accent/30'
+                          !n.isRead ? 'bg-primary/3 cursor-pointer' : 'hover:bg-accent/30'
                         )}
                       >
                         <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-accent/50 border border-border/20 flex-shrink-0 mt-0.5">
@@ -867,7 +895,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     />
                   </div>
                   <span className={cn(
-                    'text-[10px] font-bold uppercase tracking-wide transition-colors',
+                    'text-[10.5px] font-medium transition-colors',
                     isActive ? 'text-foreground' : 'text-muted-foreground/40'
                   )}>
                     {item.label}
@@ -886,7 +914,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <div className="flex items-center justify-center w-8 h-6">
                 <Menu className="w-5 h-5 text-muted-foreground/50" aria-hidden />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground/40">More</span>
+              <span className="text-[10.5px] font-medium text-muted-foreground/50">More</span>
             </button>
 
             {/* Mobile FAB - search */}

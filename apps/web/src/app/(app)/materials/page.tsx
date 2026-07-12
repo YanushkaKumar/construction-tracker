@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { 
   Package, Plus, Loader2, AlertCircle, Truck, Store, Layers,
-  AlertTriangle, SlidersHorizontal, FolderDot, Sparkles, Star
+  AlertTriangle, SlidersHorizontal, FolderDot, Star
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
@@ -365,7 +365,7 @@ export default function MaterialsPage() {
                               <td className="py-3 pl-2 font-bold text-foreground">{req.material.name}</td>
                               <td className="py-3 text-muted-foreground/80 font-bold uppercase font-mono">{req.project?.code || 'PRJ-001'}</td>
                               <td className="py-3 text-foreground font-bold">{req.quantity} {req.material.unit}</td>
-                              <td className="py-3 text-right font-black text-foreground font-mono text-financial">LKR {(req.totalPrice || 0).toLocaleString()}</td>
+                              <td className="py-3 text-right font-semibold text-foreground font-mono text-financial">LKR {(req.totalPrice || 0).toLocaleString()}</td>
                               <td className="py-3 text-muted-foreground/80">{req.supplier?.name || '—'}</td>
                               <td className="py-3 pr-2 text-center select-none">
                                 <select 
@@ -424,7 +424,7 @@ export default function MaterialsPage() {
 
                         <div className="flex justify-between items-baseline border-b border-border/15 pb-2">
                           <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider font-mono">Current Stock</span>
-                          <span className="text-[20px] font-black text-foreground font-mono text-financial">
+                          <span className="text-[20px] font-semibold text-foreground font-mono text-financial">
                             {m.currentStock} <span className="text-[11px] text-muted-foreground font-bold uppercase">{m.unit}</span>
                           </span>
                         </div>
@@ -463,7 +463,7 @@ export default function MaterialsPage() {
                     <span className="absolute top-0 bottom-0 left-0 w-[3px] bg-success" />
                     <CardContent className="p-4 pl-5 space-y-3.5 font-semibold text-left">
                       <div className="flex items-center justify-between select-none">
-                        <span className="text-[13px] text-success font-black text-financial flex items-center gap-1 font-mono">
+                        <span className="text-[13px] text-success font-semibold text-financial flex items-center gap-1 font-mono">
                           <Star className="w-3.5 h-3.5 text-success fill-success" /> {s.rating || 5}.0 rating
                         </span>
                         <span className="text-[10px] font-bold bg-success-subtle text-success px-2 py-0.5 rounded-full border border-success/20 uppercase tracking-wider font-mono">Active supplier</span>

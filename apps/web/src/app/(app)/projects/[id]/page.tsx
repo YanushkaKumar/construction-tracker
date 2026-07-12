@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { 
   Building2, MapPin, User, Calendar, ArrowLeft, Phone, Mail, 
   Plus, Loader2, CheckSquare, FileSpreadsheet, Landmark, AlertCircle,
-  Clock, ShieldAlert, Sparkles, TrendingUp
+  Clock, ShieldAlert, TrendingUp
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
@@ -224,15 +224,15 @@ export default function ProjectDetailsPage() {
 
             {/* Funding Status Sub-banner */}
             <div className="mt-4 pt-4 border-t border-border/15 grid grid-cols-1 sm:grid-cols-3 gap-3.5 select-none text-left">
-              <div className="p-3 bg-indigo-500/5 border border-indigo-500/15 rounded-xl">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-indigo-400 font-mono">Funding Received (Advances)</span>
-                <p className="text-[15px] font-black text-indigo-400 mt-1 font-mono leading-none">
+              <div className="p-3 bg-info-subtle border border-info/20 rounded-xl">
+                <span className="text-[11px] font-medium text-info">Funding received (advances)</span>
+                <p className="text-[15px] font-semibold text-info mt-1 tabular-nums leading-none">
                   LKR {(project.totalAdvance || 0).toLocaleString()}
                 </p>
               </div>
               <div className="p-3 bg-danger-subtle/10 border border-danger/15 rounded-xl">
                 <span className="text-[9px] font-bold uppercase tracking-widest text-danger font-mono font-semibold">Funding Consumed</span>
-                <p className="text-[15px] font-black text-danger mt-1 font-mono leading-none">
+                <p className="text-[15px] font-semibold text-danger mt-1 font-mono leading-none">
                   LKR {(project.totalSpent || 0).toLocaleString()}
                 </p>
               </div>
@@ -244,7 +244,7 @@ export default function ProjectDetailsPage() {
               )}>
                 <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 font-mono">Funding Remaining</span>
                 <p className={cn(
-                  'text-[15px] font-black mt-1 font-mono leading-none',
+                  'text-[15px] font-semibold mt-1 font-mono leading-none',
                   (project.remainingAdvance || 0) >= 0 ? 'text-success' : 'text-danger'
                 )}>
                   LKR {(project.remainingAdvance || 0).toLocaleString()}

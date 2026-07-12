@@ -45,6 +45,8 @@ export default function LoginPage() {
     }
   };
 
+  const showDemo = process.env.NEXT_PUBLIC_ENABLE_DEMO === 'true';
+
   const fillDemo = (email: string) => {
     setValue('email', email);
     setValue('password', 'BuildTrack@2026');
@@ -58,7 +60,7 @@ export default function LoginPage() {
           Welcome back
         </h1>
         <p className="text-[13px] text-muted-foreground/65 font-medium">
-          Sign in to your BuildTrack command center.
+          Sign in to continue to BuildTrack.
         </p>
       </div>
 
@@ -67,7 +69,7 @@ export default function LoginPage() {
         <div className="flex items-start gap-3 p-3.5 bg-danger-subtle border border-danger/25 rounded-xl" role="alert" aria-live="assertive">
           <AlertCircle className="h-4 w-4 text-danger flex-shrink-0 mt-0.5" aria-hidden />
           <div>
-            <p className="text-[12px] font-bold text-danger uppercase tracking-wide">Authentication Error</p>
+            <p className="text-[13px] font-semibold text-danger">Couldn&apos;t sign you in</p>
             <p className="text-[12px] text-danger/80 font-medium mt-0.5">{error}</p>
           </div>
         </div>
@@ -147,40 +149,43 @@ export default function LoginPage() {
         </button>
       </form>
 
-      {/* Divider */}
-      <div className="relative flex items-center justify-center">
-        <span className="absolute inset-x-0 border-t border-border/20" />
-        <span className="relative bg-card px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/45">
-          Quick demo access
-        </span>
-      </div>
+      {/* Demo access — only rendered when explicitly enabled (NEXT_PUBLIC_ENABLE_DEMO=true) */}
+      {showDemo && (
+        <>
+          <div className="relative flex items-center justify-center">
+            <span className="absolute inset-x-0 border-t border-border/20" />
+            <span className="relative bg-card px-4 text-[11px] font-medium text-muted-foreground/60">
+              or try a demo account
+            </span>
+          </div>
 
-      {/* Demo role buttons */}
-      <div className="grid grid-cols-1 gap-2">
-        {[
-          { label: 'Company Owner',   email: 'owner@lankabuild.lk',    dot: 'bg-success', role: 'Full access'   },
-          { label: 'Project Manager', email: 'pm@lankabuild.lk',       dot: 'bg-info',    role: 'Operations'    },
-          { label: 'Site Engineer',   email: 'engineer@lankabuild.lk', dot: 'bg-warning', role: 'Field access'  },
-        ].map(demo => (
-          <button
-            key={demo.email}
-            type="button"
-            onClick={() => fillDemo(demo.email)}
-            className="flex items-center gap-3 px-3.5 py-2.5 border border-border/25 bg-accent/20 hover:bg-accent/40 hover:border-border/40 rounded-xl text-left transition-all duration-200 group"
-            aria-label={`Use ${demo.label} demo account`}
-          >
-            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${demo.dot}`} aria-hidden />
-            <div className="flex-1 min-w-0">
-              <p className="text-[12.5px] font-bold text-foreground/90">{demo.label}</p>
-              <p className="text-[10.5px] text-muted-foreground/50 font-mono mt-0.5">{demo.email}</p>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest hidden sm:block">{demo.role}</span>
-              <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-muted-foreground/60 group-hover:translate-x-0.5 transition-all" aria-hidden />
-            </div>
-          </button>
-        ))}
-      </div>
+          <div className="grid grid-cols-1 gap-2">
+            {[
+              { label: 'Company Owner',   email: 'owner@lankabuild.lk',    dot: 'bg-success', role: 'Full access'   },
+              { label: 'Project Manager', email: 'pm@lankabuild.lk',       dot: 'bg-info',    role: 'Operations'    },
+              { label: 'Site Engineer',   email: 'engineer@lankabuild.lk', dot: 'bg-warning', role: 'Field access'  },
+            ].map(demo => (
+              <button
+                key={demo.email}
+                type="button"
+                onClick={() => fillDemo(demo.email)}
+                className="flex items-center gap-3 px-3.5 py-2.5 border border-border/25 bg-accent/20 hover:bg-accent/40 hover:border-border/40 rounded-xl text-left transition-all duration-200 group"
+                aria-label={`Use ${demo.label} demo account`}
+              >
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${demo.dot}`} aria-hidden />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12.5px] font-semibold text-foreground">{demo.label}</p>
+                  <p className="text-[11px] text-muted-foreground/55 mt-0.5">{demo.email}</p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-[11px] font-medium text-muted-foreground/50 hidden sm:block">{demo.role}</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-muted-foreground/60 group-hover:translate-x-0.5 transition-all" aria-hidden />
+                </div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Register link */}
       <p className="text-center text-[12px] text-muted-foreground/60 font-medium">

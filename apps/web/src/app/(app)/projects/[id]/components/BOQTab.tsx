@@ -200,9 +200,9 @@ export function BOQTab({ projectId }: { projectId: string }) {
                         <td className="p-2.5 text-center text-muted-foreground/80 font-mono">{item.unit}</td>
                         <td className="p-2.5 text-right font-bold font-mono">{Number(item.quantity).toLocaleString()}</td>
                         <td className="p-2.5 text-right text-muted-foreground/75 font-normal font-mono">{Number(item.rate).toLocaleString()}</td>
-                        <td className="p-2.5 text-right font-black text-foreground font-mono">{Number(item.amount).toLocaleString()}</td>
+                        <td className="p-2.5 text-right font-semibold text-foreground font-mono">{Number(item.amount).toLocaleString()}</td>
                         <td className="p-2.5 text-right text-success font-bold font-mono">{item.actualQty ? Number(item.actualQty).toLocaleString() : '-'}</td>
-                        <td className="p-2.5 text-right text-success font-black font-mono">{item.actualAmount ? Number(item.actualAmount).toLocaleString() : '-'}</td>
+                        <td className="p-2.5 text-right text-success font-semibold font-mono">{item.actualAmount ? Number(item.actualAmount).toLocaleString() : '-'}</td>
                         <td className="p-2.5 pr-3 text-center">
                           <div className="flex justify-center gap-1.5 select-none">
                             <Button variant="ghost" size="icon" className="h-6 w-6 text-success hover:text-success hover:bg-success/10 rounded-lg" onClick={() => { setActualDlg(item); actualForm.reset({ actualQty: Number(item.actualQty || 0), actualAmount: Number(item.actualAmount || 0) }); }}>

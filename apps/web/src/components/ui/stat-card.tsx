@@ -208,7 +208,7 @@ export function StatCard({
         {/* Header row */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/55 select-none">
+            <span className="text-[12.5px] font-medium text-muted-foreground select-none">
               {label}
             </span>
           </div>
@@ -232,8 +232,8 @@ export function StatCard({
           <div className="flex items-end gap-2">
             <p
               className={cn(
-                'text-[2rem] font-semibold tracking-tight leading-none tabular-nums transition-colors',
-                attention ? 'text-danger' : 'text-foreground/90'
+                'text-[1.75rem] font-semibold tracking-tight leading-none tabular-nums transition-colors',
+                attention ? 'text-danger' : 'text-foreground'
               )}
             >
               {displayValue}
@@ -255,7 +255,7 @@ export function StatCard({
 
         {/* Caption */}
         {caption && !loading && (
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/45 select-none">
+          <p className="text-[11.5px] font-medium text-muted-foreground/60 select-none">
             {caption}
           </p>
         )}

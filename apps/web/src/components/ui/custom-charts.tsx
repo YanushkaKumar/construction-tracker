@@ -159,7 +159,7 @@ export function DonutChart({
                 <p className="text-[13px] font-semibold text-muted-foreground/80 truncate max-w-[110px]">
                   {data[hoveredIndex].label}
                 </p>
-                <p className="text-[16px] font-black text-foreground mt-0.5 font-mono text-financial">
+                <p className="text-[16px] font-semibold text-foreground mt-0.5 font-mono text-financial">
                   {isCurrency ? formatLKR(data[hoveredIndex].value) : `${valuePrefix}${data[hoveredIndex].value.toLocaleString()}`}
                 </p>
                 <p className="text-[13px] font-bold text-success mt-0.5">
@@ -171,7 +171,7 @@ export function DonutChart({
                 <p className="text-[13px] font-semibold text-muted-foreground/60">
                   {subtitle}
                 </p>
-                <p className="text-[18px] font-black text-foreground mt-0.5 font-mono text-financial">
+                <p className="text-[18px] font-semibold text-foreground mt-0.5 font-mono text-financial">
                   {isCurrency ? formatLKR(total) : `${valuePrefix}${total.toLocaleString()}`}
                 </p>
               </>
@@ -484,7 +484,7 @@ export function ResponsiveBarChart({
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: activeSeries[hoveredBar?.seriesIdx || 0]?.color }} />
               <span className="font-bold text-muted-foreground">{tooltip.label}:</span>
-              <span className="font-black text-foreground font-mono text-financial">{tooltip.value}</span>
+              <span className="font-semibold text-foreground font-mono text-financial">{tooltip.value}</span>
             </div>
           </div>
         )}
@@ -782,7 +782,7 @@ export function LineAreaChart({
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: activeSeries[hoveredPoint?.seriesIdx || 0]?.color }} />
               <span className="font-bold text-muted-foreground">{tooltip.label}:</span>
-              <span className="font-black text-foreground font-mono text-financial">{tooltip.value}</span>
+              <span className="font-semibold text-foreground font-mono text-financial">{tooltip.value}</span>
             </div>
           </div>
         )}
@@ -853,7 +853,7 @@ export function RadialGauge({ value, title, label = 'Score' }: RadialGaugeProps)
           />
         </svg>
         <div className="absolute bottom-2 inset-x-0 flex flex-col items-center">
-          <p className="text-[32px] font-black text-foreground tracking-tight leading-none font-mono">
+          <p className="text-[32px] font-semibold text-foreground tracking-tight leading-none font-mono">
             {pct}%
           </p>
           <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 mt-1">

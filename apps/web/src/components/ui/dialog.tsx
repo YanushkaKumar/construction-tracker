@@ -12,17 +12,15 @@ function Dialog({ ...props }: DialogPrimitive.Root.Props) {
 }
 
 function DialogTrigger({ asChild, children, ...props }: DialogPrimitive.Trigger.Props & { asChild?: boolean; children?: React.ReactNode }) {
-  if (asChild) {
-    // When asChild, wrap the trigger in a neutral span and render children directly
-    // This prevents button-inside-button nesting with @base-ui
+  if (asChild && React.isValidElement(children)) {
+    // Compose trigger behavior onto the child element itself (Base UI `render`
+    // prop), so the rendered node stays a real <button>
     return (
       <DialogPrimitive.Trigger
         data-slot="dialog-trigger"
-        render={<span style={{ display: 'contents' }} />}
+        render={children as React.ReactElement<Record<string, unknown>>}
         {...props}
-      >
-        {children}
-      </DialogPrimitive.Trigger>
+      />
     );
   }
   return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props}>{children}</DialogPrimitive.Trigger>;

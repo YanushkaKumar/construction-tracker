@@ -164,6 +164,19 @@ export class ExpenseService {
     });
   }
 
+  async findAllByCompany(companyId: string, status?: string) {
+    return this.prisma.expense.findMany({
+      where: { project: { companyId }, ...(status ? { status: status as any } : {}) },
+      include: {
+        project: { select: { id: true, name: true, code: true } },
+        submittedBy: { select: { id: true, firstName: true, lastName: true } },
+        approvedBy: { select: { id: true, firstName: true, lastName: true } },
+        allocations: { include: { fundingSource: true } }
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async findPending(companyId: string) {
     return this.prisma.expense.findMany({
       where: { status: 'PENDING', project: { companyId } },

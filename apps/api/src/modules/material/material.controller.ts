@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { MaterialService } from './material.service';
@@ -24,6 +24,12 @@ export class MaterialController {
   @ApiOperation({ summary: 'Create material request' })
   createRequest(@Param('projectId') projectId: string, @CurrentUser() user: JwtPayload, @Body() data: any) {
     return this.materialService.createRequest(projectId, user.sub, data);
+  }
+
+  @Get('material-requests')
+  @ApiOperation({ summary: 'List all company material requests' })
+  findAllRequests(@CompanyId() companyId: string, @Query('status') status?: string) {
+    return this.materialService.findRequestsByCompany(companyId, status);
   }
 
   @Get('projects/:projectId/material-requests')

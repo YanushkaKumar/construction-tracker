@@ -8,7 +8,7 @@ import {
   Wallet, TrendingDown, TrendingUp, CircleDollarSign, Banknote,
   Zap, ChevronRight, ArrowUpRight, Download, Plus, CheckCircle2,
   AlertTriangle, BarChart2, Building2, Landmark, FileText,
-  RefreshCw, Loader2, AlertCircle, Coins, Sparkles, FileSpreadsheet,
+  RefreshCw, Loader2, AlertCircle, Coins, FileSpreadsheet,
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -463,7 +463,7 @@ function PurchasesTab() {
           <div className="space-y-0.5">
             {fallocs.map((fa: any) => (
               <div key={fa.id} className="text-[11px] leading-tight">
-                <span className="font-semibold text-indigo-400">{fa.fundingSource?.name}</span>
+                <span className="font-semibold text-primary">{fa.fundingSource?.name}</span>
                 <span className="text-[9px] text-muted-foreground/60 font-mono ml-1">({fmt(fa.amount)})</span>
               </div>
             ))}
@@ -585,7 +585,7 @@ function AssetsTab() {
           <div className="space-y-0.5">
             {fallocs.map((fa: any) => (
               <div key={fa.id} className="text-[11px] leading-tight font-semibold">
-                <span className="text-indigo-400">{fa.fundingSource?.name}</span>
+                <span className="text-primary">{fa.fundingSource?.name}</span>
                 <span className="text-[9px] text-muted-foreground/60 font-mono ml-1">({fmt(fa.amount)})</span>
               </div>
             ))}
@@ -877,7 +877,7 @@ function FundingDashboardTab() {
                   {/* Allocation deductions nodes */}
                   {selectedWallet.allocations && selectedWallet.allocations.map((alloc: any) => (
                     <div key={alloc.id} className="relative text-xs font-semibold">
-                      <span className="absolute -left-[25px] w-2 h-2 rounded-full bg-indigo-400 ring-4 ring-card" />
+                      <span className="absolute -left-[25px] w-2 h-2 rounded-full bg-primary ring-4 ring-card" />
                       <p className="text-foreground/90 font-bold font-mono">-{fmt(alloc.amount)}</p>
                       <p className="text-[10px] text-muted-foreground/70 mt-0.5">{alloc.title}</p>
                     </div>
@@ -923,7 +923,9 @@ function MoneyAllocationsMatrixTab() {
   }
 
   // Find unique project names mapped in matrix
-  const projectHeaders = Array.from(new Set(matrix.flatMap((row: any) => row.projects.map((p: any) => p.name)))) as string[];
+  const projectHeaders = Array.from(
+    new Set(matrix.flatMap((row: any) => (row.allocations ?? []).map((a: any) => a.projectName)))
+  ) as string[];
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-border/25 bg-card shadow-surface text-left animate-in slide-in-from-bottom-2 duration-300">
@@ -941,7 +943,7 @@ function MoneyAllocationsMatrixTab() {
             <tr key={row.sourceId} className="border-b border-border/10 last:border-0 hover:bg-accent/20 transition-colors">
               <td className="px-5 py-4 font-bold text-foreground">{row.sourceName}</td>
               {projectHeaders.map((pName) => {
-                const match = row.projects.find((p: any) => p.name === pName);
+                const match = (row.allocations ?? []).find((a: any) => a.projectName === pName);
                 return (
                   <td key={pName} className="px-5 py-4 text-right font-mono font-bold text-muted-foreground/80">
                     {match ? fmt(match.amount) : '—'}
@@ -1107,7 +1109,7 @@ function AuditTrailTab() {
           {auditLogs.map((log: any) => (
             <tr key={log.id} className="border-b border-border/10 last:border-0 hover:bg-accent/20 transition-colors">
               <td className="px-5 py-4 text-muted-foreground font-mono">{new Date(log.expenseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
-              <td className="px-5 py-4 font-mono font-bold text-indigo-400">JNL-{log.id.substring(0, 8).toUpperCase()}</td>
+              <td className="px-5 py-4 font-mono font-semibold text-primary">JNL-{log.id.substring(0, 8).toUpperCase()}</td>
               <td className="px-5 py-4 font-semibold text-foreground/80">{log.project?.name || 'General'}</td>
               <td className="px-5 py-4 text-muted-foreground uppercase text-[9px] font-mono">{log.category}</td>
               <td className="px-5 py-4 font-mono font-bold text-success">-{fmt(Number(log.amount))}</td>

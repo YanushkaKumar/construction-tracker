@@ -62,7 +62,7 @@ export default function NotificationsPage() {
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'TASK_ASSIGNED': return <CheckSquare className="w-4 h-4 text-blue-500" />;
-      case 'EXPENSE_APPROVED': return <Landmark className="w-4 h-4 text-emerald-500" />;
+      case 'EXPENSE_APPROVED': return <Landmark className="w-4 h-4 text-success" />;
       case 'DAILY_LOG_SUBMITTED': return <FileText className="w-4 h-4 text-amber-500" />;
       default: return <Bell className="w-4 h-4 text-zinc-500" />;
     }

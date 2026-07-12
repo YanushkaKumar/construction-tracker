@@ -379,7 +379,7 @@ export default function ExpensesPage() {
                       id="registerAsAsset" 
                       checked={registerAsAsset} 
                       onChange={(e) => setRegisterAsAsset(e.target.checked)}
-                      className="rounded border-border/40 text-indigo-500 focus:ring-indigo-500/20 cursor-pointer"
+                      className="rounded border-border/40 text-primary focus:ring-ring cursor-pointer"
                     />
                     <Label htmlFor="registerAsAsset" className="text-xs font-bold text-foreground/85 cursor-pointer">Register as Asset in company registry?</Label>
                   </div>
@@ -488,7 +488,7 @@ export default function ExpensesPage() {
                                 {allocationsList.length > 0 && (
                                   <div className="flex flex-wrap gap-1 mt-1 font-mono text-[9px]">
                                     {allocationsList.map((alloc: any) => (
-                                      <span key={alloc.id} className="bg-indigo-500/10 text-indigo-400 px-1.5 py-0.5 rounded-md border border-indigo-500/25">
+                                      <span key={alloc.id} className="bg-info-subtle text-info px-1.5 py-0.5 rounded-md border border-info/25">
                                         {alloc.fundingSource?.name || 'Capital Pool'}: LKR {Number(alloc.amount).toLocaleString()}
                                       </span>
                                     ))}
@@ -498,7 +498,7 @@ export default function ExpensesPage() {
                               <td className="py-3 text-muted-foreground/80 uppercase tracking-wider text-[11px] font-mono select-none">
                                 {categoryLabels[exp.category] || exp.category}
                               </td>
-                              <td className="py-3 text-right font-black text-foreground font-mono text-financial">
+                              <td className="py-3 text-right font-semibold text-foreground font-mono text-financial">
                                 LKR {exp.amount.toLocaleString()}
                               </td>
                               <td className="py-3 text-muted-foreground/80 font-mono">{new Date(exp.expenseDate).toLocaleDateString()}</td>
@@ -592,7 +592,7 @@ export default function ExpensesPage() {
 
                       <div className="flex justify-between items-baseline border-y border-border/15 py-2.5 select-none">
                         <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider font-mono">Total Amount</span>
-                        <span className="text-[20px] font-black text-danger text-financial font-mono">LKR {exp.amount.toLocaleString()}</span>
+                        <span className="text-[20px] font-semibold text-danger text-financial font-mono">LKR {exp.amount.toLocaleString()}</span>
                       </div>
 
                       {/* Display allocations for approvals too */}
@@ -601,7 +601,7 @@ export default function ExpensesPage() {
                           <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider font-mono select-none">Funding Structure</span>
                           <div className="flex flex-wrap gap-1 font-mono text-[9px]">
                             {((exp as any).allocations || []).map((alloc: any) => (
-                              <span key={alloc.id} className="bg-indigo-500/10 text-indigo-400 px-1.5 py-0.5 rounded-md border border-indigo-500/25">
+                              <span key={alloc.id} className="bg-info-subtle text-info px-1.5 py-0.5 rounded-md border border-info/25">
                                 {alloc.fundingSource?.name || 'Capital Pool'}: LKR {Number(alloc.amount).toLocaleString()}
                               </span>
                             ))}
