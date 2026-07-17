@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   LayoutDashboard, Building2, CheckSquare, FileText,
   Package, Landmark, Wallet, Users, Settings, BarChart2,
-  HardHat, Search, ArrowRight, Hash, Sparkles, Plus,
+  HardHat, Search, ArrowRight, Hash, Plus,
   Command, X,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -33,7 +33,7 @@ interface CommandPaletteProps {
 // ── Static command registry ───────────────────────────────────
 
 const NAV_COMMANDS: CommandItem[] = [
-  { id: 'nav-dashboard',       label: 'Dashboard',       description: 'Executive command center', href: '/dashboard',      icon: <LayoutDashboard className="w-4 h-4" aria-hidden />,  group: 'Navigation', keywords: ['home', 'overview'] },
+  { id: 'nav-dashboard',       label: 'Dashboard',       description: 'Overview of projects and finances', href: '/dashboard',      icon: <LayoutDashboard className="w-4 h-4" aria-hidden />,  group: 'Navigation', keywords: ['home', 'overview'] },
   { id: 'nav-projects',        label: 'Projects',        description: 'All active projects',      href: '/projects',       icon: <Building2 className="w-4 h-4" aria-hidden />,         group: 'Navigation', keywords: ['project', 'site'] },
   { id: 'nav-tasks',           label: 'Tasks',           description: 'Task management board',   href: '/tasks',          icon: <CheckSquare className="w-4 h-4" aria-hidden />,        group: 'Navigation', keywords: ['task', 'kanban', 'todo'] },
   { id: 'nav-daily-reports',   label: 'Daily Logs',      description: 'Site progress reports',   href: '/daily-reports',  icon: <FileText className="w-4 h-4" aria-hidden />,           group: 'Navigation', keywords: ['report', 'log', 'daily'] },

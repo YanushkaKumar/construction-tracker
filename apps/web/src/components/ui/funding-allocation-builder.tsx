@@ -140,7 +140,7 @@ export function FundingAllocationBuilder({
               >
                 <div className={cn(
                   'w-4 h-4 mt-0.5 rounded border flex items-center justify-center transition-all',
-                  isChecked ? 'bg-indigo-500 border-indigo-600 text-white' : 'border-border/40 bg-accent/5'
+                  isChecked ? 'bg-primary border-primary text-primary-foreground' : 'border-border/40 bg-accent/5'
                 )}>
                   {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
                 </div>

@@ -112,7 +112,10 @@ export class AttendanceService {
         worker: { companyId },
         date: { gte: new Date(startDate), lte: new Date(endDate) },
       },
-      include: { worker: { select: { id: true, firstName: true, lastName: true, skillType: true } }, project: { select: { id: true, name: true } } },
+      include: {
+        worker: { select: { id: true, firstName: true, lastName: true, skillType: true, dailyRate: true } },
+        project: { select: { id: true, name: true } },
+      },
     });
 
     // Group by worker and calculate totals
@@ -120,12 +123,24 @@ export class AttendanceService {
     for (const record of attendance) {
       const key = record.workerId;
       if (!workerMap.has(key)) {
-        workerMap.set(key, { worker: record.worker, totalDays: 0, totalWage: 0, projects: new Set() });
+        workerMap.set(key, {
+          workerId: record.worker.id,
+          firstName: record.worker.firstName,
+          lastName: record.worker.lastName,
+          skillType: record.worker.skillType ?? 'General',
+          dailyRate: Number(record.worker.dailyRate),
+          daysPresent: 0,
+          halfDays: 0,
+          totalOvertimeHours: 0,
+          totalEarnings: 0,
+          projects: new Set<string>(),
+        });
       }
       const entry = workerMap.get(key)!;
-      if (record.status === 'PRESENT') entry.totalDays += 1;
-      else if (record.status === 'HALF_DAY') entry.totalDays += 0.5;
-      entry.totalWage += Number(record.dailyWage);
+      if (record.status === 'PRESENT') entry.daysPresent += 1;
+      else if (record.status === 'HALF_DAY') entry.halfDays += 1;
+      entry.totalOvertimeHours += Number(record.overtimeHours ?? 0);
+      entry.totalEarnings += Number(record.dailyWage);
       entry.projects.add(record.project.name);
     }
 

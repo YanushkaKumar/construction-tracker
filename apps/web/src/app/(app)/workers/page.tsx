@@ -466,9 +466,9 @@ export default function WorkersPage() {
                                 onClick={() => handleAttendanceChange(w.id, status)}
                                 className={`px-2.5 py-1 text-[11px] font-bold uppercase rounded-md transition-all ${
                                   isSel
-                                    ? status === 'PRESENT' ? 'bg-success text-white shadow-sm font-black' :
-                                      status === 'HALF_DAY' ? 'bg-warning text-zinc-950 shadow-sm font-black' :
-                                      'bg-danger text-white shadow-sm font-black'
+                                    ? status === 'PRESENT' ? 'bg-success text-white shadow-sm font-semibold' :
+                                      status === 'HALF_DAY' ? 'bg-warning text-zinc-950 shadow-sm font-semibold' :
+                                      'bg-danger text-white shadow-sm font-semibold'
                                     : 'text-muted-foreground/60 hover:text-foreground'
                                 }`}
                               >
@@ -573,12 +573,12 @@ export default function WorkersPage() {
                               {pay.firstName} {pay.lastName}
                             </td>
                             <td className="py-2.5 text-muted-foreground/80">{pay.skillType}</td>
-                            <td className="py-2.5 text-muted-foreground/80 text-financial font-mono">LKR {pay.dailyRate.toLocaleString()}</td>
+                            <td className="py-2.5 text-muted-foreground/80 text-financial font-mono">LKR {Number(pay.dailyRate ?? 0).toLocaleString()}</td>
                             <td className="py-2.5 text-muted-foreground/80 font-medium font-sans">
-                              {pay.daysPresent} Present {pay.halfDays > 0 && `• ${pay.halfDays} Half Days`}
+                              {pay.daysPresent ?? 0} Present {(pay.halfDays ?? 0) > 0 && `• ${pay.halfDays} Half Days`}
                             </td>
-                            <td className="py-2.5 text-muted-foreground/80 text-center text-financial font-mono">{pay.totalOvertimeHours} Hrs</td>
-                            <td className="py-2.5 pr-2 text-right font-black text-foreground text-financial font-mono">LKR {pay.totalEarnings.toLocaleString()}</td>
+                            <td className="py-2.5 text-muted-foreground/80 text-center text-financial font-mono">{pay.totalOvertimeHours ?? 0} Hrs</td>
+                            <td className="py-2.5 pr-2 text-right font-semibold text-foreground text-financial font-mono">LKR {Number(pay.totalEarnings ?? 0).toLocaleString()}</td>
                           </tr>
                         ))}
                       </tbody>

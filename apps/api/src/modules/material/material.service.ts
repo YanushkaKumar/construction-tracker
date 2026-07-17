@@ -20,6 +20,18 @@ export class MaterialService {
     });
   }
 
+  async findRequestsByCompany(companyId: string, status?: string) {
+    return this.prisma.materialRequest.findMany({
+      where: { project: { companyId }, ...(status ? { status: status as any } : {}) },
+      include: {
+        material: true,
+        supplier: true,
+        project: { select: { id: true, name: true, code: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async findRequestsByProject(projectId: string) {
     return this.prisma.materialRequest.findMany({
       where: { projectId },

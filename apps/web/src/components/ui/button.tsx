@@ -44,9 +44,6 @@ const buttonVariants = cva(
           "hover:bg-warning-subtle hover:border-warning/40",
         link:
           "text-primary underline-offset-4 hover:underline border-transparent p-0 h-auto",
-        premium:
-          "bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-0 shadow-elevated " +
-          "hover:brightness-110 hover:shadow-modal",
       },
       size: {
         default: "h-9 px-3.5 text-[13.5px] [&_svg:not([class*='size-'])]:size-4",

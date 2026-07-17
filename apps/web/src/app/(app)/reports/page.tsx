@@ -63,9 +63,23 @@ const categoryLabels: Record<string, string> = {
   OTHER: 'Miscellaneous',
 };
 
+interface LabourReportRow {
+  project?: { id: string; name: string; code: string };
+  totalWage: number;
+  totalHours: number;
+  attendanceRecords: number;
+}
+
+const LABOUR_RANGES = [
+  { id: '7', label: 'Last 7 days', days: 7 },
+  { id: '30', label: 'Last 30 days', days: 30 },
+  { id: '90', label: 'Last 90 days', days: 90 },
+] as const;
+
 export default function ReportsPage() {
-  const [activeTab, setActiveTab] = useState<'financials' | 'expenses' | 'progress'>('financials');
+  const [activeTab, setActiveTab] = useState<'financials' | 'expenses' | 'labour' | 'progress'>('financials');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('ALL');
+  const [labourRange, setLabourRange] = useState<string>('30');
 
   // Fetch budget vs actual report
   const { data: budgetData, isLoading: isBudgetLoading } = useQuery<BudgetVsActualData[]>({
@@ -82,6 +96,22 @@ export default function ReportsPage() {
       const response = await apiClient.get(url);
       return response.data;
     },
+    retry: 1,
+  });
+
+  // Fetch labour report for the selected date range
+  const { data: labourData, isLoading: isLabourLoading } = useQuery<LabourReportRow[]>({
+    queryKey: ['report-labour', labourRange],
+    queryFn: async () => {
+      const days = LABOUR_RANGES.find(r => r.id === labourRange)?.days ?? 30;
+      const end = new Date();
+      const start = new Date();
+      start.setDate(end.getDate() - days);
+      const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
+      const response = await apiClient.get(`/reports/labour?startDate=${fmtDate(start)}&endDate=${fmtDate(end)}`);
+      return response.data;
+    },
+    enabled: activeTab === 'labour',
     retry: 1,
   });
 
@@ -118,6 +148,7 @@ export default function ReportsPage() {
         {[
           { id: 'financials', label: 'Financial Health', icon: Landmark },
           { id: 'expenses', label: 'Expense Distribution', icon: TrendingUp },
+          { id: 'labour', label: 'Labour Costs', icon: Users },
           { id: 'progress', label: 'Timeline & Progress', icon: Building2 }
         ].map((tab) => {
           const Icon = tab.icon;
@@ -312,6 +343,103 @@ export default function ReportsPage() {
                   </CardContent>
                 </Card>
               </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'labour' && (
+          <div className="space-y-4 animate-in slide-in-from-bottom-2 duration-300">
+            {/* Date range selector */}
+            <div className="flex items-center gap-2 select-none">
+              {LABOUR_RANGES.map(r => (
+                <button
+                  key={r.id}
+                  onClick={() => setLabourRange(r.id)}
+                  className={`px-3.5 py-1.5 rounded-lg text-[13px] font-semibold border transition-all duration-200 ${
+                    labourRange === r.id
+                      ? 'bg-card text-foreground border-border/30 shadow-sm'
+                      : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-accent/40'
+                  }`}
+                  aria-pressed={labourRange === r.id}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+
+            {isLabourLoading ? (
+              <div className="space-y-3 animate-pulse">
+                {[...Array(2)].map((_, i) => (
+                  <div key={i} className="h-32 rounded-xl bg-accent/15 border border-border/20 shimmer-bg" />
+                ))}
+              </div>
+            ) : (labourData ?? []).length === 0 ? (
+              <Card className="border-border/30">
+                <CardContent className="p-10 text-center">
+                  <Users className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" aria-hidden />
+                  <p className="text-[14px] font-semibold text-foreground">No attendance in this period</p>
+                  <p className="text-[13px] text-muted-foreground mt-1">
+                    Labour costs appear here once site attendance has been marked.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Summary stats */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 select-none">
+                  {(() => {
+                    const rows = labourData ?? [];
+                    const totalWage = rows.reduce((a, r) => a + r.totalWage, 0);
+                    const totalHours = rows.reduce((a, r) => a + r.totalHours, 0);
+                    const totalRecords = rows.reduce((a, r) => a + r.attendanceRecords, 0);
+                    return [
+                      { label: 'Total labour cost', value: `LKR ${totalWage.toLocaleString()}` },
+                      { label: 'Hours worked', value: totalHours.toLocaleString() },
+                      { label: 'Attendance records', value: totalRecords.toLocaleString() },
+                    ].map(stat => (
+                      <Card key={stat.label} className="border-border/30 shadow-surface">
+                        <CardContent className="p-4">
+                          <span className="text-[12.5px] font-medium text-muted-foreground">{stat.label}</span>
+                          <p className="text-[26px] font-semibold text-foreground mt-1.5 tracking-tight tabular-nums">
+                            {stat.value}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    ));
+                  })()}
+                </div>
+
+                {/* Per-project table */}
+                <Card className="border-border/30 shadow-surface">
+                  <CardContent className="p-4">
+                    <h3 className="text-[14px] font-semibold text-foreground mb-4 select-none">Labour cost by project</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-[14px] text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-border/25 text-muted-foreground text-[12px] font-medium select-none">
+                            <th className="pb-2.5 pl-2">Project</th>
+                            <th className="pb-2.5">Code</th>
+                            <th className="pb-2.5 text-right">Hours</th>
+                            <th className="pb-2.5 text-right">Records</th>
+                            <th className="pb-2.5 pr-2 text-right">Wages paid</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(labourData ?? []).map((row, i) => (
+                            <tr key={row.project?.id ?? i} className="border-b border-border/15 last:border-0 hover:bg-accent/15 transition-colors">
+                              <td className="py-3 pl-2 text-foreground font-semibold">{row.project?.name ?? 'Unknown project'}</td>
+                              <td className="py-3 text-muted-foreground font-mono text-[13px]">{row.project?.code ?? '—'}</td>
+                              <td className="py-3 text-right tabular-nums">{row.totalHours.toLocaleString()}</td>
+                              <td className="py-3 text-right tabular-nums">{row.attendanceRecords.toLocaleString()}</td>
+                              <td className="py-3 pr-2 text-right font-semibold text-foreground tabular-nums">LKR {row.totalWage.toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
             )}
           </div>
         )}

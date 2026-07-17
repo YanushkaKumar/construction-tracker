@@ -24,6 +24,12 @@ export class ExpenseController {
     return this.expenseService.findByProject(projectId, status);
   }
 
+  @Get('expenses')
+  @ApiOperation({ summary: 'List all company expenses' })
+  findAllByCompany(@CompanyId() companyId: string, @Query('status') status?: string) {
+    return this.expenseService.findAllByCompany(companyId, status);
+  }
+
   @Get('expenses/pending')
   @ApiOperation({ summary: 'Get pending expense approvals' })
   findPending(@CompanyId() companyId: string) {

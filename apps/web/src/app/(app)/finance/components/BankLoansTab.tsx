@@ -106,7 +106,7 @@ export function BankLoansTab() {
       <div className="flex justify-between items-center bg-card/65 backdrop-blur-xl p-4 rounded-2xl border border-border/25 shadow-surface text-left select-none">
         <div>
           <h2 className="text-[18px] lg:text-[20px] font-bold text-foreground flex items-center gap-2">
-            <Landmark className="w-5 h-5 text-indigo-500" />
+            <Landmark className="w-5 h-5 text-primary" />
             Company Bank Loans
             {(isFetching || createLoan.isPending || createRepayment.isPending || delLoan.isPending || deleteRepayment.isPending) && (
               <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
@@ -171,7 +171,7 @@ export function BankLoansTab() {
         <DialogContent className="max-w-md rounded-2xl bg-card border border-border/30 p-5 text-left shadow-elevated">
           <DialogHeader className="border-b border-border/15 pb-3.5 mb-3.5">
             <DialogTitle className="flex items-center gap-2 text-sm font-bold">
-              <Coins className="w-5 h-5 text-emerald-500" />
+              <Coins className="w-5 h-5 text-success" />
               Record Loan Repayment
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground mt-0.5">Add a repayment to reduce the outstanding debt balance of this loan.</DialogDescription>
@@ -220,12 +220,12 @@ export function BankLoansTab() {
             
             return (
               <Card key={loan.id} className="overflow-hidden glass-panel border-border/30 rounded-2xl relative shadow-panel text-left hover:border-border/60 transition-all duration-300">
-                <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500" />
+                <div className="h-1 w-full bg-primary/60" />
                 <CardContent className="p-5 space-y-4">
                   <div className="flex justify-between items-start flex-wrap gap-4">
                     <div>
                       <div className="flex items-center gap-2 mb-1.5 select-none">
-                        <Building className="w-4.5 h-4.5 text-indigo-500" />
+                        <Building className="w-4.5 h-4.5 text-primary" />
                         <h3 className="font-bold text-[18px] lg:text-[20px] text-foreground">{loan.bankName}</h3>
                       </div>
                       <span className="text-[11px] text-muted-foreground/60 font-semibold bg-accent/40 border border-border/25 px-2.5 py-0.5 rounded-lg select-none font-mono">
@@ -313,7 +313,7 @@ export function BankLoansTab() {
                                 <td className="py-2 text-muted-foreground/80 font-mono">{new Date(r.paymentDate).toLocaleDateString()}</td>
                                 <td className="py-2 text-foreground font-mono">{r.referenceNo || '—'}</td>
                                 <td className="py-2 text-muted-foreground/75 font-normal">{r.notes || '—'}</td>
-                                <td className="py-2 text-right font-black text-info font-mono">{fmt(r.amount)}</td>
+                                <td className="py-2 text-right font-semibold text-info font-mono">{fmt(r.amount)}</td>
                                 <td className="py-2 pr-2 text-right">
                                   <button className="text-muted-foreground/60 hover:text-danger p-1 transition-colors rounded hover:bg-danger/10" onClick={() => deleteRepayment.mutate(r.id)}>
                                     <Trash2 className="w-3.5 h-3.5" />

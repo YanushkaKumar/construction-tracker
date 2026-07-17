@@ -35,4 +35,22 @@ export class AuditService {
       this.logger.error('Failed to create audit log', error);
     }
   }
+
+  async findAll(companyId: string, limit = 100) {
+    const logs = await this.prisma.auditLog.findMany({
+      where: { companyId },
+      include: { user: { select: { firstName: true, lastName: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: Math.min(Math.max(limit, 1), 500),
+    });
+
+    return logs.map((log) => ({
+      id: log.id,
+      action: log.action,
+      entityType: log.entityType,
+      entityId: log.entityId,
+      user: `${log.user.firstName} ${log.user.lastName}`.trim(),
+      createdAt: log.createdAt,
+    }));
+  }
 }

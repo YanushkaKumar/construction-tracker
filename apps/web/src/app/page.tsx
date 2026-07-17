@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   HardHat, FileText, Landmark, Users, ClipboardCheck,
   CheckCircle, ArrowRight, TrendingUp, Layers,
-  ShieldCheck, Sparkles, ChevronRight, Activity,
+  ShieldCheck, ChevronRight, Activity,
   Check, BarChart2, Building2, Package, Wallet,
   Zap, Globe, Lock, Bell, Download, Menu, X,
 } from 'lucide-react';
@@ -110,10 +110,10 @@ function FeatureCard({ icon: Icon, title, description, accent }: {
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div className="text-center select-none">
-      <p className="text-[2.5rem] md:text-[3rem] font-bold text-foreground/90 font-mono tracking-tight leading-none tabular-nums">
+      <p className="text-[2.5rem] md:text-[3rem] font-semibold text-foreground tracking-tight leading-none tabular-nums">
         {value}
       </p>
-      <p className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground/50 mt-2 font-mono">
+      <p className="text-[13px] font-medium text-muted-foreground/60 mt-2">
         {label}
       </p>
     </div>
@@ -157,14 +157,14 @@ export default function LandingPage() {
   };
 
   const features = [
-    { icon: Building2,     title: 'Project Management',   description: 'Multi-project dashboards with real-time budget utilisation, timeline tracking, and milestone progress.', accent: 'bg-blue-500/10 text-blue-500' },
-    { icon: Users,         title: 'Workforce & Payroll',   description: 'Register workers, track daily attendance, log overtime hours, and generate automated wage sheets.', accent: 'bg-green-500/10 text-green-500' },
-    { icon: FileText,      title: 'Daily Site Reports',    description: 'Structured field logs with photo uploads, work progress, labour counts, and material consumption.', accent: 'bg-amber-500/10 text-amber-500' },
-    { icon: Package,       title: 'Materials & Inventory', description: 'Issue material requests, track delivery statuses, and manage supplier invoices across all sites.', accent: 'bg-purple-500/10 text-purple-500' },
-    { icon: Landmark,      title: 'Expense Management',    description: 'Role-based expense voucher submission, manager approvals, and full audit trail for every payment.', accent: 'bg-rose-500/10 text-rose-500' },
-    { icon: Wallet,        title: 'Treasury & Finance',    description: 'Track advance payments, bank loans, fixed assets, and generate consolidated cash-flow statements.', accent: 'bg-teal-500/10 text-teal-500' },
-    { icon: ClipboardCheck,title: 'Task Tracking',         description: 'Assign tasks to team members, set deadlines, manage priorities, and visualise progress on a Kanban board.', accent: 'bg-indigo-500/10 text-indigo-500' },
-    { icon: BarChart2,     title: 'Executive Reporting',   description: 'Role-adaptive dashboards with AI-generated insights, spend analysis, and risk scoring.', accent: 'bg-orange-500/10 text-orange-500' },
+    { icon: Building2,     title: 'Project Management',   description: 'Multi-project dashboards with real-time budget utilisation, timeline tracking, and milestone progress.', accent: 'bg-info-subtle text-info' },
+    { icon: Users,         title: 'Workforce & Payroll',   description: 'Register workers, track daily attendance, log overtime hours, and generate automated wage sheets.', accent: 'bg-success-subtle text-success' },
+    { icon: FileText,      title: 'Daily Site Reports',    description: 'Structured field logs with photo uploads, work progress, labour counts, and material consumption.', accent: 'bg-warning-subtle text-warning' },
+    { icon: Package,       title: 'Materials & Inventory', description: 'Issue material requests, track delivery statuses, and manage supplier invoices across all sites.', accent: 'bg-[var(--chart-4)]/10 text-[var(--chart-4)]' },
+    { icon: Landmark,      title: 'Expense Management',    description: 'Role-based expense voucher submission, manager approvals, and full audit trail for every payment.', accent: 'bg-danger-subtle text-danger' },
+    { icon: Wallet,        title: 'Treasury & Finance',    description: 'Track advance payments, bank loans, fixed assets, and generate consolidated cash-flow statements.', accent: 'bg-[var(--chart-5)]/10 text-[var(--chart-5)]' },
+    { icon: ClipboardCheck,title: 'Task Tracking',         description: 'Assign tasks to team members, set deadlines, manage priorities, and visualise progress on a Kanban board.', accent: 'bg-[var(--chart-1)]/10 text-[var(--chart-1)]' },
+    { icon: BarChart2,     title: 'Executive Reporting',   description: 'Role-adaptive dashboards with spend analysis, cash-flow trends, and budget risk flags.', accent: 'bg-[var(--chart-3)]/10 text-[var(--chart-3)]' },
   ];
 
   const activeContent = roles[activeRole];
@@ -184,24 +184,21 @@ export default function LandingPage() {
       <section className="relative flex flex-col items-center text-center px-6 pt-24 pb-20 md:pt-32 md:pb-28 max-w-6xl mx-auto w-full" aria-label="Hero">
         {/* Eyebrow badge */}
         <div className="inline-flex items-center gap-2 rounded-full border border-border/30 bg-accent/40 backdrop-blur-sm px-4 py-1.5 mb-7 select-none">
-          <Sparkles className="w-3.5 h-3.5 text-warning" aria-hidden />
-          <span className="text-[11px] font-bold uppercase tracking-widest text-foreground/75 font-mono">
-            Built for Sri Lankan construction industry
+          <HardHat className="w-3.5 h-3.5 text-muted-foreground/70" aria-hidden />
+          <span className="text-[12px] font-medium text-foreground/75">
+            Built for the Sri Lankan construction industry
           </span>
         </div>
 
         {/* Headline */}
         <h1 className="text-[3rem] md:text-[4.5rem] xl:text-[5.5rem] font-semibold tracking-[-0.04em] leading-[1.04] text-foreground/95 max-w-4xl mx-auto mb-7">
-          The construction{' '}
-          <span className="text-transparent bg-clip-text bg-gradient-to-br from-foreground via-foreground/85 to-foreground/40">
-            command center
-          </span>
-          {' '}you deserve.
+          Run your construction business{' '}
+          <span className="text-muted-foreground">without the paperwork.</span>
         </h1>
 
         <p className="text-[17px] text-muted-foreground/70 max-w-2xl mx-auto leading-relaxed font-medium mb-10">
-          BuildTrack brings real-time project management, workforce tracking, material procurement,
-          and financial control into one premium, enterprise-grade workspace — designed for Sri Lanka.
+          BuildTrack brings project management, workforce tracking, material procurement,
+          and financial control together in one workspace — from site to head office.
         </p>
 
         {/* CTA buttons */}
@@ -225,10 +222,10 @@ export default function LandingPage() {
         {/* Trust badges */}
         <div className="flex flex-wrap items-center justify-center gap-5 text-[12px] font-semibold text-muted-foreground/55 select-none">
           {[
-            { icon: ShieldCheck, text: 'SOC 2 compliant' },
-            { icon: Lock,        text: 'End-to-end encrypted' },
-            { icon: Globe,       text: 'Sri Lanka hosted' },
-            { icon: Zap,         text: '99.97% uptime SLA' },
+            { icon: ShieldCheck, text: 'Role-based access control' },
+            { icon: Lock,        text: 'Your data stays private' },
+            { icon: Globe,       text: 'Works on any device' },
+            { icon: Zap,         text: 'Fast, even on site connections' },
           ].map(b => (
             <div key={b.text} className="flex items-center gap-1.5">
               <b.icon className="w-3.5 h-3.5 text-success" aria-hidden />
@@ -241,10 +238,10 @@ export default function LandingPage() {
       {/* ── Stats ─────────────────────────────────────────── */}
       <section className="w-full max-w-5xl mx-auto px-6 py-16 border-y border-border/15" aria-label="Platform statistics">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
-          <Stat value="2,400+"   label="Projects tracked"     />
-          <Stat value="LKR 1.2B" label="Expenses processed"   />
-          <Stat value="350+"     label="Site supervisors"     />
-          <Stat value="99.97%"   label="Platform uptime"      />
+          <Stat value="8"       label="Integrated modules"        />
+          <Stat value="6"       label="Role-based workspaces"     />
+          <Stat value="2 min"   label="To log a daily report"     />
+          <Stat value="LKR 0"   label="Per-seat charges"          />
         </div>
       </section>
 
@@ -253,7 +250,7 @@ export default function LandingPage() {
         <div className="text-center mb-14 select-none">
           <div className="inline-flex items-center gap-2 rounded-full border border-border/25 bg-accent/30 px-4 py-1.5 mb-5">
             <Layers className="w-3.5 h-3.5 text-primary" aria-hidden />
-            <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/65 font-mono">Platform modules</span>
+            <span className="text-[12px] font-medium text-muted-foreground/75">Platform modules</span>
           </div>
           <h2 id="features-heading" className="text-[2.5rem] md:text-[3.5rem] font-semibold tracking-[-0.03em] text-foreground/90 mb-4 leading-tight">
             Everything your site needs,<br className="hidden md:block" /> nothing it doesn&apos;t.
@@ -289,8 +286,8 @@ export default function LandingPage() {
               { step: '03', title: 'Track everything in real time', description: 'Monitor expenses, daily reports, tasks, worker attendance, and cash flow — live — from the executive dashboard.' },
             ].map(s => (
               <div key={s.step} className="relative bg-card border border-border/25 rounded-2xl p-7 shadow-surface text-left">
-                <div className="text-[40px] font-black text-foreground/8 absolute top-4 right-5 select-none font-mono" aria-hidden>{s.step}</div>
-                <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-foreground text-background text-[14px] font-black mb-5 shadow-surface font-mono" aria-hidden>
+                <div className="text-[40px] font-semibold text-foreground/8 absolute top-4 right-5 select-none tabular-nums" aria-hidden>{s.step}</div>
+                <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-foreground text-background text-[14px] font-semibold mb-5 shadow-surface tabular-nums" aria-hidden>
                   {s.step}
                 </div>
                 <h3 className="text-[16px] font-bold text-foreground/90 mb-2">{s.title}</h3>
@@ -334,7 +331,7 @@ export default function LandingPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center max-w-5xl mx-auto" key={activeRole}>
           <div className="text-left">
             <div className="inline-flex items-center gap-2 rounded-full border border-border/20 bg-accent/30 px-3 py-1 mb-5">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 font-mono">{activeContent.badge}</span>
+              <span className="text-[12px] font-medium text-muted-foreground/70">{activeContent.badge}</span>
             </div>
             <h3 className="text-[2rem] font-semibold tracking-[-0.02em] text-foreground/90 mb-4 leading-tight">
               {activeContent.title}
@@ -362,7 +359,7 @@ export default function LandingPage() {
 
           {/* Mock dashboard preview */}
           <div className="relative bg-card border border-border/25 rounded-2xl p-5 shadow-elevated overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary via-success to-info" aria-hidden />
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary/60" aria-hidden />
             <div className="flex items-center gap-2 mb-4 select-none">
               <div className="w-3 h-3 rounded-full bg-danger/60" aria-hidden />
               <div className="w-3 h-3 rounded-full bg-warning/60" aria-hidden />
@@ -401,7 +398,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-border/25 bg-accent/40 px-4 py-1.5 mb-6 select-none">
             <TrendingUp className="w-3.5 h-3.5 text-success" aria-hidden />
-            <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/65 font-mono">Simple, transparent pricing</span>
+            <span className="text-[12px] font-medium text-muted-foreground/75">Simple, transparent pricing</span>
           </div>
           <h2 id="pricing-heading" className="text-[2.5rem] md:text-[3rem] font-semibold tracking-[-0.03em] text-foreground/90 mb-4">
             One plan. Everything included.
@@ -411,11 +408,11 @@ export default function LandingPage() {
           </p>
 
           <div className="max-w-sm mx-auto bg-card border border-border/25 rounded-2xl p-8 shadow-elevated text-left relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-success" aria-hidden />
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary/60" aria-hidden />
             <div className="mb-6">
-              <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/50 font-mono mb-2">Enterprise Plan</p>
+              <p className="text-[12px] font-medium text-muted-foreground/70 mb-2">BuildTrack Standard</p>
               <div className="flex items-baseline gap-2">
-                <span className="text-[3rem] font-black text-foreground tracking-tight font-mono">LKR 15K</span>
+                <span className="text-[3rem] font-semibold text-foreground tracking-tight tabular-nums">LKR 15K</span>
                 <span className="text-[14px] text-muted-foreground/60 font-medium">/month</span>
               </div>
               <p className="text-[12px] text-muted-foreground/55 mt-1">Unlimited projects, unlimited users</p>
@@ -450,13 +447,13 @@ export default function LandingPage() {
       <section className="w-full max-w-4xl mx-auto px-6 py-32 text-center" aria-label="Call to action">
         <div className="inline-flex items-center gap-2 rounded-full border border-border/25 bg-accent/30 px-4 py-1.5 mb-6 select-none">
           <Activity className="w-3.5 h-3.5 text-primary animate-pulse-soft" aria-hidden />
-          <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/65 font-mono">Ready to get started?</span>
+          <span className="text-[12px] font-medium text-muted-foreground/75">Ready to get started?</span>
         </div>
         <h2 className="text-[3rem] md:text-[4rem] font-semibold tracking-[-0.03em] leading-[1.05] text-foreground/90 mb-5">
           Transform how you build.
         </h2>
         <p className="text-[16px] text-muted-foreground/60 max-w-lg mx-auto leading-relaxed mb-10">
-          Join hundreds of Sri Lankan construction professionals who run their sites on BuildTrack.
+          Bring your projects, people, and money into one workspace.
           Start your 14-day free trial — no credit card required.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
