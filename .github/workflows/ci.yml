@@ -152,7 +152,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
-          source: "docker-compose.yml,infra"
+          source: "docker-compose.yml,infra/nginx/conf.d/default.conf,infra/postgres/init.sql,infra/prometheus/prometheus.yml,infra/grafana/dashboards/buildtrack.json"
           target: "/home/${{ secrets.EC2_USER }}/buildtrack"
 
       - name: Deploy services on EC2 via SSH
