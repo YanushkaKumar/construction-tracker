@@ -8,10 +8,8 @@ on:
 
 env:
   NODE_VERSION: '20'
-  AWS_REGION: 'us-east-1'
-  AWS_ACCOUNT_ID: '842549707720'
-  ECR_REGISTRY: '842549707720.dkr.ecr.us-east-1.amazonaws.com'
-  ECS_CLUSTER: 'buildtrack-cluster'
+  DOCKERHUB_REPO: 'yanushka101/build-rack'
+
 
 jobs:
   lint:
@@ -100,23 +98,18 @@ jobs:
       - run: npm run build -- --if-present
 
   push-images:
-    name: Build & Push to AWS ECR
+    name: Build & Push to Docker Hub
     runs-on: ubuntu-latest
     needs: [test-api, test-web]
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Log in to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -124,40 +117,63 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push API to ECR
+      - name: Build and push API
         uses: docker/build-push-action@v5
         with:
           context: ./apps/api
           file: ./apps/api/Dockerfile
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}/buildtrack-api:latest
-            ${{ env.ECR_REGISTRY }}/buildtrack-api:${{ github.sha }}
+            ${{ env.DOCKERHUB_REPO }}:api-latest
+            ${{ env.DOCKERHUB_REPO }}:api-${{ github.sha }}
 
-      - name: Build and push Web to ECR
+      - name: Build and push Web
         uses: docker/build-push-action@v5
         with:
           context: ./apps/web
           file: ./apps/web/Dockerfile
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}/buildtrack-web:latest
-            ${{ env.ECR_REGISTRY }}/buildtrack-web:${{ github.sha }}
+            ${{ env.DOCKERHUB_REPO }}:web-latest
+            ${{ env.DOCKERHUB_REPO }}:web-${{ github.sha }}
 
   deploy:
-    name: Deploy to AWS ECS
+    name: Deploy to EC2
     runs-on: ubuntu-latest
     needs: push-images
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+      - uses: actions/checkout@v4
 
-      - name: Trigger Rolling Update in ECS
-        run: |
-          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service buildtrack-api-service --force-new-deployment
-          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service buildtrack-web-service --force-new-deployment
+      - name: Copy Docker Compose and Nginx configs to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          source: "docker-compose.yml,infra/nginx/conf.d/default.conf"
+          target: "/home/${{ secrets.EC2_USER }}/buildtrack"
+
+      - name: Deploy services on EC2 via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            cd /home/${{ secrets.EC2_USER }}/buildtrack
+            # Create a basic .env file if it does not exist
+            if [ ! -f .env ]; then
+              echo "Creating a dummy .env file. Please configure the environment variables on the host!"
+              cp .env.example .env
+            fi
+            
+            # Pull the latest images and restart the services
+            export IMAGE_TAG=${{ github.sha }}
+            docker compose pull
+            docker compose up -d --remove-orphans
+            
+            # Prune unused images to optimize disk space
+            docker image prune -f
