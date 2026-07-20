@@ -136,6 +136,7 @@ jobs:
           tags: |
             ${{ env.DOCKERHUB_REPO }}:web-latest
             ${{ env.DOCKERHUB_REPO }}:web-${{ github.sha }}
+            
 
   deploy:
     name: Deploy to EC2
