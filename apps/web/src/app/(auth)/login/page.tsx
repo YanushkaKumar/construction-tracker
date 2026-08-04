@@ -9,6 +9,7 @@ import * as z from 'zod';
 import { AlertCircle, ArrowRight, User } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 import { apiClient } from '@/lib/api-client';
+import { createClient } from '@/utils/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const [error, setError]       = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const supabase = createClient();
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -34,6 +36,16 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
     try {
+      // Authenticate with Supabase Auth
+      try {
+        await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+      } catch {
+        // Continue if user only exists in database
+      }
+
       const response = await apiClient.post('/auth/login', data);
       const { user, company, accessToken, refreshToken } = response.data;
       setAuth(user, company, accessToken, refreshToken);

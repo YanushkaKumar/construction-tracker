@@ -9,6 +9,7 @@ import * as z from 'zod';
 import { Loader2, AlertCircle, ArrowRight } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 import { apiClient } from '@/lib/api-client';
+import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,6 +31,7 @@ export default function RegisterPage() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const supabase = createClient();
 
   const {
     register,
@@ -52,6 +54,23 @@ export default function RegisterPage() {
     setError(null);
 
     try {
+      // Create user in Supabase Auth
+      try {
+        await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: {
+            data: {
+              first_name: data.firstName,
+              last_name: data.lastName,
+              company_name: data.companyName,
+            },
+          },
+        });
+      } catch {
+        // Continue if Supabase auth already registered or optional
+      }
+
       const response = await apiClient.post('/auth/register', data);
       const { user, company, accessToken, refreshToken } = response.data;
       
