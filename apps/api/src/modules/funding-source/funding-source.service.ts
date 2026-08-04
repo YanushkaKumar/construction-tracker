@@ -97,27 +97,27 @@ export class FundingSourceService {
   async ensureDefaultSources(companyId: string) {
     const count = await this.prisma.fundingSource.count({ where: { companyId } });
     if (count === 0) {
-      // Spawn default Company Cash and Owner Capital pools
+      // Spawn default Company Cash and Owner Capital pools for new companies
       await this.prisma.fundingSource.createMany({
         data: [
           {
             companyId,
             type: 'COMPANY_CASH',
             name: 'Primary Company Cash Pool',
-            openingBalance: 15000000,
-            currentBalance: 15000000,
-            originalAmount: 15000000,
-            remainingAmount: 15000000,
+            openingBalance: 0,
+            currentBalance: 0,
+            originalAmount: 0,
+            remainingAmount: 0,
             status: 'ACTIVE',
           },
           {
             companyId,
             type: 'OWNER_CAPITAL',
             name: 'Director Owner Capital Pool',
-            openingBalance: 5000000,
-            currentBalance: 5000000,
-            originalAmount: 5000000,
-            remainingAmount: 5000000,
+            openingBalance: 0,
+            currentBalance: 0,
+            originalAmount: 0,
+            remainingAmount: 0,
             status: 'ACTIVE',
           },
         ],
