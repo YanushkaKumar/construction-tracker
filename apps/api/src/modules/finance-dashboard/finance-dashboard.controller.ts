@@ -28,4 +28,16 @@ export class FinanceDashboardController {
   getProjectLedger(@Param('projectId') projectId: string) {
     return this.financeDashboardService.getProjectLedger(projectId);
   }
+
+  @Get('expenses/drill-down')
+  @ApiOperation({ summary: 'Deep drill-down of all expenses/purchases by category, item, and supplier' })
+  getExpenseDrillDown(@CompanyId() companyId: string) {
+    return this.financeDashboardService.getExpenseDrillDown(companyId);
+  }
+
+  @Get('bills')
+  @ApiOperation({ summary: 'Enterprise Bills Dashboard' })
+  getBills(@CompanyId() companyId: string) {
+    return this.financeDashboardService.getBills(companyId);
+  }
 }

@@ -48,6 +48,8 @@ interface ProjectDetails {
   totalAdvance?: number;
   totalSpent?: number;
   remainingAdvance?: number;
+  contractValue?: number;
+  remainingToReceive?: number;
   _count: {
     tasks: number;
     expenses: number;
@@ -223,32 +225,45 @@ export default function ProjectDetailsPage() {
             </div>
 
             {/* Funding Status Sub-banner */}
-            <div className="mt-4 pt-4 border-t border-border/15 grid grid-cols-1 sm:grid-cols-3 gap-3.5 select-none text-left">
+            <div className="mt-4 pt-4 border-t border-border/15 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 select-none text-left">
+              <div className="p-3 bg-accent/15 border border-border/20 rounded-xl">
+                <span className="text-[11px] font-medium text-muted-foreground/80">Contract Value / Expected</span>
+                <p className="text-[15px] font-semibold text-foreground/90 mt-1 tabular-nums leading-none">
+                  LKR {(project.contractValue || 0).toLocaleString()}
+                </p>
+              </div>
               <div className="p-3 bg-info-subtle border border-info/20 rounded-xl">
-                <span className="text-[11px] font-medium text-info">Funding received (advances)</span>
+                <span className="text-[11px] font-medium text-info">Funding Received (Advances)</span>
                 <p className="text-[15px] font-semibold text-info mt-1 tabular-nums leading-none">
                   LKR {(project.totalAdvance || 0).toLocaleString()}
                 </p>
-              </div>
-              <div className="p-3 bg-danger-subtle/10 border border-danger/15 rounded-xl">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-danger font-mono font-semibold">Funding Consumed</span>
-                <p className="text-[15px] font-semibold text-danger mt-1 font-mono leading-none">
-                  LKR {(project.totalSpent || 0).toLocaleString()}
+                <p className="text-[10px] text-info/70 mt-1.5 font-mono">
+                  Remaining to get: <strong className="text-info/90">LKR {(project.remainingToReceive || 0).toLocaleString()}</strong>
                 </p>
               </div>
+              <div className="p-3 bg-danger-subtle/10 border border-danger/15 rounded-xl flex flex-col justify-between">
+                <div>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-danger font-mono font-semibold">Funding Consumed</span>
+                  <p className="text-[15px] font-semibold text-danger mt-1 font-mono leading-none">
+                    LKR {(project.totalSpent || 0).toLocaleString()}
+                  </p>
+                </div>
+              </div>
               <div className={cn(
-                'p-3 border rounded-xl',
+                'p-3 border rounded-xl flex flex-col justify-between',
                 (project.remainingAdvance || 0) >= 0 
                   ? 'bg-success-subtle/10 border-success/15' 
                   : 'bg-danger-subtle/10 border-danger/15'
               )}>
-                <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 font-mono">Funding Remaining</span>
-                <p className={cn(
-                  'text-[15px] font-semibold mt-1 font-mono leading-none',
-                  (project.remainingAdvance || 0) >= 0 ? 'text-success' : 'text-danger'
-                )}>
-                  LKR {(project.remainingAdvance || 0).toLocaleString()}
-                </p>
+                <div>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 font-mono">Advance Left to Spend</span>
+                  <p className={cn(
+                    'text-[15px] font-semibold mt-1 font-mono leading-none',
+                    (project.remainingAdvance || 0) >= 0 ? 'text-success' : 'text-danger'
+                  )}>
+                    LKR {(project.remainingAdvance || 0).toLocaleString()}
+                  </p>
+                </div>
               </div>
             </div>
           </CardContent>

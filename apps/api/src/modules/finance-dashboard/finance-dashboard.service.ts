@@ -62,6 +62,14 @@ export class FinanceDashboardService {
       _sum: { amount: true },
     });
 
+    // Bills Summary (Purchases acting as Bills)
+    const billsStats = await this.prisma.purchase.groupBy({
+      by: ['status'],
+      where: { companyId },
+      _sum: { totalAmount: true, paidAmount: true },
+      _count: true,
+    });
+
     const totalAdvance = Number(totalAdvanceResult._sum.amount || 0);
     const totalSpent = Number(totalSpentResult._sum.amount || 0);
     const totalExpenses = Number(totalExpensesResult._sum.amount || 0);
@@ -150,12 +158,30 @@ export class FinanceDashboardService {
       };
     });
 
+    const billsSummary = {
+      totalAmount: 0,
+      totalPaid: 0,
+      totalPending: 0,
+      totalOverdue: 0,
+    };
+
+    for (const bs of billsStats) {
+      const total = Number(bs._sum.totalAmount || 0);
+      const paid = Number(bs._sum.paidAmount || 0);
+      billsSummary.totalAmount += total;
+      billsSummary.totalPaid += paid;
+      
+      if (bs.status === 'PENDING' || bs.status === 'PARTIAL') billsSummary.totalPending += (total - paid);
+      if (bs.status === 'OVERDUE') billsSummary.totalOverdue += (total - paid);
+    }
+
     return {
       companyTotals: {
         totalBudget,
         totalAdvance,
         totalSpent: consolidatedSpent,
         balance: totalAdvance - consolidatedSpent,
+        billsSummary,
       },
       projectBreakdown: projectBreakdown.sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance)),
       categoryBreakdown: categoryBreakdown.map((c: any) => ({
@@ -366,6 +392,134 @@ export class FinanceDashboardService {
         totalOut: ledgerEntries.reduce((sum, e) => sum + e.amountOut, 0),
         finalBalance: runningBalance,
       },
+    };
+  }
+
+  /**
+   * Enterprise Expense Drill-down
+   * Category -> Item (Title) -> Supplier -> Transactions
+   */
+  async getExpenseDrillDown(companyId: string) {
+    const purchases = await this.prisma.purchase.findMany({
+      where: { companyId },
+      include: {
+        purchasedBy: { select: { firstName: true, lastName: true } },
+      },
+    });
+
+    const expenses = await this.prisma.expense.findMany({
+      where: { project: { companyId } },
+      include: {
+        submittedBy: { select: { firstName: true, lastName: true } },
+      },
+    });
+
+    // Grouping structure: Category -> Item Title -> Vendor/Submitter -> List of Tx
+    const tree: any = {};
+
+    const addNode = (cat: string, item: string, vendor: string, tx: any) => {
+      const c = cat || 'OTHER';
+      const i = item || 'Unknown Item';
+      const v = vendor || 'Unknown Vendor';
+
+      if (!tree[c]) tree[c] = { total: 0, items: {} };
+      tree[c].total += Number(tx.amount);
+
+      if (!tree[c].items[i]) tree[c].items[i] = { total: 0, vendors: {} };
+      tree[c].items[i].total += Number(tx.amount);
+
+      if (!tree[c].items[i].vendors[v]) tree[c].items[i].vendors[v] = { total: 0, transactions: [] };
+      tree[c].items[i].vendors[v].total += Number(tx.amount);
+
+      tree[c].items[i].vendors[v].transactions.push(tx);
+    };
+
+    for (const p of purchases) {
+      addNode(p.category, p.title, p.vendor || 'Supplier', {
+        id: p.id,
+        type: 'PURCHASE',
+        date: p.purchaseDate,
+        amount: p.totalAmount,
+        status: p.status,
+        user: `${p.purchasedBy.firstName} ${p.purchasedBy.lastName}`,
+        receiptUrl: p.receiptUrl,
+      });
+    }
+
+    for (const e of expenses) {
+      addNode(e.category, e.title, 'Employee Reimbursement', {
+        id: e.id,
+        type: 'EXPENSE',
+        date: e.expenseDate,
+        amount: e.amount,
+        status: e.status,
+        user: `${e.submittedBy.firstName} ${e.submittedBy.lastName}`,
+        receiptUrl: e.receiptUrl,
+      });
+    }
+
+    return tree;
+  }
+
+  /**
+   * Enterprise Bills Dashboard
+   */
+  async getBills(companyId: string) {
+    const bills = await this.prisma.purchase.findMany({
+      where: { companyId },
+      include: {
+        allocations: { include: { project: { select: { name: true, id: true } } } },
+        purchasedBy: { select: { firstName: true, lastName: true, avatar: true } },
+      },
+      orderBy: { dueDate: 'asc' },
+    });
+
+    const now = new Date();
+    const categories = {
+      pending: [] as any[],
+      paid: [] as any[],
+      overdue: [] as any[],
+      upcoming: [] as any[],
+    };
+
+    let totalPending = 0;
+    let totalOverdue = 0;
+
+    for (const b of bills) {
+      const balance = Number(b.totalAmount) - Number(b.paidAmount);
+      
+      const billData = {
+        id: b.id,
+        vendor: b.vendor || 'Unknown Vendor',
+        title: b.title,
+        totalAmount: Number(b.totalAmount),
+        paidAmount: Number(b.paidAmount),
+        balance,
+        status: b.status,
+        dueDate: b.dueDate,
+        purchasedBy: b.purchasedBy,
+        projects: b.allocations.map(a => a.project),
+      };
+
+      if (b.status === 'PAID') {
+        categories.paid.push(billData);
+      } else if (b.status === 'OVERDUE' || (b.dueDate && new Date(b.dueDate) < now)) {
+        categories.overdue.push(billData);
+        totalOverdue += balance;
+      } else {
+        if (b.dueDate && new Date(b.dueDate) > now) {
+          categories.upcoming.push(billData);
+        } else {
+          categories.pending.push(billData);
+        }
+        totalPending += balance;
+      }
+    }
+
+    return {
+      totalPending,
+      totalOverdue,
+      categories,
     };
   }
 }

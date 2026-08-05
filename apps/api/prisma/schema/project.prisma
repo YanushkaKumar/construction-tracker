@@ -32,6 +32,7 @@ model Project {
   status          ProjectStatus @default(PLANNING)
   priority        Priority      @default(MEDIUM)
   budgetEstimate  Decimal       @default(0) @map("budget_estimate") @db.Decimal(15, 2)
+  contractValue   Decimal       @default(0) @map("contract_value") @db.Decimal(15, 2)
   budgetActual    Decimal       @default(0) @map("budget_actual") @db.Decimal(15, 2)
   currency        String        @default("LKR")
   progressPercent Int           @default(0) @map("progress_percent")

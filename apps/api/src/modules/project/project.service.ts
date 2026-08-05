@@ -80,12 +80,16 @@ export class ProjectService {
 
     const totalSpent = totalPurchaseSpent + totalExpenseSpent;
     const remainingAdvance = totalAdvance - totalSpent;
+    const contractValue = Number(project.contractValue || 0);
+    const remainingToReceive = contractValue - totalAdvance;
 
     return {
       ...project,
+      contractValue,
       totalAdvance,
       totalSpent,
       remainingAdvance,
+      remainingToReceive,
     };
   }
 

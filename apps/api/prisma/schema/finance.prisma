@@ -25,6 +25,13 @@ enum AssetCondition {
   RETIRED
 }
 
+enum BillStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+}
+
 enum BankLoanStatus {
   ACTIVE
   PAID_OFF
@@ -79,10 +86,17 @@ model Purchase {
   createdAt     DateTime         @default(now()) @map("created_at")
   updatedAt     DateTime         @updatedAt @map("updated_at")
 
+  // Bill Tracking Fields
+  status        BillStatus       @default(PENDING)
+  dueDate       DateTime?        @map("due_date") @db.Date
+  paidAmount    Decimal          @default(0) @map("paid_amount") @db.Decimal(15, 2)
+  approvedById  String?          @map("approved_by_id")
+
   bankLoanId    String?          @map("bank_loan_id")
 
   company     Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
   purchasedBy User                 @relation("PurchaseBuyer", fields: [purchasedById], references: [id])
+  approvedBy  User?                @relation("PurchaseApprover", fields: [approvedById], references: [id])
   allocations PurchaseAllocation[]
   asset       Asset?
   bankLoan    BankLoan?            @relation(fields: [bankLoanId], references: [id], onDelete: SetNull)

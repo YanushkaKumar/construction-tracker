@@ -34,6 +34,7 @@ model User {
   // Finance relations
   receivedAdvances   ProjectAdvance[]  @relation("AdvanceReceiver")
   purchases          Purchase[]        @relation("PurchaseBuyer")
+  approvedPurchases  Purchase[]        @relation("PurchaseApprover")
   assetAssignments   AssetAssignment[] @relation("AssetAssigner")
 
   @@unique([companyId, email])

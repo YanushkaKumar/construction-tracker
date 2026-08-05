@@ -3,14 +3,35 @@
 // ============================================
 
 enum FundingSourceType {
-  PROJECT_ADVANCE
-  BANK_LOAN
+  // Capital & Equity
   COMPANY_CASH
   OWNER_CAPITAL
+  DIRECTOR_INVESTMENT
+  SHAREHOLDER_CONTRIBUTION
+  INVESTOR_FUNDING
+
+  // Loans & Credit
+  BANK_LOAN
   EMERGENCY_LOAN
   EQUIPMENT_LOAN
   VEHICLE_LOAN
   SUPPLIER_CREDIT
+
+  // Client Payments
+  PROJECT_ADVANCE
+  CLIENT_PROGRESS_PAYMENT
+
+  // Internal & Other
+  INTERNAL_TRANSFER
+  FIXED_DEPOSIT_WITHDRAWAL
+  TREASURY_RESERVE
+  EMERGENCY_FUND
+  EQUIPMENT_SALE
+  ASSET_SALE
+  REFUND
+  GOVERNMENT_GRANT
+  INSURANCE_CLAIM
+  OTHER_INCOME
 }
 
 enum FundingSourceStatus {
@@ -32,6 +53,16 @@ model FundingSource {
   projectId        String?             @map("project_id")
   projectAdvanceId String?             @unique @map("project_advance_id")
   bankLoanId       String?             @unique @map("bank_loan_id")
+
+  // Enterprise metadata
+  description      String?
+  referenceNo      String?             @map("reference_no")
+  receivedDate     DateTime?           @map("received_date")
+  paymentMethod    String?             @map("payment_method")
+  approvedBy       String?             @map("approved_by")
+  sourceCategory   String?             @map("source_category")
+  metadata         Json                @default("{}")
+
   createdAt        DateTime            @default(now()) @map("created_at")
   updatedAt        DateTime            @updatedAt @map("updated_at")
 
@@ -43,6 +74,7 @@ model FundingSource {
 
   @@index([companyId])
   @@index([projectId])
+  @@index([sourceCategory])
   @@map("funding_sources")
 }
 
@@ -69,3 +101,4 @@ model FundingAllocation {
   @@index([attendanceId])
   @@map("funding_allocations")
 }
+

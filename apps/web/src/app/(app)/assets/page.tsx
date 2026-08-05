@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
-  Plus, AlertCircle, HardHat, Calendar, Building2, Search, Tool, Car
+  Plus, AlertCircle, HardHat, Calendar, Building2, Search, Wrench, Car
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
