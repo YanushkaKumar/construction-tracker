@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { SkeletonList } from '@/components/ui/skeleton';
+import { FundingAllocationBuilder } from '@/components/ui/funding-allocation-builder';
 import { cn } from '@/lib/utils';
 
 const purchaseSchema = z.object({
@@ -38,6 +39,7 @@ export default function PurchasesPage() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [mutateError, setMutateError] = useState<string | null>(null);
+  const [allocations, setAllocations] = useState<{ fundingSourceId: string; amount: number }[]>([]);
 
   const { data: purchasesData, isLoading } = useQuery<any[]>({
     queryKey: ['purchases'],
@@ -54,8 +56,15 @@ export default function PurchasesPage() {
   const createPurchaseMutation = useMutation({
     mutationFn: async (values: PurchaseFormValues) => {
       const { projectId, ...rest } = values;
+      
+      const totalAllocated = allocations.reduce((acc, curr) => acc + curr.amount, 0);
+      if (Math.abs(totalAllocated - Number(values.totalAmount)) > 0.01) {
+        throw new Error(`Please allocate exactly LKR ${Number(values.totalAmount).toLocaleString()} from funding sources.`);
+      }
+
       const data = {
         ...rest,
+        fundingAllocations: allocations,
         allocations: [
           {
             projectId,
@@ -72,6 +81,7 @@ export default function PurchasesPage() {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       setIsDialogOpen(false);
       resetForm();
+      setAllocations([]);
       setMutateError(null);
     },
     onError: (err: any) => {
@@ -79,7 +89,7 @@ export default function PurchasesPage() {
     },
   });
 
-  const { register, handleSubmit, reset: resetForm, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, watch, reset: resetForm, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(purchaseSchema),
     defaultValues: {
       title: '',
@@ -107,7 +117,14 @@ export default function PurchasesPage() {
           </p>
         </div>
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(o) => {
+          setIsDialogOpen(o);
+          if (!o) {
+            setAllocations([]);
+            setMutateError(null);
+            resetForm();
+          }
+        }}>
           <DialogTrigger asChild>
             <Button className="gap-2 flex-shrink-0">
               <Plus className="w-4 h-4" aria-hidden />
@@ -186,6 +203,15 @@ export default function PurchasesPage() {
               <div className="flex items-center gap-2 pt-2">
                 <input type="checkbox" id="registerAsAsset" {...register('registerAsAsset')} className="rounded border-border bg-accent/20 text-primary focus:ring-primary h-4 w-4" />
                 <Label htmlFor="registerAsAsset" className="text-[12px] font-medium cursor-pointer">Register this purchase as a long-term Asset</Label>
+              </div>
+
+              <div className="pt-2">
+                <FundingAllocationBuilder
+                  totalAmount={Number(watch('totalAmount')) || 0}
+                  allocations={allocations}
+                  onChange={setAllocations}
+                  projectId={watch('projectId')}
+                />
               </div>
 
               <div className="flex justify-end gap-2 pt-4 border-t border-border/15">

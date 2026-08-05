@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { SkeletonList } from '@/components/ui/skeleton';
+import { FundingAllocationBuilder } from '@/components/ui/funding-allocation-builder';
 import { cn } from '@/lib/utils';
 
 const assetSchema = z.object({
@@ -38,6 +39,7 @@ export default function AssetsPage() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [mutateError, setMutateError] = useState<string | null>(null);
+  const [allocations, setAllocations] = useState<{ fundingSourceId: string; amount: number }[]>([]);
 
   const { data: assetsData, isLoading } = useQuery<any[]>({
     queryKey: ['assets'],
@@ -53,8 +55,13 @@ export default function AssetsPage() {
 
   const createAssetMutation = useMutation({
     mutationFn: async (values: AssetFormValues) => {
-      // Send as-is
-      return (await apiClient.post('/assets', values)).data;
+      const totalAllocated = allocations.reduce((acc, curr) => acc + curr.amount, 0);
+      if (Math.abs(totalAllocated - Number(values.purchasePrice)) > 0.01) {
+        throw new Error(`Please allocate exactly LKR ${Number(values.purchasePrice).toLocaleString()} from funding sources.`);
+      }
+
+      // Send as-is with fundingAllocations
+      return (await apiClient.post('/assets', { ...values, fundingAllocations: allocations })).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
@@ -62,6 +69,7 @@ export default function AssetsPage() {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       setIsDialogOpen(false);
       resetForm();
+      setAllocations([]);
       setMutateError(null);
     },
     onError: (err: any) => {
@@ -69,7 +77,7 @@ export default function AssetsPage() {
     },
   });
 
-  const { register, handleSubmit, reset: resetForm, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, watch, reset: resetForm, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(assetSchema),
     defaultValues: {
       name: '',
@@ -81,6 +89,9 @@ export default function AssetsPage() {
       notes: '',
     },
   });
+
+  const watchPrice = watch('purchasePrice');
+  const watchProjectId = watch('currentProjectId');
 
   const assets = assetsData ?? [];
   const projects = projectsData?.data ?? [];
@@ -97,7 +108,14 @@ export default function AssetsPage() {
           </p>
         </div>
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(o) => {
+          setIsDialogOpen(o);
+          if (!o) {
+            setAllocations([]);
+            setMutateError(null);
+            resetForm();
+          }
+        }}>
           <DialogTrigger asChild>
             <Button className="gap-2 flex-shrink-0">
               <Plus className="w-4 h-4" aria-hidden />
@@ -182,6 +200,15 @@ export default function AssetsPage() {
               <div className="space-y-1.5">
                 <Label className="text-[12px] font-semibold text-foreground/80">Notes</Label>
                 <Input placeholder="Any additional information..." {...register('notes')} className={inputCls} />
+              </div>
+
+              <div className="pt-2">
+                <FundingAllocationBuilder
+                  totalAmount={Number(watchPrice) || 0}
+                  allocations={allocations}
+                  onChange={setAllocations}
+                  projectId={watchProjectId}
+                />
               </div>
 
               <div className="flex justify-end gap-2 pt-4 border-t border-border/15">
