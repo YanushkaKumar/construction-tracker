@@ -4,8 +4,6 @@ import { PrismaClient } from '@prisma/client';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
-  public isOffline = false;
-
   constructor() {
     super({
       log: [
@@ -18,13 +16,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   }
 
   async onModuleInit() {
-    try {
-      await this.$connect();
-      this.logger.log('Database connected successfully');
-    } catch (error) {
-      this.isOffline = true;
-      this.logger.error('Failed to connect to the database. Running in offline fallback mode.', error);
-    }
+    await this.$connect();
+    this.logger.log('Database connected successfully');
   }
 
   async onModuleDestroy() {

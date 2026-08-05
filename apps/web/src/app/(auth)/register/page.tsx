@@ -54,35 +54,39 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      // Create user in Supabase Auth
-      try {
-        await supabase.auth.signUp({
-          email: data.email,
-          password: data.password,
-          options: {
-            data: {
-              first_name: data.firstName,
-              last_name: data.lastName,
-              company_name: data.companyName,
-            },
+      // 1. Create user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            first_name: data.firstName,
+            last_name: data.lastName,
+            company_name: data.companyName,
           },
-        });
-      } catch {
-        // Continue if Supabase auth already registered or optional
+        },
+      });
+
+      if (authError) {
+        throw new Error(authError.message || 'Supabase signup failed');
       }
 
-      const response = await apiClient.post('/auth/register', data);
-      const { user, company, accessToken, refreshToken } = response.data;
-      
-      // Store in Zustand (include refreshToken for silent refresh)
-      setAuth(user, company, accessToken, refreshToken);
-      
-      // Redirect to dashboard
-      router.push('/dashboard');
+      // 2. Create the company and user in the NestJS backend
+      const registerRes = await apiClient.post('/auth/register', data);
+
+      // 3. Log them in directly using the backend tokens!
+      if (registerRes.data && registerRes.data.accessToken) {
+        const { user, company, accessToken, refreshToken } = registerRes.data;
+        
+        setAuth(user, company, accessToken, refreshToken);
+        router.push('/dashboard');
+      } else {
+        setError('Registration successful! Please log in to continue.');
+      }
     } catch (err: any) {
       console.error(err);
       setError(
-        err.response?.data?.message || 
+        err.response?.data?.message || err.message || 
         'Registration failed. Please check your details and try again.'
       );
     } finally {

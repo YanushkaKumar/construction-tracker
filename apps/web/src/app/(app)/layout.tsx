@@ -8,7 +8,7 @@ import {
   Package, Landmark, Wallet, Users, Settings, LogOut, Menu, X,
   Bell, BarChart2, Search, ChevronDown, Check,
   Sun, Moon, Plus, ChevronRight, AlertTriangle, Info,
-  CheckCircle2, XCircle, Clock, Pin, PinOff, HardHatIcon,
+  CheckCircle2, XCircle, Clock, Pin, PinOff, HardHatIcon, ShoppingCart, Component,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
@@ -66,7 +66,9 @@ function getNavGroups(role: string): NavGroup[] {
       label: 'Finance',
       items: [
         { href: '/expenses',      label: 'Expenses',   icon: Landmark },
+        { href: '/purchases',     label: 'Purchases',  icon: ShoppingCart },
         { href: '/finance',       label: 'Treasury',   icon: Wallet },
+        { href: '/assets',        label: 'Assets',     icon: Component },
         { href: '/subcontractors',label: 'Contracts',  icon: HardHat },
       ],
     },
@@ -101,6 +103,7 @@ function getNavGroups(role: string): NavGroup[] {
         label: 'Finance',
         items: [
           { href: '/expenses',      label: 'Expenses',   icon: Landmark },
+          { href: '/purchases',     label: 'Purchases',  icon: ShoppingCart },
           { href: '/subcontractors',label: 'Contracts',  icon: HardHat },
           { href: '/reports',       label: 'Reports',    icon: BarChart2 },
         ],

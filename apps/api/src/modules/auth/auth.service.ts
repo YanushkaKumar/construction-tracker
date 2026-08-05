@@ -166,58 +166,6 @@ export class AuthService {
    * Register a new company with owner account
    */
   async register(dto: RegisterDto) {
-    if (this.prisma.isOffline) {
-      this.logger.warn(`Database is offline. Performing mock registration for ${dto.email}`);
-      const mockCompanyId = 'mock-company-' + this.slugify(dto.companyName);
-      const mockUserId = 'mock-user-id-' + dto.firstName.toLowerCase();
-      
-      const mockUser = {
-        id: mockUserId,
-        email: dto.email,
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        role: { name: 'COMPANY_OWNER', displayName: 'Company Owner', permissions: ['*'] },
-      };
-
-      const mockCompany = {
-        id: mockCompanyId,
-        name: dto.companyName,
-        slug: this.slugify(dto.companyName),
-      };
-
-      const accessPayload: JwtPayload = {
-        sub: mockUser.id,
-        email: mockUser.email,
-        companyId: mockCompany.id,
-        role: mockUser.role.name,
-        permissions: mockUser.role.permissions,
-      };
-      const accessToken = this.jwtService.sign(accessPayload);
-
-      const refreshToken = this.jwtService.sign({ sub: mockUser.id, tokenId: 'mock-refresh-token-id' }, {
-        secret: this.configService.get<string>('auth.jwtRefreshSecret'),
-        expiresIn: '7d',
-      });
-
-      return {
-        user: {
-          id: mockUser.id,
-          email: mockUser.email,
-          firstName: mockUser.firstName,
-          lastName: mockUser.lastName,
-          role: mockUser.role.name,
-          roleDisplayName: mockUser.role.displayName,
-          permissions: mockUser.role.permissions,
-        },
-        company: {
-          id: mockCompany.id,
-          name: mockCompany.name,
-          slug: mockCompany.slug,
-        },
-        accessToken,
-        refreshToken,
-      };
-    }
 
     // Check if email already exists
     const existingUser = await this.prisma.user.findFirst({
@@ -294,87 +242,6 @@ export class AuthService {
    * Login with email and password
    */
   async login(dto: LoginDto) {
-    if (this.prisma.isOffline) {
-      this.logger.warn(`Database is offline. Performing mock login for ${dto.email}`);
-      
-      const roleMap: Record<string, { name: string; displayName: string; permissions: string[] }> = {
-        'owner@lankabuild.lk': {
-          name: 'COMPANY_OWNER',
-          displayName: 'Company Owner',
-          permissions: ['*'],
-        },
-        'pm@lankabuild.lk': {
-          name: 'PROJECT_MANAGER',
-          displayName: 'Project Manager',
-          permissions: ['project:read', 'project:create', 'task:create', 'worker:read'],
-        },
-        'engineer@lankabuild.lk': {
-          name: 'SITE_ENGINEER',
-          displayName: 'Site Engineer',
-          permissions: ['project:read', 'task:update', 'daily-report:create', 'worker:attendance'],
-        },
-      };
-
-      const emailKey = dto.email.toLowerCase();
-      const mockRole = roleMap[emailKey] || {
-        name: 'COMPANY_OWNER',
-        displayName: 'Company Owner',
-        permissions: ['*'],
-      };
-
-      const firstName = emailKey.includes('owner') ? 'Chamara' : emailKey.includes('pm') ? 'Nimal' : 'Kasun';
-      const lastName = emailKey.includes('owner') ? 'Perera' : emailKey.includes('pm') ? 'Fernando' : 'Silva';
-      const mockUser = {
-        id: 'mock-user-id-' + (emailKey.split('@')[0] || 'user'),
-        email: dto.email,
-        firstName,
-        lastName,
-        avatar: null,
-        role: { name: mockRole.name, displayName: mockRole.displayName, permissions: mockRole.permissions },
-        companyId: 'mock-company-id',
-      };
-
-      const mockCompany = {
-        id: 'mock-company-id',
-        name: 'Lanka Build Pvt Ltd',
-        slug: 'lanka-build-pvt-ltd',
-        logo: null,
-      };
-
-      const accessPayload: JwtPayload = {
-        sub: mockUser.id,
-        email: mockUser.email,
-        companyId: mockUser.companyId,
-        role: mockUser.role.name,
-        permissions: mockRole.permissions,
-      };
-      const accessToken = this.jwtService.sign(accessPayload);
-
-      const refreshToken = this.jwtService.sign({ sub: mockUser.id, tokenId: 'mock-refresh-token-id' }, {
-        secret: this.configService.get<string>('auth.jwtRefreshSecret'),
-        expiresIn: '7d',
-      });
-
-      return {
-        user: {
-          id: mockUser.id,
-          email: mockUser.email,
-          firstName: mockUser.firstName,
-          lastName: mockUser.lastName,
-          avatar: mockUser.avatar,
-          role: mockUser.role.name,
-          roleDisplayName: mockUser.role.displayName,
-        },
-        company: {
-          id: mockCompany.id,
-          name: mockCompany.name,
-          slug: mockCompany.slug,
-          logo: mockCompany.logo,
-        },
-        accessToken,
-        refreshToken,
-      };
-    }
 
     const user = await this.prisma.user.findFirst({
       where: { email: dto.email, isActive: true },
@@ -425,35 +292,6 @@ export class AuthService {
    * Refresh access token
    */
   async refreshToken(refreshToken: string) {
-    if (this.prisma.isOffline) {
-      try {
-        const payload = this.jwtService.verify<JwtRefreshPayload>(refreshToken, {
-          secret: this.configService.get<string>('auth.jwtRefreshSecret'),
-        });
-        
-        const isOwner = payload.sub.includes('owner');
-        const isPm = payload.sub.includes('pm');
-        const role = isOwner ? 'COMPANY_OWNER' : isPm ? 'PROJECT_MANAGER' : 'SITE_ENGINEER';
-        const permissions = isOwner ? ['*'] : ['project:read'];
-        
-        const accessToken = this.jwtService.sign({
-          sub: payload.sub,
-          email: isOwner ? 'owner@lankabuild.lk' : isPm ? 'pm@lankabuild.lk' : 'engineer@lankabuild.lk',
-          companyId: 'mock-company-id',
-          role,
-          permissions,
-        });
-        
-        const newRefreshToken = this.jwtService.sign({ sub: payload.sub, tokenId: 'mock-refresh-token-id' }, {
-          secret: this.configService.get<string>('auth.jwtRefreshSecret'),
-          expiresIn: '7d',
-        });
-        
-        return { accessToken, refreshToken: newRefreshToken };
-      } catch {
-        throw new UnauthorizedException('Invalid refresh token');
-      }
-    }
 
     try {
       const payload = this.jwtService.verify<JwtRefreshPayload>(refreshToken, {
@@ -491,9 +329,6 @@ export class AuthService {
    * Logout — revoke refresh token
    */
   async logout(userId: string) {
-    if (this.prisma.isOffline) {
-      return;
-    }
 
     await this.prisma.refreshToken.updateMany({
       where: { userId, revokedAt: null },
@@ -505,39 +340,6 @@ export class AuthService {
    * Get current user profile
    */
   async getProfile(userId: string) {
-    if (this.prisma.isOffline || userId.startsWith('mock-')) {
-      const email = userId.includes('owner') 
-        ? 'owner@lankabuild.lk' 
-        : userId.includes('pm') 
-        ? 'pm@lankabuild.lk' 
-        : 'engineer@lankabuild.lk';
-
-      const firstName = email.includes('owner') ? 'Chamara' : email.includes('pm') ? 'Nimal' : 'Kasun';
-      const lastName = email.includes('owner') ? 'Perera' : email.includes('pm') ? 'Fernando' : 'Silva';
-      const roleName = email.includes('owner') ? 'COMPANY_OWNER' : email.includes('pm') ? 'PROJECT_MANAGER' : 'SITE_ENGINEER';
-      const roleDisplayName = email.includes('owner') ? 'Company Owner' : email.includes('pm') ? 'Project Manager' : 'Site Engineer';
-      const permissions = email.includes('owner') ? ['*'] : ['project:read', 'task:update', 'worker:attendance'];
-
-      return {
-        id: userId,
-        email,
-        firstName,
-        lastName,
-        phone: '+94771234567',
-        avatar: null,
-        role: roleName,
-        roleDisplayName,
-        permissions,
-        company: {
-          id: 'mock-company-id',
-          name: 'Lanka Build Pvt Ltd',
-          slug: 'lanka-build-pvt-ltd',
-          logo: null,
-          plan: 'FREE' as any,
-        },
-        lastLoginAt: new Date().toISOString(),
-      };
-    }
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -644,12 +446,14 @@ export class AuthService {
   }
 
   private slugify(text: string): string {
-    return text
+    const base = text
       .toLowerCase()
       .trim()
       .replace(/[^\w\s-]/g, '')
       .replace(/[\s_-]+/g, '-')
       .replace(/^-+|-+$/g, '');
+    const suffix = uuidv4().substring(0, 6);
+    return `${base}-${suffix}`;
   }
 
   private parseExpiration(expiration: string): number {

@@ -834,11 +834,12 @@ function FundingDashboardTab() {
                       </div>
                       <span className={cn(
                         'chip font-mono text-[9px]',
-                        source.currentBalance === 0 ? 'bg-danger-subtle border-danger/25 text-danger' :
+                        source.originalAmount === 0 && source.currentBalance === 0 ? 'bg-accent/30 border-border/20 text-muted-foreground' :
+                        source.currentBalance <= 0 ? 'bg-danger-subtle border-danger/25 text-danger' :
                         utilPercent > 80 ? 'bg-warning-subtle border-warning/25 text-warning' :
                         'bg-success-subtle border-success/25 text-success'
                       )}>
-                        {source.currentBalance === 0 ? 'Depleted' : 'Active'}
+                        {source.originalAmount === 0 && source.currentBalance === 0 ? 'Unfunded' : source.currentBalance <= 0 ? 'Depleted' : 'Active'}
                       </span>
                     </div>
 

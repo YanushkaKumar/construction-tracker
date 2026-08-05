@@ -294,7 +294,7 @@ export default function ExpensesPage() {
                 Log Expense
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md bg-card border border-border/30 rounded-2xl p-5 text-left shadow-elevated">
+            <DialogContent className="sm:max-w-md bg-card border border-border/30 rounded-2xl p-5 text-left shadow-elevated max-h-[90vh] overflow-y-auto">
               <DialogHeader className="border-b border-border/15 pb-3.5 mb-3.5">
                 <DialogTitle className="text-sm font-bold">Log Project Expense</DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">Record a physical transaction or raw material invoice.</DialogDescription>

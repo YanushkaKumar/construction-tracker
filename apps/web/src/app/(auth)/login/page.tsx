@@ -36,22 +36,25 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
     try {
-      // Authenticate with Supabase Auth
-      try {
-        await supabase.auth.signInWithPassword({
-          email: data.email,
-          password: data.password,
-        });
-      } catch {
-        // Continue if user only exists in database
-      }
+      // Try to authenticate with Supabase Auth (for frontend supabase features, if they have an account)
+      // We ignore the error object because team members only exist in our local DB, not Supabase
+      await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
 
-      const response = await apiClient.post('/auth/login', data);
-      const { user, company, accessToken, refreshToken } = response.data;
+      // Authenticate with NestJS backend to get backend session
+      const backendRes = await apiClient.post('/auth/login', {
+        email: data.email,
+        password: data.password,
+      });
+      
+      const { user, company, accessToken, refreshToken } = backendRes.data;
+
       setAuth(user, company, accessToken, refreshToken);
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message ?? 'Invalid email or password. Please try again.');
+      setError(err.response?.data?.message ?? err.message ?? 'Invalid email or password. Please try again.');
     } finally {
       setIsLoading(false);
     }

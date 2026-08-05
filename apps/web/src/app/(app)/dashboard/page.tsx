@@ -269,138 +269,77 @@ export default function DashboardPage() {
           {/* 1. COMPANY OWNER / CEO HOME */}
           {activeRole === 'COMPANY_OWNER' && (
             <div className="space-y-5 animate-in fade-in duration-300">
-              {/* Treasury insight callout */}
-              <div className="flex items-start gap-3.5 bg-card border border-border/30 rounded-2xl p-4 shadow-surface select-none">
-                <div className="w-9 h-9 rounded-xl bg-info-subtle border border-info/20 flex items-center justify-center flex-shrink-0" aria-hidden>
-                  <Activity className="w-4 h-4 text-info" />
-                </div>
-                <div className="flex-1 min-w-0 text-left">
-                  <p className="text-[13px] font-semibold text-foreground">Treasury insight</p>
-                  <p className="text-[13px] text-muted-foreground mt-0.5 leading-relaxed">
-                    {fd.insights && fd.insights.length > 0
-                      ? fd.insights[0]
-                      : 'Spending is within normal range and your treasury balance is positive.'}
-                  </p>
-                </div>
-              </div>
-
-              {/* CEO KPI Stat Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
-                  label="Treasury Net Cash"
+                  label="Treasury Balance"
                   value={fmt(fd.currentCash)}
-                  insight="Liquid cash across all wallets"
+                  insight="Total liquid cash"
                   icon={Wallet}
                   href="/finance"
                 />
                 <StatCard
-                  label="Advances Balance"
-                  value={fmt(fd.availableAdvances)}
-                  insight="Mobilization funding reserves"
-                  icon={CircleDollarSign}
-                  href="/finance"
+                  label="Active Projects"
+                  value={kpis?.activeProjects ?? 0}
+                  insight="Currently running"
+                  icon={Building2}
+                  href="/projects"
                 />
                 <StatCard
-                  label="Active Loan Balance"
-                  value={fmt(fd.loans)}
-                  insight="Debt liabilities exposure"
-                  attention={fd.loans > 5000000}
-                  icon={Landmark}
-                  href="/finance"
+                  label="Workers On Site"
+                  value={kpis?.workersOnSite ?? 0}
+                  insight="Marked present today"
+                  icon={Users}
+                  href="/workers"
                 />
                 <StatCard
-                  label="Surplus Company Capital"
-                  value={fmt(fd.companyFunds)}
-                  insight="Unallocated corporate funds"
-                  icon={Coins}
-                  href="/finance"
+                  label="Pending Approvals"
+                  value={kpis?.pendingExpenses ?? 0}
+                  insight="Awaiting your review"
+                  icon={CheckSquare}
+                  href="/expenses"
                 />
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                {/* Left: Charts, cash burn progress */}
+                {/* Left: Quick Actions */}
                 <div className="lg:col-span-8 space-y-4">
-                  {/* Burn timeline and progress */}
-                  <Card className="border border-border/30 shadow-surface text-left">
+                  <Card className="border border-border/30 shadow-surface text-left h-full">
                     <CardContent className="p-5 space-y-4">
-                      <div className="flex justify-between items-baseline select-none">
-                        <div>
-                          <h3 className="text-[14px] font-semibold text-foreground">Funding composition</h3>
-                          <p className="text-[12px] text-muted-foreground mt-0.5">How your working capital is sourced</p>
-                        </div>
-                        <span className="text-[12px] font-medium text-muted-foreground tabular-nums">Daily burn {fmt(dailyBurn)}</span>
+                      <h3 className="text-[14px] font-semibold text-foreground pb-1.5 border-b border-border/15">Quick Actions</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <Link href="/purchases">
+                          <Button className="w-full h-16 flex flex-col gap-1 items-center justify-center rounded-xl bg-accent/20 border border-border/20 hover:bg-accent/40 text-foreground transition-all">
+                            <Landmark className="w-5 h-5 text-primary" />
+                            <span className="text-[11px] font-semibold">Add Purchase</span>
+                          </Button>
+                        </Link>
+                        <Link href="/assets">
+                          <Button className="w-full h-16 flex flex-col gap-1 items-center justify-center rounded-xl bg-accent/20 border border-border/20 hover:bg-accent/40 text-foreground transition-all">
+                            <HardHat className="w-5 h-5 text-info" />
+                            <span className="text-[11px] font-semibold">Add Asset</span>
+                          </Button>
+                        </Link>
+                        <Link href="/projects">
+                          <Button className="w-full h-16 flex flex-col gap-1 items-center justify-center rounded-xl bg-accent/20 border border-border/20 hover:bg-accent/40 text-foreground transition-all">
+                            <Building2 className="w-5 h-5 text-success" />
+                            <span className="text-[11px] font-semibold">New Project</span>
+                          </Button>
+                        </Link>
                       </div>
-
-                      {(() => {
-                        const parts = [
-                          { key: 'cash', color: 'bg-success', amount: Math.max(fd.companyFunds, 0) },
-                          { key: 'adv', color: 'bg-[var(--chart-1)]', amount: Math.max(fd.availableAdvances, 0) },
-                          { key: 'loan', color: 'bg-danger', amount: Math.max(fd.loans, 0) },
-                        ];
-                        const total = parts.reduce((s, p) => s + p.amount, 0);
-                        return (
-                          <div className="flex h-2 rounded-full overflow-hidden bg-accent/30 gap-0.5" role="img" aria-label="Funding composition bar">
-                            {total > 0 ? parts.map((p, i) => (
-                              <div
-                                key={p.key}
-                                className={cn(p.color, i === 0 && 'rounded-l-full', i === parts.length - 1 && 'rounded-r-full')}
-                                style={{ width: `${(p.amount / total) * 100}%` }}
-                              />
-                            )) : <div className="bg-accent w-full" />}
-                          </div>
-                        );
-                      })()}
-
-                      <div className="grid grid-cols-3 gap-4 pt-1 select-none">
-                        {[
-                          { dot: 'bg-success', label: 'Company cash', value: fmt(fd.companyFunds) },
-                          { dot: 'bg-[var(--chart-1)]', label: 'Client advances', value: fmt(fd.availableAdvances) },
-                          { dot: 'bg-danger', label: 'Loans', value: fmt(fd.loans) },
-                        ].map(item => (
-                          <div key={item.label}>
-                            <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-                              <span className={cn('w-2 h-2 rounded-full flex-shrink-0', item.dot)} aria-hidden />
-                              {item.label}
-                            </div>
-                            <p className="text-[13px] font-semibold text-foreground mt-1 tabular-nums">{item.value}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Rolling budget vs actual line chart */}
-                  <Card className="border border-border/30 shadow-surface text-left">
-                    <CardContent className="p-5">
-                      <div className="flex items-center justify-between mb-4 select-none">
-                        <h4 className="text-[14px] font-semibold text-foreground">Operational Inflow/Outflow Trend</h4>
-                      </div>
-                      {fd.timeline && fd.timeline.length > 0 ? (
-                        <div className="h-[200px] w-full flex items-center justify-center">
-                          <LineAreaChart
-                            data={fd.timeline}
-                            xAxisKey="month"
-                            series={[{ key: 'amount', name: 'Treasury Outflow', color: 'var(--chart-1)' }]}
-                            viewHeight={200}
-                          />
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground text-center py-10 font-bold">No timeline data available</p>
-                      )}
                     </CardContent>
                   </Card>
                 </div>
 
-                {/* Right: Critical alerts and cross-funding warning */}
+                {/* Right: Critical alerts */}
                 <div className="lg:col-span-4 space-y-4">
-                  <Card className="border border-border/30 shadow-surface text-left">
+                  <Card className="border border-border/30 shadow-surface text-left h-full">
                     <CardContent className="p-5 space-y-3 font-semibold">
                       <div className="flex items-center gap-2 pb-1.5 border-b border-border/15">
-                        <ShieldAlert className="w-4 h-4 text-danger" />
+                        <ShieldAlert className="w-4 h-4 text-warning" />
                         <h4 className="text-[14px] font-semibold text-foreground">Treasury Alerts</h4>
                       </div>
                       <div className="space-y-2.5">
-                        {fd.insights && fd.insights.map((insight: string, i: number) => {
+                        {fd.insights && fd.insights.length > 0 ? fd.insights.map((insight: string, i: number) => {
                           const isLeakage = insight.includes('consuming') || insight.includes('utilization');
                           return (
                             <div key={i} className={cn('p-2.5 border rounded-xl flex items-start gap-2.5', isLeakage ? 'bg-danger-subtle/10 border-danger/20 text-danger' : 'bg-accent/25 border-border/15 text-foreground/80')}>
@@ -408,22 +347,14 @@ export default function DashboardPage() {
                               <p className="text-[11px] leading-tight font-bold">{insight}</p>
                             </div>
                           );
-                        })}
+                        }) : (
+                          <div className="p-3 bg-success-subtle/10 border border-success/15 rounded-xl text-success text-[12px]">
+                            No critical alerts today.
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
-
-                  {/* Action Links */}
-                  <div className="grid grid-cols-2 gap-3 select-none">
-                    <Link href="/finance" className="p-3 bg-card border border-border/20 rounded-xl hover:bg-accent/25 transition-all text-center">
-                      <Coins className="w-5 h-5 mx-auto text-primary mb-1" />
-                      <span className="text-[11px] font-bold text-foreground">Money Center</span>
-                    </Link>
-                    <Link href="/reports" className="p-3 bg-card border border-border/20 rounded-xl hover:bg-accent/25 transition-all text-center">
-                      <FileSpreadsheet className="w-5 h-5 mx-auto text-success mb-1" />
-                      <span className="text-[11px] font-bold text-foreground">Ledgers</span>
-                    </Link>
-                  </div>
                 </div>
               </div>
             </div>

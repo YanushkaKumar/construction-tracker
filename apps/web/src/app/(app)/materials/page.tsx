@@ -205,7 +205,7 @@ export default function MaterialsPage() {
                 Request Materials
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md bg-card border border-border/30 rounded-2xl p-5 text-left shadow-elevated">
+            <DialogContent className="sm:max-w-md bg-card border border-border/30 rounded-2xl p-5 text-left shadow-elevated max-h-[90vh] overflow-y-auto">
               <DialogHeader className="border-b border-border/15 pb-3.5 mb-3.5">
                 <DialogTitle className="text-sm font-bold text-foreground">Submit Procurement Requisition</DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5 font-medium">Request construction supplies or raw materials for the target workspace.</DialogDescription>
@@ -342,6 +342,12 @@ export default function MaterialsPage() {
                   <div key={i} className="h-16 rounded-xl bg-accent/15 border border-border/20 shimmer-bg" />
                 ))}
               </div>
+            ) : requests.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center select-none glass-panel border-border/30 rounded-2xl">
+                <Truck className="w-8 h-8 text-muted-foreground/20 mb-3" />
+                <p className="text-sm font-bold text-foreground mb-1">No Procurement Requests</p>
+                <p className="text-xs text-muted-foreground font-semibold max-w-xs leading-relaxed">No material requisitions have been submitted yet.</p>
+              </div>
             ) : (
               <Card className="glass-panel border-border/30 shadow-panel">
                 <CardContent className="p-4">
@@ -400,6 +406,12 @@ export default function MaterialsPage() {
                   <div key={i} className="h-40 rounded-xl bg-accent/15 border border-border/20 shimmer-bg" />
                 ))}
               </div>
+            ) : materials.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center select-none glass-panel border-border/30 rounded-2xl">
+                <Package className="w-8 h-8 text-muted-foreground/20 mb-3" />
+                <p className="text-sm font-bold text-foreground mb-1">No Materials Found</p>
+                <p className="text-xs text-muted-foreground font-semibold max-w-xs leading-relaxed">Your inventory is currently empty.</p>
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {materials.map((m) => {
@@ -455,6 +467,12 @@ export default function MaterialsPage() {
                 {[...Array(2)].map((_, i) => (
                   <div key={i} className="h-40 rounded-xl bg-accent/15 border border-border/20 shimmer-bg" />
                 ))}
+              </div>
+            ) : suppliers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center select-none glass-panel border-border/30 rounded-2xl">
+                <Store className="w-8 h-8 text-muted-foreground/20 mb-3" />
+                <p className="text-sm font-bold text-foreground mb-1">No Suppliers Found</p>
+                <p className="text-xs text-muted-foreground font-semibold max-w-xs leading-relaxed">You haven't added any suppliers to your directory yet.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
