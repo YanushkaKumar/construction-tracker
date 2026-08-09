@@ -14,12 +14,13 @@ import { SkeletonChart } from '@/components/ui/skeleton';
 import { DashboardTab } from './components/DashboardTab';
 import { ProjectsTab } from './components/ProjectsTab';
 import { FundingDashboardTab } from './components/FundingTab';
-import { BillsTab } from './components/BillsTab';
+import { ProcurementTab } from './components/ProcurementTab';
 import { DrillDownModal } from './components/DrillDownModal';
 import { AssetsTab } from './components/AssetsTab';
+import { ProjectFinanceWorkspace } from './components/ProjectFinanceWorkspace';
 
 export default function FinancePage() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'funding' | 'bills' | 'assets' | 'reports'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'funding' | 'procurement' | 'assets' | 'reports'>('dashboard');
   
   const [drillDownState, setDrillDownState] = useState<{ open: boolean; type: string | null; payload: any }>({
     open: false,
@@ -33,18 +34,39 @@ export default function FinancePage() {
     retry: 1,
   });
 
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+
   const handleDrillDown = (type: string, payload?: any) => {
-    setDrillDownState({ open: true, type, payload });
+    if (type === 'PROJECT') {
+      setActiveProjectId(payload.id);
+    } else {
+      setDrillDownState({ open: true, type, payload });
+    }
   };
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart2 },
     { id: 'projects', label: 'Projects', icon: Building2 },
     { id: 'funding', label: 'Funding', icon: Wallet },
-    { id: 'bills', label: 'Bills', icon: FileText },
+    { id: 'procurement', label: 'Procurement', icon: FileText },
     { id: 'assets', label: 'Assets', icon: HardHat },
     { id: 'reports', label: 'Reports', icon: Banknote },
   ] as const;
+
+  if (activeProjectId) {
+    return (
+      <div className="pt-2">
+        <ProjectFinanceWorkspace 
+          projectId={activeProjectId} 
+          onBack={() => setActiveProjectId(null)} 
+          onNavigate={(tab) => {
+            setActiveProjectId(null);
+            setActiveTab(tab as any);
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-20" aria-label="Finance Module">
@@ -74,7 +96,7 @@ export default function FinancePage() {
         {tabs.map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => { setActiveProjectId(null); setActiveTab(tab.id as any); }}
             className={cn(
               'flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-[13px] font-bold transition-all relative select-none',
               activeTab === tab.id
@@ -103,7 +125,7 @@ export default function FinancePage() {
             {activeTab === 'dashboard' && <DashboardTab data={overview} onDrillDown={handleDrillDown} />}
             {activeTab === 'projects' && <ProjectsTab data={overview} onDrillDown={handleDrillDown} />}
             {activeTab === 'funding' && <FundingDashboardTab />}
-            {activeTab === 'bills' && <BillsTab onDrillDown={handleDrillDown} />}
+            {activeTab === 'procurement' && <ProcurementTab />}
             {activeTab === 'assets' && <AssetsTab />}
             {activeTab === 'reports' && (
               <div className="p-6 text-center border border-border/10 rounded-xl bg-card text-muted-foreground text-sm font-semibold">

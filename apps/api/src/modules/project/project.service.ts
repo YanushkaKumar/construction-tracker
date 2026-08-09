@@ -21,8 +21,23 @@ export class ProjectService {
       formattedData.actualEndDate = new Date(formattedData.actualEndDate);
     }
 
-    return this.prisma.project.create({
-      data: { ...formattedData, companyId, code },
+    return this.prisma.$transaction(async (tx) => {
+      const project = await tx.project.create({
+        data: { ...formattedData, companyId, code },
+      });
+
+      await tx.projectWallet.create({
+        data: {
+          projectId: project.id,
+          companyId: project.companyId,
+          balance: 0,
+          totalAllocated: 0,
+          totalSpent: 0,
+          reservedAmount: 0,
+        },
+      });
+
+      return project;
     });
   }
 

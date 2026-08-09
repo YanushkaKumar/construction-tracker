@@ -2,6 +2,16 @@
 // Finance & Advance Tracking Models
 // ============================================
 
+enum ProcurementStage {
+  REQUEST
+  APPROVAL
+  PO_GENERATED
+  GOODS_RECEIVED
+  INVOICED
+  BILLED
+  COMPLETED
+}
+
 enum AdvanceStatus {
   RECEIVED
   RETURNED
@@ -41,25 +51,25 @@ enum BankLoanStatus {
 // ── Project Advance (Money IN) ──────────────
 
 model ProjectAdvance {
-  id            String        @id @default(cuid())
-  projectId     String        @map("project_id")
-  companyId     String        @map("company_id")
-  receivedById  String        @map("received_by_id")
-  amount        Decimal       @db.Decimal(15, 2)
-  description   String
-  referenceNo   String?       @map("reference_no")
-  receivedDate  DateTime      @map("received_date") @db.Date
-  status        AdvanceStatus @default(RECEIVED)
-  notes         String?
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
+  id           String        @id @default(cuid())
+  projectId    String        @map("project_id")
+  companyId    String        @map("company_id")
+  receivedById String        @map("received_by_id")
+  amount       Decimal       @db.Decimal(15, 2)
+  description  String
+  referenceNo  String?       @map("reference_no")
+  receivedDate DateTime      @map("received_date") @db.Date
+  status       AdvanceStatus @default(RECEIVED)
+  notes        String?
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
 
-  bankLoanId    String?       @map("bank_loan_id")
+  bankLoanId String? @map("bank_loan_id")
 
-  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  receivedBy User      @relation("AdvanceReceiver", fields: [receivedById], references: [id])
-  bankLoan   BankLoan? @relation(fields: [bankLoanId], references: [id], onDelete: SetNull)
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  receivedBy    User           @relation("AdvanceReceiver", fields: [receivedById], references: [id])
+  bankLoan      BankLoan?      @relation(fields: [bankLoanId], references: [id], onDelete: SetNull)
   fundingSource FundingSource?
 
   @@index([projectId])
@@ -86,21 +96,27 @@ model Purchase {
   createdAt     DateTime         @default(now()) @map("created_at")
   updatedAt     DateTime         @updatedAt @map("updated_at")
 
-  // Bill Tracking Fields
-  status        BillStatus       @default(PENDING)
-  dueDate       DateTime?        @map("due_date") @db.Date
-  paidAmount    Decimal          @default(0) @map("paid_amount") @db.Decimal(15, 2)
-  approvedById  String?          @map("approved_by_id")
+  // Bill & AP Tracking Fields
+  status          BillStatus       @default(PENDING)
+  workflowStage   ProcurementStage @default(REQUEST) @map("workflow_stage")
+  dueDate         DateTime?        @map("due_date") @db.Date
+  paidAmount      Decimal          @default(0) @map("paid_amount") @db.Decimal(15, 2)
+  approvedById    String?          @map("approved_by_id")
+  supplierId      String?          @map("supplier_id")
+  projectWalletId String?          @map("project_wallet_id")
 
-  bankLoanId    String?          @map("bank_loan_id")
+  bankLoanId String? @map("bank_loan_id")
 
-  company     Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  purchasedBy User                 @relation("PurchaseBuyer", fields: [purchasedById], references: [id])
-  approvedBy  User?                @relation("PurchaseApprover", fields: [approvedById], references: [id])
-  allocations PurchaseAllocation[]
-  asset       Asset?
-  bankLoan    BankLoan?            @relation(fields: [bankLoanId], references: [id], onDelete: SetNull)
+  company            Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  purchasedBy        User                 @relation("PurchaseBuyer", fields: [purchasedById], references: [id])
+  approvedBy         User?                @relation("PurchaseApprover", fields: [approvedById], references: [id])
+  supplier           Supplier?            @relation(fields: [supplierId], references: [id])
+  projectWallet      ProjectWallet?       @relation(fields: [projectWalletId], references: [id])
+  allocations        PurchaseAllocation[]
+  asset              Asset?
+  bankLoan           BankLoan?            @relation(fields: [bankLoanId], references: [id], onDelete: SetNull)
   fundingAllocations FundingAllocation[]
+  payments           Payment[]
 
   @@index([companyId])
   @@index([category])
@@ -143,10 +159,10 @@ model Asset {
   createdAt        DateTime       @default(now()) @map("created_at")
   updatedAt        DateTime       @updatedAt @map("updated_at")
 
-  company        Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  purchase       Purchase?         @relation(fields: [purchaseId], references: [id])
-  currentProject Project?          @relation("AssetCurrentProject", fields: [currentProjectId], references: [id])
-  assignments    AssetAssignment[]
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  purchase           Purchase?           @relation(fields: [purchaseId], references: [id])
+  currentProject     Project?            @relation("AssetCurrentProject", fields: [currentProjectId], references: [id])
+  assignments        AssetAssignment[]
   fundingAllocations FundingAllocation[]
 
   @@index([companyId])
@@ -190,10 +206,10 @@ model BankLoan {
   createdAt    DateTime       @default(now()) @map("created_at")
   updatedAt    DateTime       @updatedAt @map("updated_at")
 
-  company    Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  advances   ProjectAdvance[]
-  purchases  Purchase[]
-  repayments BankLoanRepayment[]
+  company       Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  advances      ProjectAdvance[]
+  purchases     Purchase[]
+  repayments    BankLoanRepayment[]
   fundingSource FundingSource?
 
   @@index([companyId])
@@ -216,4 +232,78 @@ model BankLoanRepayment {
 
   @@index([bankLoanId])
   @@map("bank_loan_repayments")
+}
+
+// ── Project Wallet (Internal Project Treasury) ──
+
+model ProjectWallet {
+  id             String   @id @default(cuid())
+  projectId      String   @unique @map("project_id")
+  companyId      String   @map("company_id")
+  balance        Decimal  @default(0) @db.Decimal(15, 2)
+  totalAllocated Decimal  @default(0) @map("total_allocated") @db.Decimal(15, 2)
+  totalSpent     Decimal  @default(0) @map("total_spent") @db.Decimal(15, 2)
+  reservedAmount Decimal  @default(0) @map("reserved_amount") @db.Decimal(15, 2)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  project            Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  purchases          Purchase[]
+  expenses           Expense[]
+  payments           Payment[]
+  fundingAllocations FundingAllocation[]
+
+  @@index([companyId])
+  @@map("project_wallets")
+}
+
+// ── Payment (Individual transaction tracking) ──
+
+model Payment {
+  id            String   @id @default(cuid())
+  companyId     String   @map("company_id")
+  amount        Decimal  @db.Decimal(15, 2)
+  paymentMethod String   @map("payment_method")
+  referenceNo   String?  @map("reference_no")
+  paidDate      DateTime @map("paid_date") @db.Date
+  notes         String?
+
+  purchaseId      String? @map("purchase_id")
+  expenseId       String? @map("expense_id")
+  projectWalletId String? @map("project_wallet_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  purchase      Purchase?      @relation(fields: [purchaseId], references: [id])
+  expense       Expense?       @relation(fields: [expenseId], references: [id])
+  projectWallet ProjectWallet? @relation(fields: [projectWalletId], references: [id])
+
+  @@index([companyId])
+  @@index([purchaseId])
+  @@index([expenseId])
+  @@index([projectWalletId])
+  @@map("payments")
+}
+
+// ── Budget Category ──────────────────────────────
+
+model BudgetCategory {
+  id        String   @id @default(cuid())
+  companyId String   @map("company_id")
+  projectId String   @map("project_id")
+  name      String
+  allocated Decimal  @default(0) @db.Decimal(15, 2)
+  spent     Decimal  @default(0) @db.Decimal(15, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+
+  @@index([companyId])
+  @@index([projectId])
+  @@map("budget_categories")
 }

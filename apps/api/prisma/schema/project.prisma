@@ -52,18 +52,20 @@ model Project {
   attendance       Attendance[]
 
   // Finance relations
-  advances              ProjectAdvance[]
-  purchaseAllocations   PurchaseAllocation[]
-  currentAssets         Asset[]              @relation("AssetCurrentProject")
-  assetAssignments      AssetAssignment[]
+  advances            ProjectAdvance[]
+  purchaseAllocations PurchaseAllocation[]
+  currentAssets       Asset[]              @relation("AssetCurrentProject")
+  assetAssignments    AssetAssignment[]
 
   // BOQ relations
-  boqSections           BOQSection[]
-  boqItems              BOQItem[]
+  boqSections BOQSection[]
+  boqItems    BOQItem[]
 
   // Subcontractor relations
   subcontractorContracts SubcontractorContract[]
   fundingSources         FundingSource[]
+  projectWallet          ProjectWallet?
+  budgetCategories       BudgetCategory[]
 
   @@unique([companyId, code])
   @@index([companyId])

@@ -36,12 +36,15 @@ model Company {
   auditLogs     AuditLog[]
 
   // Finance relations
-  advances      ProjectAdvance[]
-  purchases     Purchase[]
-  assets        Asset[]
-  bankLoans     BankLoan[]
-  subcontractors Subcontractor[]
-  fundingSources FundingSource[]
+  advances         ProjectAdvance[]
+  purchases        Purchase[]
+  assets           Asset[]
+  bankLoans        BankLoan[]
+  subcontractors   Subcontractor[]
+  fundingSources   FundingSource[]
+  projectWallets   ProjectWallet[]
+  payments         Payment[]
+  budgetCategories BudgetCategory[]
 
   @@map("companies")
 }

@@ -69,7 +69,24 @@ const requestSchema = z.object({
   notes: z.string().optional(),
 });
 
+const materialSchema = z.object({
+  name: z.string().min(2, 'Name is required'),
+  unit: z.string().min(1, 'Unit is required'),
+  unitPrice: z.coerce.number().min(0, 'Must be a positive number'),
+  category: z.string().optional(),
+  minimumStock: z.coerce.number().min(0, 'Cannot be negative'),
+});
+
+const supplierSchema = z.object({
+  name: z.string().min(2, 'Supplier name is required'),
+  contactPerson: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email('Invalid email').or(z.literal('')),
+});
+
 type RequestFormValues = z.infer<typeof requestSchema>;
+type MaterialFormValues = z.infer<typeof materialSchema>;
+type SupplierFormValues = z.infer<typeof supplierSchema>;
 
 const statusMeta: Record<string, { label: string; bgClass: string; textClass: string }> = {
   PENDING: { label: 'Pending', bgClass: 'bg-warning-subtle/10 border-warning/25', textClass: 'text-warning' },
@@ -84,6 +101,8 @@ export default function MaterialsPage() {
   const [activeTab, setActiveTab] = useState<'requests' | 'inventory' | 'suppliers'>('requests');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('ALL');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isMaterialDialogOpen, setIsMaterialDialogOpen] = useState(false);
+  const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
   const [mutateError, setMutateError] = useState<string | null>(null);
 
   // Fetch materials list
@@ -142,6 +161,34 @@ export default function MaterialsPage() {
     }
   });
 
+  const createMaterialMutation = useMutation({
+    mutationFn: async (values: MaterialFormValues) => {
+      return (await apiClient.post('/materials', values)).data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['materials'] });
+      setIsMaterialDialogOpen(false);
+      resetMaterialForm();
+    },
+    onError: (err: any) => {
+      setMutateError(err.response?.data?.message || 'Failed to add material');
+    }
+  });
+
+  const createSupplierMutation = useMutation({
+    mutationFn: async (values: SupplierFormValues) => {
+      return (await apiClient.post('/suppliers', values)).data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      setIsSupplierDialogOpen(false);
+      resetSupplierForm();
+    },
+    onError: (err: any) => {
+      setMutateError(err.response?.data?.message || 'Failed to add supplier');
+    }
+  });
+
   const updateRequestStatusMutation = useMutation({
     mutationFn: async ({ requestId, status }: { requestId: string; status: string }) => {
       return (await apiClient.patch(`/material-requests/${requestId}/status`, { status })).data;
@@ -167,6 +214,37 @@ export default function MaterialsPage() {
       supplierId: '',
       quantity: 0,
       notes: '',
+    },
+  });
+
+  const {
+    register: registerMaterial,
+    handleSubmit: handleSubmitMaterial,
+    reset: resetMaterialForm,
+    formState: { errors: errorsMaterial, isSubmitting: isSubmittingMaterial },
+  } = useForm({
+    resolver: zodResolver(materialSchema),
+    defaultValues: {
+      name: '',
+      unit: '',
+      unitPrice: 0,
+      category: '',
+      minimumStock: 0,
+    },
+  });
+
+  const {
+    register: registerSupplier,
+    handleSubmit: handleSubmitSupplier,
+    reset: resetSupplierForm,
+    formState: { errors: errorsSupplier, isSubmitting: isSubmittingSupplier },
+  } = useForm({
+    resolver: zodResolver(supplierSchema),
+    defaultValues: {
+      name: '',
+      contactPerson: '',
+      phone: '',
+      email: '',
     },
   });
 
@@ -279,6 +357,110 @@ export default function MaterialsPage() {
                     ) : (
                       'Submit Requisition'
                     )}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {activeTab === 'inventory' && (
+          <Dialog open={isMaterialDialogOpen} onOpenChange={setIsMaterialDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="font-semibold h-10 rounded-xl transition-all shadow-sm">
+                <Plus className="w-4 h-4 mr-1.5" />
+                Add Material
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md bg-card border border-border/30 rounded-2xl p-5 text-left shadow-elevated">
+              <DialogHeader className="border-b border-border/15 pb-3.5 mb-3.5">
+                <DialogTitle className="text-sm font-bold text-foreground">Add New Material</DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5 font-medium">Add a custom material item to your master inventory list.</DialogDescription>
+              </DialogHeader>
+
+              <form onSubmit={handleSubmitMaterial((values) => createMaterialMutation.mutate(values))} className="space-y-4 font-semibold text-left">
+                <div className="space-y-1.5">
+                  <Label htmlFor="name" className="text-xs font-semibold text-foreground/80">Material Name *</Label>
+                  <Input id="name" placeholder="e.g. Paint (White)" {...registerMaterial('name')} className={inputStyle} />
+                  {errorsMaterial.name && <p className="text-[10px] text-danger font-bold">{errorsMaterial.name.message as string}</p>}
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="unit" className="text-xs font-semibold text-foreground/80">Unit *</Label>
+                    <Input id="unit" placeholder="e.g. Litre, Bag" {...registerMaterial('unit')} className={inputStyle} />
+                    {errorsMaterial.unit && <p className="text-[10px] text-danger font-bold">{errorsMaterial.unit.message as string}</p>}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="unitPrice" className="text-xs font-semibold text-foreground/80">Unit Price (LKR) *</Label>
+                    <Input id="unitPrice" type="number" step="any" placeholder="e.g. 500" {...registerMaterial('unitPrice')} className={inputStyle} />
+                    {errorsMaterial.unitPrice && <p className="text-[10px] text-danger font-bold">{errorsMaterial.unitPrice.message as string}</p>}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="category" className="text-xs font-semibold text-foreground/80">Category</Label>
+                    <Input id="category" placeholder="e.g. Hardware" {...registerMaterial('category')} className={inputStyle} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="minimumStock" className="text-xs font-semibold text-foreground/80">Min Stock Warning</Label>
+                    <Input id="minimumStock" type="number" step="any" placeholder="e.g. 10" {...registerMaterial('minimumStock')} className={inputStyle} />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2.5 pt-4 border-t border-border/15">
+                  <Button type="button" variant="outline" className="rounded-xl h-10 px-4 text-xs font-semibold" onClick={() => setIsMaterialDialogOpen(false)}>Cancel</Button>
+                  <Button type="submit" className="font-semibold h-10 rounded-xl text-xs px-4" disabled={isSubmittingMaterial}>
+                    {isSubmittingMaterial ? 'Adding...' : 'Add Material'}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {activeTab === 'suppliers' && (
+          <Dialog open={isSupplierDialogOpen} onOpenChange={setIsSupplierDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="font-semibold h-10 rounded-xl transition-all shadow-sm">
+                <Plus className="w-4 h-4 mr-1.5" />
+                Add Supplier
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md bg-card border border-border/30 rounded-2xl p-5 text-left shadow-elevated">
+              <DialogHeader className="border-b border-border/15 pb-3.5 mb-3.5">
+                <DialogTitle className="text-sm font-bold text-foreground">Add New Supplier</DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5 font-medium">Add a supplier or vendor to your directory.</DialogDescription>
+              </DialogHeader>
+
+              <form onSubmit={handleSubmitSupplier((values) => createSupplierMutation.mutate(values))} className="space-y-4 font-semibold text-left">
+                <div className="space-y-1.5">
+                  <Label htmlFor="supp-name" className="text-xs font-semibold text-foreground/80">Company Name *</Label>
+                  <Input id="supp-name" placeholder="e.g. Apex Hardware" {...registerSupplier('name')} className={inputStyle} />
+                  {errorsSupplier.name && <p className="text-[10px] text-danger font-bold">{errorsSupplier.name.message as string}</p>}
+                </div>
+                
+                <div className="space-y-1.5">
+                  <Label htmlFor="contactPerson" className="text-xs font-semibold text-foreground/80">Contact Person</Label>
+                  <Input id="contactPerson" placeholder="e.g. Nimal Perera" {...registerSupplier('contactPerson')} className={inputStyle} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="phone" className="text-xs font-semibold text-foreground/80">Phone</Label>
+                    <Input id="phone" placeholder="e.g. 077..." {...registerSupplier('phone')} className={inputStyle} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email" className="text-xs font-semibold text-foreground/80">Email</Label>
+                    <Input id="email" type="email" placeholder="e.g. info@..." {...registerSupplier('email')} className={inputStyle} />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2.5 pt-4 border-t border-border/15">
+                  <Button type="button" variant="outline" className="rounded-xl h-10 px-4 text-xs font-semibold" onClick={() => setIsSupplierDialogOpen(false)}>Cancel</Button>
+                  <Button type="submit" className="font-semibold h-10 rounded-xl text-xs px-4" disabled={isSubmittingSupplier}>
+                    {isSubmittingSupplier ? 'Adding...' : 'Add Supplier'}
                   </Button>
                 </div>
               </form>

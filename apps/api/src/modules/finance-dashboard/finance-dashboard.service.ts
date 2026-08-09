@@ -10,38 +10,26 @@ export class FinanceDashboardService {
    * Returns: total advances, total spending, balance, per-project breakdown with budget info
    */
   async getOverview(companyId: string) {
-    // Get all projects with budget info
-    const projects = await this.prisma.project.findMany({
+    // Fetch all project wallets
+    const wallets = await this.prisma.projectWallet.findMany({
       where: { companyId },
-      select: {
-        id: true,
-        name: true,
-        code: true,
-        status: true,
-        budgetEstimate: true,
-        budgetActual: true,
-        progressPercent: true,
-        startDate: true,
-        endDate: true,
-      },
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            status: true,
+            budgetEstimate: true,
+            budgetActual: true,
+            progressPercent: true,
+            startDate: true,
+            endDate: true,
+          }
+        }
+      }
     });
 
-    // Aggregate advances per project
-    const advances = await this.prisma.projectAdvance.groupBy({
-      by: ['projectId'],
-      where: { companyId, status: { in: ['RECEIVED', 'PARTIAL_RETURN'] } },
-      _sum: { amount: true },
-      _count: true,
-    });
-
-    // Aggregate purchase allocations per project
-    const allocations = await this.prisma.purchaseAllocation.groupBy({
-      by: ['projectId'],
-      where: { purchase: { companyId } },
-      _sum: { amount: true },
-    });
-
-    // Company-wide totals
     const totalAdvanceResult = await this.prisma.projectAdvance.aggregate({
       where: { companyId, status: { in: ['RECEIVED', 'PARTIAL_RETURN'] } },
       _sum: { amount: true },
@@ -78,7 +66,7 @@ export class FinanceDashboardService {
     const consolidatedSpent = totalSpent + totalExpenses + totalRepayments;
 
     // Total budget across all projects
-    const totalBudget = projects.reduce((sum, p) => sum + Number(p.budgetEstimate || 0), 0);
+    const totalBudget = wallets.reduce((sum, w) => sum + Number(w.project.budgetEstimate || 0), 0);
 
     // Spending by category
     const categoryBreakdown = await this.prisma.purchase.groupBy({
@@ -107,14 +95,6 @@ export class FinanceDashboardService {
       _count: true,
     });
 
-    // Build per-project breakdown
-    const advanceMap = Object.fromEntries(
-      advances.map((a: any) => [a.projectId, { total: Number(a._sum.amount || 0), count: a._count }]),
-    );
-    const allocationMap = Object.fromEntries(
-      allocations.map((a: any) => [a.projectId, Number(a._sum.amount || 0)]),
-    );
-
     // Build task counts per project
     const taskMap: Record<string, { total: number; completed: number; inProgress: number; todo: number }> = {};
     for (const ts of taskStats) {
@@ -127,12 +107,12 @@ export class FinanceDashboardService {
       else taskMap[ts.projectId].todo += ts._count;
     }
 
-    const projectBreakdown = projects.map((project) => {
+    const projectBreakdown = wallets.map((wallet) => {
+      const project = wallet.project;
       const budgetEstimate = Number(project.budgetEstimate || 0);
-      const totalAdvance = advanceMap[project.id]?.total || 0;
-      const advanceCount = advanceMap[project.id]?.count || 0;
-      const totalSpent = allocationMap[project.id] || 0;
-      const balance = totalAdvance - totalSpent;
+      const totalAdvance = Number(wallet.totalAllocated);
+      const totalSpent = Number(wallet.totalSpent);
+      const balance = Number(wallet.balance);
       const remainingToReceive = budgetEstimate - totalAdvance;
       const tasks = taskMap[project.id] || { total: 0, completed: 0, inProgress: 0, todo: 0 };
       const workDonePercent = tasks.total > 0 ? Math.round((tasks.completed / tasks.total) * 100) : project.progressPercent || 0;
@@ -146,7 +126,7 @@ export class FinanceDashboardService {
         endDate: project.endDate,
         budgetEstimate,
         totalAdvance,
-        advanceCount,
+        advanceCount: 0, // Legacy support removed for simplicity
         totalSpent,
         balance,
         remainingToReceive: remainingToReceive > 0 ? remainingToReceive : 0,
@@ -202,40 +182,27 @@ export class FinanceDashboardService {
    * Per-project balance sheet
    */
   async getProjectBalance(projectId: string) {
-    const project = await this.prisma.project.findUnique({
-      where: { id: projectId },
-      select: {
-        id: true,
-        name: true,
-        code: true,
-        budgetEstimate: true,
-        budgetActual: true,
-        progressPercent: true,
-        startDate: true,
-        endDate: true,
-      },
+    const wallet = await this.prisma.projectWallet.findUnique({
+      where: { projectId },
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            budgetEstimate: true,
+            budgetActual: true,
+            progressPercent: true,
+            startDate: true,
+            endDate: true,
+          }
+        }
+      }
     });
 
-    const [advances, allocations, expenses] = await Promise.all([
-      this.prisma.projectAdvance.aggregate({
-        where: { projectId, status: { in: ['RECEIVED', 'PARTIAL_RETURN'] } },
-        _sum: { amount: true },
-        _count: true,
-      }),
-      this.prisma.purchaseAllocation.aggregate({
-        where: { projectId },
-        _sum: { amount: true },
-        _count: true,
-      }),
-      this.prisma.expense.aggregate({
-        where: { projectId, status: { in: ['APPROVED', 'PAID'] } },
-        _sum: { amount: true },
-        _count: true,
-      }),
-    ]);
-
-    const totalAdvance = Number(advances._sum.amount || 0);
-    const totalSpent = Number(allocations._sum.amount || 0) + Number(expenses._sum.amount || 0);
+    const project = wallet?.project;
+    const totalAdvance = Number(wallet?.totalAllocated || 0);
+    const totalSpent = Number(wallet?.totalSpent || 0);
     const budgetEstimate = Number(project?.budgetEstimate || 0);
 
     // Category breakdown for this project
@@ -283,8 +250,8 @@ export class FinanceDashboardService {
       totalSpent,
       balance: totalAdvance - totalSpent,
       remainingToReceive: Math.max(budgetEstimate - totalAdvance, 0),
-      advanceCount: advances._count,
-      purchaseCount: allocations._count + expenses._count,
+      advanceCount: 0, // Migrated to Project Wallet
+      purchaseCount: 0, // Detail queries moved to unified ledger
       utilizationPercent: totalAdvance > 0 ? Math.round((totalSpent / totalAdvance) * 100) : 0,
       budgetUtilization: budgetEstimate > 0 ? Math.round((totalSpent / budgetEstimate) * 100) : 0,
       workDonePercent: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : (project?.progressPercent || 0),

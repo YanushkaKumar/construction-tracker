@@ -24,7 +24,7 @@ model Subcontractor {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  company   Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
   contracts SubcontractorContract[]
 
   @@index([companyId])
@@ -46,8 +46,8 @@ model SubcontractorContract {
   createdAt        DateTime       @default(now()) @map("created_at")
   updatedAt        DateTime       @updatedAt @map("updated_at")
 
-  project       Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  subcontractor Subcontractor @relation(fields: [subcontractorId], references: [id], onDelete: Cascade)
+  project       Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  subcontractor Subcontractor          @relation(fields: [subcontractorId], references: [id], onDelete: Cascade)
   payments      SubcontractorPayment[]
 
   @@index([projectId])

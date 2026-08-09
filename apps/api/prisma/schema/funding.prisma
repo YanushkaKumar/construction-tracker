@@ -55,22 +55,23 @@ model FundingSource {
   bankLoanId       String?             @unique @map("bank_loan_id")
 
   // Enterprise metadata
-  description      String?
-  referenceNo      String?             @map("reference_no")
-  receivedDate     DateTime?           @map("received_date")
-  paymentMethod    String?             @map("payment_method")
-  approvedBy       String?             @map("approved_by")
-  sourceCategory   String?             @map("source_category")
-  metadata         Json                @default("{}")
+  description    String?
+  referenceNo    String?   @map("reference_no")
+  receivedDate   DateTime? @map("received_date")
+  paymentMethod  String?   @map("payment_method")
+  approvedBy     String?   @map("approved_by")
+  sourceCategory String?   @map("source_category")
+  metadata       Json      @default("{}")
 
-  createdAt        DateTime            @default(now()) @map("created_at")
-  updatedAt        DateTime            @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  company        Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  project        Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  projectAdvance ProjectAdvance?    @relation(fields: [projectAdvanceId], references: [id], onDelete: SetNull)
-  bankLoan       BankLoan?          @relation(fields: [bankLoanId], references: [id], onDelete: SetNull)
+  company        Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  project        Project?            @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectAdvance ProjectAdvance?     @relation(fields: [projectAdvanceId], references: [id], onDelete: SetNull)
+  bankLoan       BankLoan?           @relation(fields: [bankLoanId], references: [id], onDelete: SetNull)
   allocations    FundingAllocation[]
+  expenses       Expense[]
 
   @@index([companyId])
   @@index([projectId])
@@ -79,26 +80,28 @@ model FundingSource {
 }
 
 model FundingAllocation {
-  id              String        @id @default(cuid())
-  fundingSourceId String        @map("funding_source_id")
-  amount          Decimal       @db.Decimal(15, 2)
-  expenseId       String?       @map("expense_id")
-  purchaseId      String?       @map("purchase_id")
-  assetId         String?       @map("asset_id")
-  attendanceId    String?       @map("attendance_id")
-  createdAt       DateTime      @default(now()) @map("created_at")
+  id              String   @id @default(cuid())
+  fundingSourceId String   @map("funding_source_id")
+  amount          Decimal  @db.Decimal(15, 2)
+  expenseId       String?  @map("expense_id")
+  purchaseId      String?  @map("purchase_id")
+  assetId         String?  @map("asset_id")
+  attendanceId    String?  @map("attendance_id")
+  projectWalletId String?  @map("project_wallet_id")
+  createdAt       DateTime @default(now()) @map("created_at")
 
-  fundingSource FundingSource @relation(fields: [fundingSourceId], references: [id], onDelete: Cascade)
-  expense       Expense?      @relation(fields: [expenseId], references: [id], onDelete: Cascade)
-  purchase      Purchase?     @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  asset         Asset?        @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  attendance    Attendance?   @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  fundingSource FundingSource  @relation(fields: [fundingSourceId], references: [id], onDelete: Cascade)
+  expense       Expense?       @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  purchase      Purchase?      @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  asset         Asset?         @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  attendance    Attendance?    @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  projectWallet ProjectWallet? @relation(fields: [projectWalletId], references: [id], onDelete: Cascade)
 
   @@index([fundingSourceId])
   @@index([expenseId])
   @@index([purchaseId])
   @@index([assetId])
   @@index([attendanceId])
+  @@index([projectWalletId])
   @@map("funding_allocations")
 }
-
