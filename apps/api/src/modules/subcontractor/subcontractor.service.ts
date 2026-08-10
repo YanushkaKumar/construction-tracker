@@ -58,14 +58,20 @@ export class SubcontractorService {
   }
 
   async update(id: string, companyId: string, data: any) {
-    return this.prisma.subcontractor.update({
-      where: { id, companyId },
-      data,
-    });
+    // Check first: a bare update on a missing/foreign row throws Prisma's P2025,
+    // which escapes as an opaque 500 instead of a 404.
+    const existing = await this.prisma.subcontractor.findFirst({ where: { id, companyId } });
+    if (!existing) throw new NotFoundException('Subcontractor not found');
+
+    const { companyId: _ignored, ...safe } = data ?? {};
+    return this.prisma.subcontractor.update({ where: { id }, data: safe });
   }
 
   async delete(id: string, companyId: string) {
-    return this.prisma.subcontractor.delete({ where: { id, companyId } });
+    const existing = await this.prisma.subcontractor.findFirst({ where: { id, companyId } });
+    if (!existing) throw new NotFoundException('Subcontractor not found');
+
+    return this.prisma.subcontractor.delete({ where: { id } });
   }
 
   // ── Contracts ─────────────────────────────
@@ -107,11 +113,14 @@ export class SubcontractorService {
     });
   }
 
-  async updateContract(id: string, data: any) {
-    return this.prisma.subcontractorContract.update({
-      where: { id },
-      data,
+  async updateContract(id: string, companyId: string, data: any) {
+    // Contracts have no companyId; scope through the owning subcontractor.
+    const existing = await this.prisma.subcontractorContract.findFirst({
+      where: { id, subcontractor: { companyId } },
     });
+    if (!existing) throw new NotFoundException('Contract not found');
+
+    return this.prisma.subcontractorContract.update({ where: { id }, data });
   }
 
   // ── Payments ──────────────────────────────

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 
 @Injectable()
@@ -181,7 +181,21 @@ export class FinanceDashboardService {
   /**
    * Per-project balance sheet
    */
-  async getProjectBalance(projectId: string) {
+  /**
+   * Confirm the project belongs to the caller's company before returning any
+   * of its financials — the projectId comes straight from the URL.
+   */
+  private async assertProjectInCompany(projectId: string, companyId: string) {
+    const project = await this.prisma.project.findFirst({
+      where: { id: projectId, companyId },
+      select: { id: true },
+    });
+    if (!project) throw new NotFoundException('Project not found');
+  }
+
+  async getProjectBalance(projectId: string, companyId: string) {
+    await this.assertProjectInCompany(projectId, companyId);
+
     const wallet = await this.prisma.projectWallet.findUnique({
       where: { projectId },
       include: {
@@ -265,7 +279,9 @@ export class FinanceDashboardService {
   /**
    * Per-project transaction ledger with running balance
    */
-  async getProjectLedger(projectId: string) {
+  async getProjectLedger(projectId: string, companyId: string) {
+    await this.assertProjectInCompany(projectId, companyId);
+
     const [advances, allocations, expenses] = await Promise.all([
       this.prisma.projectAdvance.findMany({
         where: { projectId },

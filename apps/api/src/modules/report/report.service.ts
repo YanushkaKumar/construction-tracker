@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { parseRequiredDateRange } from '../../common/utils/date-range.util';
 
 @Injectable()
 export class ReportService {
@@ -53,11 +54,13 @@ export class ReportService {
   }
 
   async labourReport(companyId: string, startDate: string, endDate: string) {
+    const { start, end } = parseRequiredDateRange(startDate, endDate);
+
     const attendance = await this.prisma.attendance.groupBy({
       by: ['projectId'],
       where: {
         worker: { companyId },
-        date: { gte: new Date(startDate), lte: new Date(endDate) },
+        date: { gte: start, lte: end },
       },
       _sum: { dailyWage: true, hoursWorked: true },
       _count: true,

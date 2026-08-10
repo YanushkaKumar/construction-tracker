@@ -29,7 +29,7 @@ export class AssetService {
 
         // Deduct balances
         for (const alloc of allocationsToProcess) {
-          const source = await tx.fundingSource.findUnique({ where: { id: alloc.fundingSourceId } });
+          const source = await tx.fundingSource.findFirst({ where: { id: alloc.fundingSourceId, companyId } });
           if (!source) throw new NotFoundException(`Funding source ${alloc.fundingSourceId} not found`);
           if (Number(source.currentBalance) < Number(alloc.amount)) {
             throw new BadRequestException(`Insufficient balance in funding source "${source.name}". Required: LKR ${Number(alloc.amount).toLocaleString()}, Available: LKR ${Number(source.currentBalance).toLocaleString()}`);
@@ -235,7 +235,7 @@ export class AssetService {
         }
 
         for (const alloc of allocationsToProcess) {
-          const source = await tx.fundingSource.findUnique({ where: { id: alloc.fundingSourceId } });
+          const source = await tx.fundingSource.findFirst({ where: { id: alloc.fundingSourceId, companyId } });
           if (!source) throw new NotFoundException(`Funding source ${alloc.fundingSourceId} not found`);
           if (Number(source.currentBalance) < Number(alloc.amount)) {
             throw new BadRequestException(`Insufficient balance in funding source "${source.name}". Required: LKR ${Number(alloc.amount).toLocaleString()}, Available: LKR ${Number(source.currentBalance).toLocaleString()}`);

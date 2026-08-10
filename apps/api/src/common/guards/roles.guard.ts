@@ -2,6 +2,29 @@ import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY, PERMISSIONS_KEY } from '../decorators/roles.decorator';
 
+/**
+ * Permissions that are implied by a broader one. A holder of the broader
+ * permission satisfies any requirement for the narrower.
+ *
+ * Without this, a COMPANY_OWNER — who is granted `projects:manage_all` but not
+ * `projects:manage_assigned` — is refused on endpoints guarded by the narrower
+ * permission, locking the owner out of editing their own projects. Resolving it
+ * here fixes every existing company without rewriting stored role rows.
+ */
+const PERMISSION_IMPLIES: Record<string, string[]> = {
+  'projects:manage_all': ['projects:manage_assigned', 'projects:view'],
+  'expenses:view_all': ['expenses:view_own'],
+  'attendance:view': ['attendance:view_own'],
+};
+
+function expandPermissions(granted: string[]): Set<string> {
+  const all = new Set(granted);
+  for (const p of granted) {
+    for (const implied of PERMISSION_IMPLIES[p] ?? []) all.add(implied);
+  }
+  return all;
+}
+
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
@@ -39,10 +62,11 @@ export class RolesGuard implements CanActivate {
 
     // Check permissions
     if (requiredPermissions && requiredPermissions.length > 0) {
-      const userPermissions: string[] = user.permissions || [];
-      if (userPermissions.includes('*')) {
+      const granted: string[] = user.permissions || [];
+      if (granted.includes('*')) {
         return true;
       }
+      const userPermissions = [...expandPermissions(granted)];
       const hasAllPermissions = requiredPermissions.every((perm) =>
         userPermissions.some((userPerm) => {
           // Support wildcard permissions (e.g., "projects:*")

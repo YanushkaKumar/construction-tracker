@@ -64,7 +64,7 @@ describe('ExpenseService — money paths', () => {
 
     it('rejects when a funding source has insufficient balance', async () => {
       prisma.project.findFirst.mockResolvedValue({ companyId: 'c1' });
-      prisma.fundingSource.findUnique.mockResolvedValue({
+      prisma.fundingSource.findFirst.mockResolvedValue({
         id: 'fs1',
         name: 'Cash Pool',
         currentBalance: 50_000,
@@ -81,9 +81,28 @@ describe('ExpenseService — money paths', () => {
       expect(prisma.expense.create).not.toHaveBeenCalled();
     });
 
+    it('scopes the funding source lookup to the expense company', async () => {
+      prisma.project.findFirst.mockResolvedValue({ companyId: 'c1' });
+      // A funding source belonging to another company must not resolve.
+      prisma.fundingSource.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.create('p1', 'u1', {
+          ...baseData,
+          allocations: [{ fundingSourceId: 'other-company-fs', amount: 100_000 }],
+        }),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(prisma.fundingSource.findFirst).toHaveBeenCalledWith({
+        where: { id: 'other-company-fs', companyId: 'c1' },
+      });
+      expect(prisma.fundingSource.update).not.toHaveBeenCalled();
+      expect(prisma.expense.create).not.toHaveBeenCalled();
+    });
+
     it('deducts the allocated amount from the funding source on success', async () => {
       prisma.project.findFirst.mockResolvedValue({ companyId: 'c1' });
-      prisma.fundingSource.findUnique.mockResolvedValue({
+      prisma.fundingSource.findFirst.mockResolvedValue({
         id: 'fs1',
         name: 'Cash Pool',
         currentBalance: 500_000,
@@ -109,12 +128,6 @@ describe('ExpenseService — money paths', () => {
       prisma.project.findFirst.mockResolvedValue({ companyId: 'c1' });
       prisma.fundingSource.count.mockResolvedValue(1);
       prisma.fundingSource.findFirst.mockResolvedValue({
-        id: 'cash',
-        name: 'Company Cash',
-        currentBalance: 1_000_000,
-        remainingAmount: 1_000_000,
-      });
-      prisma.fundingSource.findUnique.mockResolvedValue({
         id: 'cash',
         name: 'Company Cash',
         currentBalance: 1_000_000,

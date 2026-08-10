@@ -42,8 +42,8 @@ export class PurchaseController {
 
   @Get('projects/:projectId/purchases')
   @ApiOperation({ summary: 'List purchases allocated to a project' })
-  findByProject(@Param('projectId') projectId: string) {
-    return this.purchaseService.findByProject(projectId);
+  findByProject(@Param('projectId') projectId: string, @CompanyId() companyId: string) {
+    return this.purchaseService.findByProject(projectId, companyId);
   }
 
   @Get('purchases/:id')

@@ -31,9 +31,13 @@ export class WorkerController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get worker details' })
-  findOne(@Param('id') id: string) { return this.workerService.findById(id); }
+  findOne(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.workerService.findById(id, companyId);
+  }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update worker' })
-  update(@Param('id') id: string, @Body() data: any) { return this.workerService.update(id, data); }
+  update(@Param('id') id: string, @CompanyId() companyId: string, @Body() data: any) {
+    return this.workerService.update(id, companyId, data);
+  }
 }

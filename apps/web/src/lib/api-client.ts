@@ -42,11 +42,17 @@ apiClient.interceptors.response.use(
           { withCredentials: true }
         );
         
-        const { accessToken } = response.data;
+        const { accessToken, refreshToken: rotatedRefreshToken } = response.data;
         if (accessToken) {
-          // Update tokens in Zustand store
+          // The API rotates refresh tokens: the one we just sent is now revoked,
+          // so the new one must be persisted or the next refresh will fail.
           if (currentStore.user && currentStore.company) {
-            currentStore.setAuth(currentStore.user, currentStore.company, accessToken);
+            currentStore.setAuth(
+              currentStore.user,
+              currentStore.company,
+              accessToken,
+              rotatedRefreshToken ?? refreshToken ?? undefined,
+            );
           }
           
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;

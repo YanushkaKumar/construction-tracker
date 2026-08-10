@@ -59,8 +59,8 @@ export class SubcontractorController {
 
   @Patch('subcontractor-contracts/:id')
   @ApiOperation({ summary: 'Update a contract' })
-  updateContract(@Param('id') id: string, @Body() data: any) {
-    return this.subcontractorService.updateContract(id, data);
+  updateContract(@Param('id') id: string, @CompanyId() companyId: string, @Body() data: any) {
+    return this.subcontractorService.updateContract(id, companyId, data);
   }
 
   // ── Payments ──────────────────────────────

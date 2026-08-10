@@ -5,7 +5,29 @@ import { PrismaService } from '../database/prisma.service';
 export class TaskService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(projectId: string, creatorId: string, data: any) {
+  /**
+   * Load a task only if it belongs to the given company. Tasks have no direct
+   * companyId, so tenancy is enforced through the owning project.
+   */
+  private async findScoped(id: string, companyId: string) {
+    const task = await this.prisma.task.findFirst({
+      where: { id, project: { companyId } },
+    });
+    if (!task) throw new NotFoundException('Task not found');
+    return task;
+  }
+
+  private async assertProjectInCompany(projectId: string, companyId: string) {
+    const project = await this.prisma.project.findFirst({
+      where: { id: projectId, companyId },
+      select: { id: true },
+    });
+    if (!project) throw new NotFoundException('Project not found');
+  }
+
+  async create(projectId: string, creatorId: string, companyId: string, data: any) {
+    await this.assertProjectInCompany(projectId, companyId);
+
     const formattedData = { ...data };
     if (formattedData.dueDate) {
       formattedData.dueDate = new Date(formattedData.dueDate);
@@ -16,9 +38,9 @@ export class TaskService {
     });
   }
 
-  async findAllByProject(projectId: string, status?: string) {
+  async findAllByProject(projectId: string, companyId: string, status?: string) {
     return this.prisma.task.findMany({
-      where: { projectId, ...(status ? { status: status as any } : {}) },
+      where: { projectId, project: { companyId }, ...(status ? { status: status as any } : {}) },
       include: {
         assignee: { select: { id: true, firstName: true, lastName: true, avatar: true } },
         _count: { select: { comments: true, subTasks: true, images: true } },
@@ -38,9 +60,9 @@ export class TaskService {
     });
   }
 
-  async findById(id: string) {
-    const task = await this.prisma.task.findUnique({
-      where: { id },
+  async findById(id: string, companyId: string) {
+    const task = await this.prisma.task.findFirst({
+      where: { id, project: { companyId } },
       include: {
         assignee: { select: { id: true, firstName: true, lastName: true, avatar: true } },
         creator: { select: { id: true, firstName: true, lastName: true } },
@@ -53,7 +75,9 @@ export class TaskService {
     return task;
   }
 
-  async updateStatus(id: string, status: string) {
+  async updateStatus(id: string, companyId: string, status: string) {
+    await this.findScoped(id, companyId);
+
     return this.prisma.task.update({
       where: { id },
       data: {
@@ -63,16 +87,17 @@ export class TaskService {
     });
   }
 
-  async addComment(taskId: string, userId: string, content: string, attachments: string[] = []) {
+  async addComment(taskId: string, userId: string, companyId: string, content: string, attachments: string[] = []) {
+    await this.findScoped(taskId, companyId);
+
     return this.prisma.taskComment.create({
       data: { taskId, userId, content, attachments },
       include: { user: { select: { id: true, firstName: true, lastName: true, avatar: true } } },
     });
   }
 
-  async update(id: string, data: any) {
-    const task = await this.prisma.task.findUnique({ where: { id } });
-    if (!task) throw new NotFoundException('Task not found');
+  async update(id: string, companyId: string, data: any) {
+    await this.findScoped(id, companyId);
 
     const updateData: any = {};
     if (data.title !== undefined) updateData.title = data.title;
@@ -96,9 +121,8 @@ export class TaskService {
     });
   }
 
-  async delete(id: string) {
-    const task = await this.prisma.task.findUnique({ where: { id } });
-    if (!task) throw new NotFoundException('Task not found');
+  async delete(id: string, companyId: string) {
+    await this.findScoped(id, companyId);
 
     await this.prisma.task.delete({ where: { id } });
     return { deleted: true, id };
