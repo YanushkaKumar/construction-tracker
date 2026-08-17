@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { TrendingUp, TrendingDown, Minus, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -10,9 +10,12 @@ import { cn } from '@/lib/utils';
 function useAnimatedValue(target: number, duration = 900, enabled = true) {
   const [value, setValue] = useState(0);
   const rafRef = useRef<number>(0);
+  // Nothing to animate towards: derive 0 rather than setting state from the
+  // effect, which would trigger an extra cascading render on every mount.
+  const isIdle = !enabled || target === 0;
 
   useEffect(() => {
-    if (!enabled || target === 0) { setValue(0); return; }
+    if (isIdle) return;
     const startTime = performance.now();
     const startValue = 0;
 
@@ -27,9 +30,9 @@ function useAnimatedValue(target: number, duration = 900, enabled = true) {
 
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [target, duration, enabled]);
+  }, [target, duration, isIdle]);
 
-  return value;
+  return isIdle ? 0 : value;
 }
 
 // ── Mini sparkline ────────────────────────────────────────────

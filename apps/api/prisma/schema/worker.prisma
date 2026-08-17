@@ -47,8 +47,8 @@ model Attendance {
   markedById    String?          @map("marked_by_id")
   createdAt     DateTime         @default(now()) @map("created_at")
 
-  worker  Worker  @relation(fields: [workerId], references: [id], onDelete: Cascade)
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  worker             Worker              @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  project            Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
   fundingAllocations FundingAllocation[]
 
   @@unique([workerId, projectId, date])

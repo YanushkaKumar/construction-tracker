@@ -5,9 +5,40 @@ import { PrismaService } from '../database/prisma.service';
 export class BOQService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // ── Tenancy helpers ───────────────────────
+  // BOQ rows carry no companyId of their own, so every lookup is scoped
+  // through the owning project. Section/item ids and the projectId all arrive
+  // from client input and must never be trusted on their own.
+
+  private async assertProjectInCompany(projectId: string, companyId: string) {
+    const project = await this.prisma.project.findFirst({
+      where: { id: projectId, companyId },
+      select: { id: true },
+    });
+    if (!project) throw new NotFoundException('Project not found');
+  }
+
+  private async findSectionScoped(id: string, companyId: string) {
+    const section = await this.prisma.bOQSection.findFirst({
+      where: { id, project: { companyId } },
+    });
+    if (!section) throw new NotFoundException('BOQ section not found');
+    return section;
+  }
+
+  private async findItemScoped(id: string, companyId: string) {
+    const item = await this.prisma.bOQItem.findFirst({
+      where: { id, project: { companyId } },
+    });
+    if (!item) throw new NotFoundException('BOQ item not found');
+    return item;
+  }
+
   // ── Sections ──────────────────────────────
 
-  async createSection(projectId: string, data: any) {
+  async createSection(projectId: string, companyId: string, data: any) {
+    await this.assertProjectInCompany(projectId, companyId);
+
     const maxOrder = await this.prisma.bOQSection.aggregate({
       where: { projectId },
       _max: { sortOrder: true },
@@ -32,20 +63,29 @@ export class BOQService {
     });
   }
 
-  async updateSection(id: string, data: any) {
+  async updateSection(id: string, companyId: string, data: any) {
+    await this.findSectionScoped(id, companyId);
+
     return this.prisma.bOQSection.update({
       where: { id },
       data: { title: data.title },
     });
   }
 
-  async deleteSection(id: string) {
+  async deleteSection(id: string, companyId: string) {
+    await this.findSectionScoped(id, companyId);
+
     return this.prisma.bOQSection.delete({ where: { id } });
   }
 
   // ── Items ─────────────────────────────────
 
-  async createItem(sectionId: string, projectId: string, data: any) {
+  async createItem(sectionId: string, companyId: string, data: any) {
+    // Derive the project from the section rather than trusting data.projectId,
+    // which would otherwise let an item be filed against any project.
+    const section = await this.findSectionScoped(sectionId, companyId);
+    const projectId = section.projectId;
+
     const amount = Number(data.quantity) * Number(data.rate);
     const maxOrder = await this.prisma.bOQItem.aggregate({
       where: { sectionId },
@@ -69,7 +109,9 @@ export class BOQService {
     });
   }
 
-  async updateItem(id: string, data: any) {
+  async updateItem(id: string, companyId: string, data: any) {
+    await this.findItemScoped(id, companyId);
+
     const updateData: any = {};
     if (data.itemNo !== undefined) updateData.itemNo = data.itemNo;
     if (data.description !== undefined) updateData.description = data.description;
@@ -86,13 +128,17 @@ export class BOQService {
     return this.prisma.bOQItem.update({ where: { id }, data: updateData });
   }
 
-  async deleteItem(id: string) {
+  async deleteItem(id: string, companyId: string) {
+    await this.findItemScoped(id, companyId);
+
     return this.prisma.bOQItem.delete({ where: { id } });
   }
 
   // ── Summary ───────────────────────────────
 
-  async getProjectBOQSummary(projectId: string) {
+  async getProjectBOQSummary(projectId: string, companyId: string) {
+    await this.assertProjectInCompany(projectId, companyId);
+
     const sections = await this.getSections(projectId);
     let totalEstimated = 0;
     let totalActual = 0;

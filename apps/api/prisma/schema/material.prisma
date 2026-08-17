@@ -46,6 +46,8 @@ model Supplier {
 
   company          Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
   materialRequests MaterialRequest[]
+  expenses         Expense[]
+  purchases        Purchase[]
 
   @@index([companyId])
   @@map("suppliers")

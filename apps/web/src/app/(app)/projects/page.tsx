@@ -49,6 +49,7 @@ const projectSchema = z.object({
   clientPhone:    z.string().optional(),
   location:       z.string().optional(),
   budgetEstimate: z.coerce.number().min(0, 'Budget must be positive'),
+  contractValue:  z.coerce.number().min(0, 'Contract value must be positive or zero').default(0),
   startDate:      z.string().optional(),
   endDate:        z.string().optional(),
   status:   z.enum(['PLANNING', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELLED']).default('PLANNING'),
@@ -286,7 +287,7 @@ export default function ProjectsPage() {
     resolver: zodResolver(projectSchema),
     defaultValues: {
       name: '', description: '', clientName: '', clientPhone: '',
-      location: '', budgetEstimate: 0, status: 'PLANNING' as const, priority: 'MEDIUM' as const,
+      location: '', budgetEstimate: 0, contractValue: 0, status: 'PLANNING' as const, priority: 'MEDIUM' as const,
     },
   });
 
@@ -364,6 +365,13 @@ export default function ProjectsPage() {
                 <div className="space-y-1.5">
                   <Label htmlFor="proj-loc" className="text-[12px] font-semibold text-foreground/80">Location</Label>
                   <Input id="proj-loc" placeholder="Negombo, LK" {...register('location')} className={inputCls} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="proj-contract" className="text-[12px] font-semibold text-foreground/80">
+                    Contract Value (LKR)
+                  </Label>
+                  <Input id="proj-contract" type="number" min="0" placeholder="10000000" {...register('contractValue')} className={inputCls} />
+                  {errors.contractValue && <p className="text-[11px] text-danger font-semibold">{errors.contractValue.message}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="proj-budget" className="text-[12px] font-semibold text-foreground/80">

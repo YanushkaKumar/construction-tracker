@@ -12,6 +12,15 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         { emit: 'stdout', level: 'warn' },
         { emit: 'stdout', level: 'error' },
       ],
+      // The money flows (expense, purchase and asset creation, attendance
+      // batches) run a dozen or more sequential statements inside a single
+      // interactive transaction. Prisma's 5s default is comfortable against a
+      // local database but expires part-way through against a managed remote
+      // one, failing the request with "Transaction not found".
+      transactionOptions: {
+        maxWait: 10_000,
+        timeout: 30_000,
+      },
     });
   }
 

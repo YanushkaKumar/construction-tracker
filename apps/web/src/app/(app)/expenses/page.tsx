@@ -402,7 +402,7 @@ export default function ExpensesPage() {
                     {isSubmitting ? (
                       <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Logging…</>
                     ) : (
-                      'Log Purchase'
+                      'Log Expense'
                     )}
                   </Button>
                 </div>

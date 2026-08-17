@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 
 @Injectable()
@@ -10,38 +10,26 @@ export class FinanceDashboardService {
    * Returns: total advances, total spending, balance, per-project breakdown with budget info
    */
   async getOverview(companyId: string) {
-    // Get all projects with budget info
-    const projects = await this.prisma.project.findMany({
+    // Fetch all project wallets
+    const wallets = await this.prisma.projectWallet.findMany({
       where: { companyId },
-      select: {
-        id: true,
-        name: true,
-        code: true,
-        status: true,
-        budgetEstimate: true,
-        budgetActual: true,
-        progressPercent: true,
-        startDate: true,
-        endDate: true,
-      },
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            status: true,
+            budgetEstimate: true,
+            budgetActual: true,
+            progressPercent: true,
+            startDate: true,
+            endDate: true,
+          }
+        }
+      }
     });
 
-    // Aggregate advances per project
-    const advances = await this.prisma.projectAdvance.groupBy({
-      by: ['projectId'],
-      where: { companyId, status: { in: ['RECEIVED', 'PARTIAL_RETURN'] } },
-      _sum: { amount: true },
-      _count: true,
-    });
-
-    // Aggregate purchase allocations per project
-    const allocations = await this.prisma.purchaseAllocation.groupBy({
-      by: ['projectId'],
-      where: { purchase: { companyId } },
-      _sum: { amount: true },
-    });
-
-    // Company-wide totals
     const totalAdvanceResult = await this.prisma.projectAdvance.aggregate({
       where: { companyId, status: { in: ['RECEIVED', 'PARTIAL_RETURN'] } },
       _sum: { amount: true },
@@ -62,6 +50,14 @@ export class FinanceDashboardService {
       _sum: { amount: true },
     });
 
+    // Bills Summary (Purchases acting as Bills)
+    const billsStats = await this.prisma.purchase.groupBy({
+      by: ['status'],
+      where: { companyId },
+      _sum: { totalAmount: true, paidAmount: true },
+      _count: true,
+    });
+
     const totalAdvance = Number(totalAdvanceResult._sum.amount || 0);
     const totalSpent = Number(totalSpentResult._sum.amount || 0);
     const totalExpenses = Number(totalExpensesResult._sum.amount || 0);
@@ -70,7 +66,7 @@ export class FinanceDashboardService {
     const consolidatedSpent = totalSpent + totalExpenses + totalRepayments;
 
     // Total budget across all projects
-    const totalBudget = projects.reduce((sum, p) => sum + Number(p.budgetEstimate || 0), 0);
+    const totalBudget = wallets.reduce((sum, w) => sum + Number(w.project.budgetEstimate || 0), 0);
 
     // Spending by category
     const categoryBreakdown = await this.prisma.purchase.groupBy({
@@ -99,14 +95,6 @@ export class FinanceDashboardService {
       _count: true,
     });
 
-    // Build per-project breakdown
-    const advanceMap = Object.fromEntries(
-      advances.map((a: any) => [a.projectId, { total: Number(a._sum.amount || 0), count: a._count }]),
-    );
-    const allocationMap = Object.fromEntries(
-      allocations.map((a: any) => [a.projectId, Number(a._sum.amount || 0)]),
-    );
-
     // Build task counts per project
     const taskMap: Record<string, { total: number; completed: number; inProgress: number; todo: number }> = {};
     for (const ts of taskStats) {
@@ -119,12 +107,12 @@ export class FinanceDashboardService {
       else taskMap[ts.projectId].todo += ts._count;
     }
 
-    const projectBreakdown = projects.map((project) => {
+    const projectBreakdown = wallets.map((wallet) => {
+      const project = wallet.project;
       const budgetEstimate = Number(project.budgetEstimate || 0);
-      const totalAdvance = advanceMap[project.id]?.total || 0;
-      const advanceCount = advanceMap[project.id]?.count || 0;
-      const totalSpent = allocationMap[project.id] || 0;
-      const balance = totalAdvance - totalSpent;
+      const totalAdvance = Number(wallet.totalAllocated);
+      const totalSpent = Number(wallet.totalSpent);
+      const balance = Number(wallet.balance);
       const remainingToReceive = budgetEstimate - totalAdvance;
       const tasks = taskMap[project.id] || { total: 0, completed: 0, inProgress: 0, todo: 0 };
       const workDonePercent = tasks.total > 0 ? Math.round((tasks.completed / tasks.total) * 100) : project.progressPercent || 0;
@@ -138,7 +126,7 @@ export class FinanceDashboardService {
         endDate: project.endDate,
         budgetEstimate,
         totalAdvance,
-        advanceCount,
+        advanceCount: 0, // Legacy support removed for simplicity
         totalSpent,
         balance,
         remainingToReceive: remainingToReceive > 0 ? remainingToReceive : 0,
@@ -150,12 +138,30 @@ export class FinanceDashboardService {
       };
     });
 
+    const billsSummary = {
+      totalAmount: 0,
+      totalPaid: 0,
+      totalPending: 0,
+      totalOverdue: 0,
+    };
+
+    for (const bs of billsStats) {
+      const total = Number(bs._sum.totalAmount || 0);
+      const paid = Number(bs._sum.paidAmount || 0);
+      billsSummary.totalAmount += total;
+      billsSummary.totalPaid += paid;
+      
+      if (bs.status === 'PENDING' || bs.status === 'PARTIAL') billsSummary.totalPending += (total - paid);
+      if (bs.status === 'OVERDUE') billsSummary.totalOverdue += (total - paid);
+    }
+
     return {
       companyTotals: {
         totalBudget,
         totalAdvance,
         totalSpent: consolidatedSpent,
         balance: totalAdvance - consolidatedSpent,
+        billsSummary,
       },
       projectBreakdown: projectBreakdown.sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance)),
       categoryBreakdown: categoryBreakdown.map((c: any) => ({
@@ -175,41 +181,42 @@ export class FinanceDashboardService {
   /**
    * Per-project balance sheet
    */
-  async getProjectBalance(projectId: string) {
-    const project = await this.prisma.project.findUnique({
-      where: { id: projectId },
-      select: {
-        id: true,
-        name: true,
-        code: true,
-        budgetEstimate: true,
-        budgetActual: true,
-        progressPercent: true,
-        startDate: true,
-        endDate: true,
-      },
+  /**
+   * Confirm the project belongs to the caller's company before returning any
+   * of its financials — the projectId comes straight from the URL.
+   */
+  private async assertProjectInCompany(projectId: string, companyId: string) {
+    const project = await this.prisma.project.findFirst({
+      where: { id: projectId, companyId },
+      select: { id: true },
+    });
+    if (!project) throw new NotFoundException('Project not found');
+  }
+
+  async getProjectBalance(projectId: string, companyId: string) {
+    await this.assertProjectInCompany(projectId, companyId);
+
+    const wallet = await this.prisma.projectWallet.findUnique({
+      where: { projectId },
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            budgetEstimate: true,
+            budgetActual: true,
+            progressPercent: true,
+            startDate: true,
+            endDate: true,
+          }
+        }
+      }
     });
 
-    const [advances, allocations, expenses] = await Promise.all([
-      this.prisma.projectAdvance.aggregate({
-        where: { projectId, status: { in: ['RECEIVED', 'PARTIAL_RETURN'] } },
-        _sum: { amount: true },
-        _count: true,
-      }),
-      this.prisma.purchaseAllocation.aggregate({
-        where: { projectId },
-        _sum: { amount: true },
-        _count: true,
-      }),
-      this.prisma.expense.aggregate({
-        where: { projectId, status: { in: ['APPROVED', 'PAID'] } },
-        _sum: { amount: true },
-        _count: true,
-      }),
-    ]);
-
-    const totalAdvance = Number(advances._sum.amount || 0);
-    const totalSpent = Number(allocations._sum.amount || 0) + Number(expenses._sum.amount || 0);
+    const project = wallet?.project;
+    const totalAdvance = Number(wallet?.totalAllocated || 0);
+    const totalSpent = Number(wallet?.totalSpent || 0);
     const budgetEstimate = Number(project?.budgetEstimate || 0);
 
     // Category breakdown for this project
@@ -257,8 +264,8 @@ export class FinanceDashboardService {
       totalSpent,
       balance: totalAdvance - totalSpent,
       remainingToReceive: Math.max(budgetEstimate - totalAdvance, 0),
-      advanceCount: advances._count,
-      purchaseCount: allocations._count + expenses._count,
+      advanceCount: 0, // Migrated to Project Wallet
+      purchaseCount: 0, // Detail queries moved to unified ledger
       utilizationPercent: totalAdvance > 0 ? Math.round((totalSpent / totalAdvance) * 100) : 0,
       budgetUtilization: budgetEstimate > 0 ? Math.round((totalSpent / budgetEstimate) * 100) : 0,
       workDonePercent: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : (project?.progressPercent || 0),
@@ -272,7 +279,9 @@ export class FinanceDashboardService {
   /**
    * Per-project transaction ledger with running balance
    */
-  async getProjectLedger(projectId: string) {
+  async getProjectLedger(projectId: string, companyId: string) {
+    await this.assertProjectInCompany(projectId, companyId);
+
     const [advances, allocations, expenses] = await Promise.all([
       this.prisma.projectAdvance.findMany({
         where: { projectId },
@@ -366,6 +375,134 @@ export class FinanceDashboardService {
         totalOut: ledgerEntries.reduce((sum, e) => sum + e.amountOut, 0),
         finalBalance: runningBalance,
       },
+    };
+  }
+
+  /**
+   * Enterprise Expense Drill-down
+   * Category -> Item (Title) -> Supplier -> Transactions
+   */
+  async getExpenseDrillDown(companyId: string) {
+    const purchases = await this.prisma.purchase.findMany({
+      where: { companyId },
+      include: {
+        purchasedBy: { select: { firstName: true, lastName: true } },
+      },
+    });
+
+    const expenses = await this.prisma.expense.findMany({
+      where: { project: { companyId } },
+      include: {
+        submittedBy: { select: { firstName: true, lastName: true } },
+      },
+    });
+
+    // Grouping structure: Category -> Item Title -> Vendor/Submitter -> List of Tx
+    const tree: any = {};
+
+    const addNode = (cat: string, item: string, vendor: string, tx: any) => {
+      const c = cat || 'OTHER';
+      const i = item || 'Unknown Item';
+      const v = vendor || 'Unknown Vendor';
+
+      if (!tree[c]) tree[c] = { total: 0, items: {} };
+      tree[c].total += Number(tx.amount);
+
+      if (!tree[c].items[i]) tree[c].items[i] = { total: 0, vendors: {} };
+      tree[c].items[i].total += Number(tx.amount);
+
+      if (!tree[c].items[i].vendors[v]) tree[c].items[i].vendors[v] = { total: 0, transactions: [] };
+      tree[c].items[i].vendors[v].total += Number(tx.amount);
+
+      tree[c].items[i].vendors[v].transactions.push(tx);
+    };
+
+    for (const p of purchases) {
+      addNode(p.category, p.title, p.vendor || 'Supplier', {
+        id: p.id,
+        type: 'PURCHASE',
+        date: p.purchaseDate,
+        amount: p.totalAmount,
+        status: p.status,
+        user: `${p.purchasedBy.firstName} ${p.purchasedBy.lastName}`,
+        receiptUrl: p.receiptUrl,
+      });
+    }
+
+    for (const e of expenses) {
+      addNode(e.category, e.title, 'Employee Reimbursement', {
+        id: e.id,
+        type: 'EXPENSE',
+        date: e.expenseDate,
+        amount: e.amount,
+        status: e.status,
+        user: `${e.submittedBy.firstName} ${e.submittedBy.lastName}`,
+        receiptUrl: e.receiptUrl,
+      });
+    }
+
+    return tree;
+  }
+
+  /**
+   * Enterprise Bills Dashboard
+   */
+  async getBills(companyId: string) {
+    const bills = await this.prisma.purchase.findMany({
+      where: { companyId },
+      include: {
+        allocations: { include: { project: { select: { name: true, id: true } } } },
+        purchasedBy: { select: { firstName: true, lastName: true, avatar: true } },
+      },
+      orderBy: { dueDate: 'asc' },
+    });
+
+    const now = new Date();
+    const categories = {
+      pending: [] as any[],
+      paid: [] as any[],
+      overdue: [] as any[],
+      upcoming: [] as any[],
+    };
+
+    let totalPending = 0;
+    let totalOverdue = 0;
+
+    for (const b of bills) {
+      const balance = Number(b.totalAmount) - Number(b.paidAmount);
+      
+      const billData = {
+        id: b.id,
+        vendor: b.vendor || 'Unknown Vendor',
+        title: b.title,
+        totalAmount: Number(b.totalAmount),
+        paidAmount: Number(b.paidAmount),
+        balance,
+        status: b.status,
+        dueDate: b.dueDate,
+        purchasedBy: b.purchasedBy,
+        projects: b.allocations.map(a => a.project),
+      };
+
+      if (b.status === 'PAID') {
+        categories.paid.push(billData);
+      } else if (b.status === 'OVERDUE' || (b.dueDate && new Date(b.dueDate) < now)) {
+        categories.overdue.push(billData);
+        totalOverdue += balance;
+      } else {
+        if (b.dueDate && new Date(b.dueDate) > now) {
+          categories.upcoming.push(billData);
+        } else {
+          categories.pending.push(billData);
+        }
+        totalPending += balance;
+      }
+    }
+
+    return {
+      totalPending,
+      totalOverdue,
+      categories,
     };
   }
 }

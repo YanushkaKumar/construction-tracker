@@ -81,6 +81,16 @@ function SkeletonStatGrid({
 }
 
 // ── Skeleton Table ─────────────────────────────────────────────
+
+/**
+ * Fixed width/opacity sequences so placeholder rows look irregular without
+ * randomness. Math.random() during render produces different markup on the
+ * server and the client, which React reports as a hydration mismatch.
+ */
+const HEADER_WIDTHS = [96, 72, 110, 64, 88, 78];
+const CELL_WIDTHS = [104, 68, 122, 84, 58, 96, 76, 112];
+const CELL_OPACITIES = [0.75, 0.95, 0.65, 0.85, 0.7, 1, 0.8, 0.9];
+
 function SkeletonTable({
   rows = 6,
   cols = 5,
@@ -103,7 +113,7 @@ function SkeletonTable({
           <Skeleton
             key={i}
             className="h-2.5"
-            style={{ width: i === 0 ? '120px' : `${60 + Math.random() * 60}px`, flexShrink: 0 }}
+            style={{ width: i === 0 ? '120px' : `${HEADER_WIDTHS[i % HEADER_WIDTHS.length]}px`, flexShrink: 0 }}
           />
         ))}
       </div>
@@ -119,9 +129,9 @@ function SkeletonTable({
               key={c}
               className="h-3"
               style={{
-                width: c === 0 ? '140px' : `${50 + Math.random() * 80}px`,
+                width: c === 0 ? '140px' : `${CELL_WIDTHS[(r + c) % CELL_WIDTHS.length]}px`,
                 flexShrink: 0,
-                opacity: 0.6 + Math.random() * 0.4,
+                opacity: CELL_OPACITIES[(r * cols + c) % CELL_OPACITIES.length],
               }}
             />
           ))}

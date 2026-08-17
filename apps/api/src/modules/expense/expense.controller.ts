@@ -20,8 +20,8 @@ export class ExpenseController {
 
   @Get('projects/:projectId/expenses')
   @ApiOperation({ summary: 'List project expenses' })
-  findByProject(@Param('projectId') projectId: string, @Query('status') status?: string) {
-    return this.expenseService.findByProject(projectId, status);
+  findByProject(@Param('projectId') projectId: string, @CompanyId() companyId: string, @Query('status') status?: string) {
+    return this.expenseService.findByProject(projectId, companyId, status);
   }
 
   @Get('expenses')

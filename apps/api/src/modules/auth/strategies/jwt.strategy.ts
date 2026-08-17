@@ -15,7 +15,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       // Use Supabase JWT secret if available, fallback to custom secret
-      secretOrKey: process.env.SUPABASE_JWT_SECRET || configService.get<string>('auth.jwtSecret') || 'default-secret',
+      secretOrKey: process.env.SUPABASE_JWT_SECRET || configService.get<string>('auth.jwtSecret')!,
     });
   }
 
@@ -28,7 +28,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     }
 
     const user = await this.prisma.user.findFirst({
-      where: { email },
+      where: { email, isActive: true },
       include: { role: true },
     });
 

@@ -62,7 +62,7 @@ export class PurchaseService {
 
       // Validate balances and deduct
       for (const fa of fundingAllocationsToProcess) {
-        const source = await tx.fundingSource.findUnique({ where: { id: fa.fundingSourceId } });
+        const source = await tx.fundingSource.findFirst({ where: { id: fa.fundingSourceId, companyId } });
         if (!source) throw new NotFoundException(`Funding source ${fa.fundingSourceId} not found`);
         if (Number(source.currentBalance) < Number(fa.amount)) {
           throw new BadRequestException(
@@ -199,9 +199,10 @@ export class PurchaseService {
     });
   }
 
-  async findByProject(projectId: string) {
+  async findByProject(projectId: string, companyId: string) {
     return this.prisma.purchase.findMany({
       where: {
+        companyId,
         allocations: { some: { projectId } },
       },
       include: {
@@ -294,7 +295,7 @@ export class PurchaseService {
       }
 
       for (const fa of fundingAllocationsToProcess) {
-        const source = await tx.fundingSource.findUnique({ where: { id: fa.fundingSourceId } });
+        const source = await tx.fundingSource.findFirst({ where: { id: fa.fundingSourceId, companyId } });
         if (!source) throw new NotFoundException(`Funding source ${fa.fundingSourceId} not found`);
         if (Number(source.currentBalance) < Number(fa.amount)) {
           throw new BadRequestException(

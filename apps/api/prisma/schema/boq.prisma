@@ -3,14 +3,14 @@
 // ============================================
 
 model BOQSection {
-  id        String    @id @default(cuid())
-  projectId String    @map("project_id")
+  id        String   @id @default(cuid())
+  projectId String   @map("project_id")
   title     String
-  sortOrder Int       @default(0) @map("sort_order")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  project Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   items   BOQItem[]
 
   @@index([projectId])
@@ -18,21 +18,21 @@ model BOQSection {
 }
 
 model BOQItem {
-  id            String   @id @default(cuid())
-  sectionId     String   @map("section_id")
-  projectId     String   @map("project_id")
-  itemNo        String   @map("item_no")
-  description   String
-  unit          String
-  quantity      Decimal  @db.Decimal(12, 2)
-  rate          Decimal  @db.Decimal(12, 2)
-  amount        Decimal  @db.Decimal(15, 2)
-  actualQty     Decimal? @map("actual_qty") @db.Decimal(12, 2)
-  actualAmount  Decimal? @map("actual_amount") @db.Decimal(15, 2)
-  remarks       String?
-  sortOrder     Int      @default(0) @map("sort_order")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(cuid())
+  sectionId    String   @map("section_id")
+  projectId    String   @map("project_id")
+  itemNo       String   @map("item_no")
+  description  String
+  unit         String
+  quantity     Decimal  @db.Decimal(12, 2)
+  rate         Decimal  @db.Decimal(12, 2)
+  amount       Decimal  @db.Decimal(15, 2)
+  actualQty    Decimal? @map("actual_qty") @db.Decimal(12, 2)
+  actualAmount Decimal? @map("actual_amount") @db.Decimal(15, 2)
+  remarks      String?
+  sortOrder    Int      @default(0) @map("sort_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   section BOQSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   project Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)

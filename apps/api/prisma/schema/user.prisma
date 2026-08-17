@@ -32,9 +32,10 @@ model User {
   auditLogs        AuditLog[]
 
   // Finance relations
-  receivedAdvances   ProjectAdvance[]  @relation("AdvanceReceiver")
-  purchases          Purchase[]        @relation("PurchaseBuyer")
-  assetAssignments   AssetAssignment[] @relation("AssetAssigner")
+  receivedAdvances  ProjectAdvance[]  @relation("AdvanceReceiver")
+  purchases         Purchase[]        @relation("PurchaseBuyer")
+  approvedPurchases Purchase[]        @relation("PurchaseApprover")
+  assetAssignments  AssetAssignment[] @relation("AssetAssigner")
 
   @@unique([companyId, email])
   @@index([companyId])

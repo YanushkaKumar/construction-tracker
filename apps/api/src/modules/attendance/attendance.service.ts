@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { parseRequiredDateRange } from '../../common/utils/date-range.util';
 
 @Injectable()
 export class AttendanceService {
@@ -11,12 +12,12 @@ export class AttendanceService {
       where: { id: projectId },
       select: { companyId: true }
     });
-    if (!project) throw new Error('Project not found');
+    if (!project) throw new NotFoundException('Project not found');
     const companyId = project.companyId;
 
     const workerIds = records.map((r) => r.workerId);
     const workersList = await this.prisma.worker.findMany({
-      where: { id: { in: workerIds } },
+      where: { id: { in: workerIds }, companyId },
     });
     const rates = new Map(workersList.map((w) => [w.id, Number(w.dailyRate)]));
 
@@ -73,6 +74,12 @@ export class AttendanceService {
             where: { companyId, type: 'COMPANY_CASH' }
           });
           if (companyCash) {
+            if (Number(companyCash.currentBalance) < wage) {
+              throw new BadRequestException(
+                `Insufficient balance in funding source "${companyCash.name}". Required: LKR ${wage.toLocaleString()}, Available: LKR ${Number(companyCash.currentBalance).toLocaleString()}`,
+              );
+            }
+
             await tx.fundingSource.update({
               where: { id: companyCash.id },
               data: {
@@ -107,10 +114,12 @@ export class AttendanceService {
   }
 
   async getPayrollSummary(companyId: string, startDate: string, endDate: string) {
+    const { start, end } = parseRequiredDateRange(startDate, endDate);
+
     const attendance = await this.prisma.attendance.findMany({
       where: {
         worker: { companyId },
-        date: { gte: new Date(startDate), lte: new Date(endDate) },
+        date: { gte: start, lte: end },
       },
       include: {
         worker: { select: { id: true, firstName: true, lastName: true, skillType: true, dailyRate: true } },
