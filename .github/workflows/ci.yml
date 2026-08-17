@@ -82,10 +82,14 @@ jobs:
       - run: npm ci
       - run: npm run test --workspace=apps/web --if-present
 
+      
   build:
     name: Build
     runs-on: ubuntu-latest
     needs: [test-api, test-web]
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_placeholder
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -134,10 +138,13 @@ jobs:
           context: ./apps/web
           file: ./apps/web/Dockerfile
           push: true
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           tags: |
             ${{ env.DOCKERHUB_REPO }}:web-latest
             ${{ env.DOCKERHUB_REPO }}:web-${{ github.sha }}
-            
+
 
   deploy:
     name: Deploy to EC2
