@@ -8,5 +8,6 @@ export default function AppProviders({ children }: { children: React.ReactNode }
     <QueryProvider>
       {children}
     </QueryProvider>
+    
   );
 }
