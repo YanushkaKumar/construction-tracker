@@ -7,6 +7,10 @@ RUN npm install --legacy-peer-deps
 # ── Stage 2: Build ───────────────────────────
 FROM node:20-alpine AS build
 WORKDIR /app
+ARG NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co
+ARG NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_placeholder
+ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+ENV NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
