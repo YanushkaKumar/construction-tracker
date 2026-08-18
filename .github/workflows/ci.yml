@@ -196,6 +196,21 @@ jobs:
             # Pull the latest images and restart the services
             export IMAGE_TAG=${{ github.sha }}
             docker compose pull
+
+            # Sync the production database schema to match this deploy's Prisma
+            # schema BEFORE swapping containers over to it — otherwise new code
+            # can start hitting tables/enum values that don't exist in prod yet
+            # (this is what caused "create project" to 500 in production: the
+            # schema had drifted since the last manual `prisma db push`).
+            #
+            # Deliberately no --accept-data-loss: additive/safe changes apply
+            # automatically, but anything that could drop data makes this step
+            # fail loudly and abort the deploy (old containers keep running)
+            # instead of silently corrupting production data. If this step
+            # fails, review the reported change and run the push manually with
+            # --accept-data-loss only once you've confirmed what it will do.
+            docker compose run --rm --no-deps api npx --yes prisma@6.14.0 db push --schema=prisma/schema
+
             docker compose up -d --remove-orphans
 
             # nginx config is bind-mounted, so compose won't restart it just

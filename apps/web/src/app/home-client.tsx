@@ -661,11 +661,12 @@ function ProjectGalleryModal({ project, onClose }: { project: Project | null; on
 
 /** Mounts its video only once scrolled near — keeps mobile from autoplaying six clips at once. */
 function LazyProjectMedia({ project }: { project: Project }) {
-  const ref = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [inView, setInView] = useState(false);
 
   useEffect(() => {
-    const el = ref.current;
+    const el = containerRef.current;
     if (!el) return;
     const io = new IntersectionObserver(
       ([entry]) => {
@@ -674,22 +675,44 @@ function LazyProjectMedia({ project }: { project: Project }) {
           io.disconnect();
         }
       },
-      { rootMargin: '400px 0px' },
+      { rootMargin: '600px 0px' },
     );
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
+  // Mobile browsers often ignore the bare `autoplay` attribute on a <video>
+  // that's mounted after the initial render — an explicit play() call is
+  // far more reliable once the element actually exists in the DOM.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !inView) return;
+    v.muted = true;
+    v.play().catch(() => {
+      // Autoplay blocked by the browser — the poster frame still shows.
+    });
+  }, [inView]);
+
+  if (!project.video) {
+    return (
+      <div ref={containerRef} className="absolute inset-0">
+        <Image src={project.cover} alt="" fill className="object-cover" sizes="100vw" />
+      </div>
+    );
+  }
+
   return (
-    <div ref={ref} className="absolute inset-0">
-      {project.video && inView ? (
+    <div ref={containerRef} className="absolute inset-0">
+      {inView ? (
         <video
+          ref={videoRef}
           src={project.video}
-          autoPlay
           muted
           loop
           playsInline
-          preload="metadata"
+          // eslint-disable-next-line react/no-unknown-property
+          webkit-playsinline="true"
+          preload="auto"
           poster={project.cover}
           className="absolute inset-0 w-full h-full object-cover"
         />
@@ -924,6 +947,16 @@ function PhotoWall({ onOpen }: { onOpen: (p: Project) => void }) {
 
 export default function HomeClient() {
   const [activeProject, setActiveProject] = useState<Project | null>(null);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
+
+  // Belt-and-braces: some mobile browsers are inconsistent about honouring
+  // the bare `autoplay` attribute, even on markup present at first paint.
+  useEffect(() => {
+    const v = heroVideoRef.current;
+    if (!v) return;
+    v.muted = true;
+    v.play().catch(() => {});
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen bg-white text-black font-sans antialiased selection:bg-black selection:text-white">
@@ -934,10 +967,13 @@ export default function HomeClient() {
       {/* ── 1. Opening frame — video hero ──────────────────── */}
       <section className="relative min-h-[100svh] w-full overflow-hidden bg-black" aria-label="IN Builders">
         <video
+          ref={heroVideoRef}
           autoPlay
           muted
           loop
           playsInline
+          // eslint-disable-next-line react/no-unknown-property
+          webkit-playsinline="true"
           preload="auto"
           poster="/images/hero-roofing.jpg"
           className="absolute inset-0 w-full h-full object-cover animate-[heroscale_24s_ease-in-out_infinite]"
@@ -1003,15 +1039,6 @@ export default function HomeClient() {
           </div>
         </div>
       </section>
-
-      {/* Hazard-style thin divider */}
-      <div
-        className="h-2 w-full"
-        style={{
-          background: `repeating-linear-gradient(-45deg, ${STEEL} 0 14px, #000 14px 28px)`,
-        }}
-        aria-hidden
-      />
 
       {/* ── 2. Statement ──────────────────────────────────── */}
       <section
