@@ -187,6 +187,11 @@ jobs:
               cp .env.example .env
             fi
 
+            # Reclaim disk space from old tagged images (every deploy tags a
+            # new web-<sha>/api-<sha> image; -a also removes unused *tagged*
+            # images, not just dangling ones, so these don't pile up forever)
+            docker image prune -af
+
             # Pull the latest images and restart the services
             export IMAGE_TAG=${{ github.sha }}
             docker compose pull
