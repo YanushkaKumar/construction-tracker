@@ -4,8 +4,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
-  MapPin, ArrowRight, ArrowDown, ChevronRight, ChevronLeft, ChevronDown, Menu, X, Star,
-  Mail, Phone, Images, Plus,
+  MapPin, ArrowRight, ArrowDown, ArrowUpRight, ChevronRight, ChevronLeft, ChevronDown,
+  Menu, X, Star, Mail, Phone, Images, Plus,
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -13,6 +13,11 @@ import {
 
 function pad(n: number) {
   return String(n).padStart(2, '0');
+}
+
+function prefersReducedMotion() {
+  return typeof window !== 'undefined'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 // ── Scroll reveal ─────────────────────────────────────────────
@@ -39,7 +44,7 @@ function Reveal({
           io.disconnect();
         }
       },
-      { threshold: 0.12, rootMargin: '0px 0px -60px 0px' },
+      { threshold: 0.1, rootMargin: '0px 0px -70px 0px' },
     );
     io.observe(el);
     return () => io.disconnect();
@@ -58,11 +63,83 @@ function Reveal({
   );
 }
 
+// ── Animated counter ─────────────────────────────────────────
+
+function Counter({ to, padTo2 = false }: { to: number; padTo2?: boolean }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (prefersReducedMotion()) {
+      setValue(to);
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        io.disconnect();
+        const started = performance.now();
+        const step = (now: number) => {
+          const p = Math.min((now - started) / 1500, 1);
+          const eased = 1 - Math.pow(1 - p, 3);
+          setValue(Math.round(to * eased));
+          if (p < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      },
+      { threshold: 0.4 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [to]);
+
+  return <span ref={ref}>{padTo2 ? pad(value) : value}</span>;
+}
+
+// ── Scroll progress ──────────────────────────────────────────
+
+function ScrollProgress() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      setProgress(max > 0 ? window.scrollY / max : 0);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, []);
+
+  return (
+    <div className="fixed top-0 inset-x-0 z-[60] h-[3px] bg-transparent pointer-events-none" aria-hidden>
+      <div
+        className="h-full bg-white origin-left transition-transform duration-150 ease-out"
+        style={{ transform: `scaleX(${progress})` }}
+      />
+    </div>
+  );
+}
+
 // ── Nav ───────────────────────────────────────────────────────
+
+const NAV_LINKS = [
+  { href: '#work',     id: 'work',     label: 'Work' },
+  { href: '#about',    id: 'about',    label: 'About' },
+  { href: '#services', id: 'services', label: 'Services' },
+  { href: '#contact',  id: 'contact',  label: 'Contact' },
+];
 
 function Nav() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [active, setActive] = useState<string | null>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -71,37 +148,63 @@ function Nav() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const links = [
-    { href: '#work',     label: 'Work' },
-    { href: '#about',    label: 'About' },
-    { href: '#services', label: 'Services' },
-    { href: '#contact',  label: 'Contact' },
-  ];
+  useEffect(() => {
+    const sections = NAV_LINKS
+      .map((l) => document.getElementById(l.id))
+      .filter((el): el is HTMLElement => Boolean(el));
+    if (!sections.length) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible) setActive(visible.target.id);
+      },
+      { rootMargin: '-45% 0px -45% 0px', threshold: [0, 0.25, 0.5, 1] },
+    );
+    sections.forEach((s) => io.observe(s));
+    return () => io.disconnect();
+  }, []);
 
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-colors duration-500 ${
-        scrolled || open ? 'bg-black/85 backdrop-blur-xl' : 'bg-transparent'
+        scrolled || open ? 'bg-black/90 backdrop-blur-xl' : 'bg-gradient-to-b from-black/55 to-transparent'
       }`}
       role="banner"
     >
       <div className="max-w-[1700px] mx-auto flex h-[68px] sm:h-20 items-center justify-between px-5 sm:px-8 lg:px-12">
-        <Link href="/" className="flex items-center gap-3" aria-label="IN Builders — home">
+        <Link
+          href="/"
+          className="flex items-center gap-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-4"
+          aria-label="IN Builders — home"
+        >
           <div className="relative w-8 h-8 sm:w-9 sm:h-9 overflow-hidden bg-white flex-shrink-0">
             <Image src="/images/logo.png" alt="" fill className="object-contain p-0.5" sizes="36px" />
           </div>
-          <span className="text-[13px] sm:text-[15px] font-black tracking-[0.14em] uppercase text-white">
-            IN Builders
+          <span className="font-display text-[17px] sm:text-[19px] font-semibold tracking-tight text-white">
+            IN&nbsp;Builders
           </span>
         </Link>
 
-        <nav
-          className="hidden md:flex items-center gap-9 text-[11px] font-bold tracking-[0.18em] uppercase text-white/55"
-          aria-label="Main"
-        >
-          {links.map((l) => (
-            <a key={l.href} href={l.href} className="hover:text-white transition-colors duration-300">
+        <nav className="hidden md:flex items-center gap-8" aria-label="Main">
+          {NAV_LINKS.map((l) => (
+            <a
+              key={l.href}
+              href={l.href}
+              aria-current={active === l.id ? 'true' : undefined}
+              className={`relative text-[11px] font-semibold tracking-[0.16em] uppercase py-1.5 transition-colors duration-300 ${
+                active === l.id ? 'text-white' : 'text-white/55 hover:text-white'
+              }`}
+            >
               {l.label}
+              <span
+                className={`absolute left-0 -bottom-0.5 h-px bg-white transition-all duration-300 ${
+                  active === l.id ? 'w-full' : 'w-0'
+                }`}
+                aria-hidden
+              />
             </a>
           ))}
         </nav>
@@ -109,14 +212,14 @@ function Nav() {
         <div className="flex items-center gap-3">
           <a
             href="tel:+94763667924"
-            className="hidden lg:inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.14em] uppercase text-white/75 hover:text-white transition-colors"
+            className="hidden lg:inline-flex items-center gap-2 text-[12.5px] font-semibold text-white/75 hover:text-white transition-colors"
           >
             <Phone className="w-3.5 h-3.5" aria-hidden />
             076 366 7924
           </a>
           <Link
             href="/login"
-            className="hidden sm:inline-flex items-center h-9 px-4 border border-white/25 text-white text-[10.5px] font-bold tracking-[0.16em] uppercase hover:bg-white hover:text-black transition-colors duration-300"
+            className="hidden sm:inline-flex items-center h-9 px-4 border border-white/30 text-white text-[10.5px] font-semibold tracking-[0.14em] uppercase hover:bg-white hover:text-black transition-colors duration-300"
           >
             Team Login
           </Link>
@@ -133,12 +236,12 @@ function Nav() {
 
       {open && (
         <div className="md:hidden border-t border-white/10 px-5 pt-3 pb-6 bg-black/95">
-          {links.map((l) => (
+          {NAV_LINKS.map((l) => (
             <a
               key={l.href}
               href={l.href}
               onClick={() => setOpen(false)}
-              className="block text-[22px] font-black tracking-tight uppercase text-white/85 hover:text-white transition-colors py-2.5"
+              className="block font-display text-[26px] font-semibold tracking-tight text-white/85 hover:text-white transition-colors py-2"
             >
               {l.label}
             </a>
@@ -146,7 +249,7 @@ function Nav() {
           <Link
             href="/login"
             onClick={() => setOpen(false)}
-            className="mt-4 inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.16em] uppercase text-white/55"
+            className="mt-4 inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.14em] uppercase text-white/55"
           >
             Team Login
             <ChevronRight className="w-3.5 h-3.5" aria-hidden />
@@ -160,12 +263,12 @@ function Nav() {
 // ── Data ──────────────────────────────────────────────────────
 
 const SERVICES = [
-  { title: 'Residential Construction',      description: 'New home builds from foundation to roof, tailored to your land, budget, and timeline.' },
-  { title: 'Renovations & Interior Fit-Outs', description: 'Kitchen upgrades, interior remodels, and commercial fit-outs finished to a high standard.' },
-  { title: 'Roofing & Structural Work',     description: 'Roof framing, re-roofing, and structural repairs built to hold up through the monsoon.' },
-  { title: 'Boundary Walls & Gatehouses',   description: 'Perimeter walls, security gates, and guardhouses for homes, estates, and factories.' },
-  { title: 'Concrete & Driveways',          description: 'Access roads, driveways, and drainage channels finished to a smooth, durable pour.' },
-  { title: 'Site Supervision',              description: 'Dedicated on-site oversight from groundbreaking through to final handover, island-wide.' },
+  { title: 'Residential construction',        description: 'New home builds from foundation to roof, tailored to your land, budget, and timeline.' },
+  { title: 'Renovations & interior fit-outs', description: 'Kitchen upgrades, interior remodels, and commercial fit-outs finished to a high standard.' },
+  { title: 'Roofing & structural work',       description: 'Roof framing, re-roofing, and structural repairs built to hold up through the monsoon.' },
+  { title: 'Boundary walls & gatehouses',     description: 'Perimeter walls, security gates, and guardhouses for homes, estates, and factories.' },
+  { title: 'Concrete & driveways',            description: 'Access roads, driveways, and drainage channels finished to a smooth, durable pour.' },
+  { title: 'Site supervision',                description: 'Dedicated on-site oversight from groundbreaking through to final handover, island-wide.' },
 ];
 
 function imgs(prefix: string, count: number) {
@@ -174,59 +277,87 @@ function imgs(prefix: string, count: number) {
 
 const PROJECTS = [
   {
-    title: 'Private Residence',
-    subtitle: 'Full Construction',
-    location: 'Gelioya, Kandy District',
+    title: 'Private residence',
+    subtitle: 'Full construction',
+    year: 'Kandy District',
+    location: 'Gelioya',
     description: 'Ground-up construction of a family home — from the groundbreaking ceremony through foundation, column casting, and roof framing.',
-    tags: ['Foundation', 'Structural Framing', 'Roofing'],
+    tags: ['Foundation', 'Structural framing', 'Roofing'],
     cover: '/images/projects/villa-10.jpg',
     images: imgs('villa', 15),
   },
   {
-    title: 'Home Renovation',
-    subtitle: 'Kitchen Rebuild',
-    location: 'Gampola, Kandy District',
+    title: 'Home renovation',
+    subtitle: 'Kitchen rebuild',
+    year: 'Kandy District',
+    location: 'Gampola',
     description: 'Full interior renovation of an older residence, including a complete modern kitchen rebuild with granite countertops and tiling.',
-    tags: ['Renovation', 'Kitchen Fit-Out', 'Tiling'],
+    tags: ['Renovation', 'Kitchen fit-out', 'Tiling'],
     cover: '/images/projects/residence-1.jpg',
     images: imgs('residence', 10),
   },
   {
-    title: 'Community School',
-    subtitle: 'Roof Restoration',
-    location: 'Hanguranketa, Kandy District',
+    title: 'Community school',
+    subtitle: 'Roof restoration',
+    year: 'Kandy District',
+    location: 'Hanguranketa',
     description: 'Roof restoration and wall repairs for a rural school building, completed ahead of the school term.',
-    tags: ['Roofing', 'Wall Repairs'],
+    tags: ['Roofing', 'Wall repairs'],
     cover: '/images/projects/school-1.jpg',
     images: imgs('school', 9),
   },
   {
-    title: 'Factory Perimeter Wall',
-    subtitle: '& Gatehouse',
-    location: 'Biyagama Industrial Zone',
+    title: 'Factory perimeter wall',
+    subtitle: '& gatehouse',
+    year: 'Industrial zone',
+    location: 'Biyagama',
     description: 'Boundary wall construction and a new security gatehouse for a commercial facility.',
-    tags: ['Boundary Wall', 'Gatehouse', 'Commercial'],
+    tags: ['Boundary wall', 'Gatehouse', 'Commercial'],
     cover: '/images/projects/factory-1.jpg',
     images: imgs('factory', 8),
   },
   {
-    title: 'Bookshop Fit-Out',
-    subtitle: 'Retail Interior',
+    title: 'Bookshop fit-out',
+    subtitle: 'Retail interior',
+    year: 'Kandy District',
     location: 'Kandy City',
     description: 'Steel ceiling grid and shelving installation for a busy retail bookstore, completed with minimal disruption to trading.',
-    tags: ['Interior Fit-Out', 'Commercial'],
+    tags: ['Interior fit-out', 'Commercial'],
     cover: '/images/projects/bookhouse-1.jpg',
     images: imgs('bookhouse', 5),
   },
   {
-    title: 'Estate Access Road',
-    subtitle: '& Drainage',
-    location: 'Katugastota, Kandy District',
+    title: 'Estate access road',
+    subtitle: '& drainage',
+    year: 'Kandy District',
+    location: 'Katugastota',
     description: 'Concrete paving and drainage channel works for a private access road.',
     tags: ['Concrete', 'Drainage'],
     cover: '/images/projects/road-1.jpg',
     images: imgs('road', 5),
   },
+];
+
+type Project = (typeof PROJECTS)[number];
+
+/** A wall of real site photos pulled from across every project. */
+const MOSAIC: { src: string; project: number; cls: string }[] = [
+  { src: '/images/projects/villa-5.jpg',      project: 0, cls: 'lg:col-span-2 lg:row-span-2' },
+  { src: '/images/projects/residence-1.jpg',  project: 1, cls: '' },
+  { src: '/images/projects/school-1.jpg',     project: 2, cls: '' },
+  { src: '/images/projects/factory-1.jpg',    project: 3, cls: '' },
+  { src: '/images/projects/villa-13.jpg',     project: 0, cls: 'lg:col-span-2 lg:row-span-2' },
+  { src: '/images/projects/bookhouse-1.jpg',  project: 4, cls: '' },
+  { src: '/images/projects/road-1.jpg',       project: 5, cls: '' },
+  { src: '/images/projects/villa-10.jpg',     project: 0, cls: 'lg:col-span-2' },
+  { src: '/images/projects/residence-4.jpg',  project: 1, cls: '' },
+  { src: '/images/projects/school-4.jpg',     project: 2, cls: '' },
+  { src: '/images/projects/villa-8.jpg',      project: 0, cls: '' },
+  { src: '/images/projects/factory-3.jpg',    project: 3, cls: 'lg:col-span-2' },
+  { src: '/images/projects/residence-7.jpg',  project: 1, cls: '' },
+  { src: '/images/projects/bookhouse-3.jpg',  project: 4, cls: '' },
+  { src: '/images/projects/road-3.jpg',       project: 5, cls: '' },
+  { src: '/images/projects/villa-3.jpg',      project: 0, cls: '' },
 ];
 
 const REVIEWS = [
@@ -245,10 +376,10 @@ const PRINCIPLES = [
 ];
 
 const PROCESS = [
-  { step: '01', title: 'Site visit & consultation', description: 'We walk the site with you, talk through what you need, and understand the land, access, and budget before anything is priced.' },
-  { step: '02', title: 'Quotation & planning',      description: 'A clear, itemised quote — materials, labour, and timeline — so there are no surprises once work starts.' },
+  { step: '01', title: 'Site visit & consultation',  description: 'We walk the site with you, talk through what you need, and understand the land, access, and budget before anything is priced.' },
+  { step: '02', title: 'Quotation & planning',       description: 'A clear, itemised quote — materials, labour, and timeline — so there are no surprises once work starts.' },
   { step: '03', title: 'Construction & supervision', description: 'Work begins on the agreed schedule, with the same crew on site every day and progress you can check in on.' },
-  { step: '04', title: 'Handover & support',        description: 'A final walkthrough before handover, and we stay reachable after the job is done — not gone the day the invoice is paid.' },
+  { step: '04', title: 'Handover & support',         description: 'A final walkthrough before handover, and we stay reachable after the job is done — not gone the day the invoice is paid.' },
 ];
 
 const FAQS = [
@@ -276,9 +407,23 @@ function Stars({ rating, className = '' }: { rating: number; className?: string 
   );
 }
 
-// ── Project gallery modal (grid + full-screen viewer) ─────────
+function Eyebrow({ children, tone = 'dark' }: { children: React.ReactNode; tone?: 'dark' | 'light' }) {
+  return (
+    <p
+      className={`flex items-center gap-3 text-[10.5px] font-semibold tracking-[0.24em] uppercase mb-6 ${
+        tone === 'dark' ? 'text-white/50' : 'text-black/45'
+      }`}
+    >
+      <span
+        className={`inline-block w-7 h-px ${tone === 'dark' ? 'bg-white/35' : 'bg-black/25'}`}
+        aria-hidden
+      />
+      {children}
+    </p>
+  );
+}
 
-type Project = (typeof PROJECTS)[number];
+// ── Project gallery modal (grid + full-screen viewer) ─────────
 
 function ProjectGalleryModal({ project, onClose }: { project: Project | null; onClose: () => void }) {
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
@@ -304,46 +449,45 @@ function ProjectGalleryModal({ project, onClose }: { project: Project | null; on
     <Dialog open={!!project} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         showCloseButton={viewerIndex === null}
-        className="max-w-5xl w-full max-h-[90vh] p-0 gap-0 overflow-hidden rounded-none bg-black border-white/15 text-white"
+        className="max-w-5xl w-full max-h-[90vh] p-0 gap-0 overflow-hidden rounded-none bg-white border-black/10 text-black"
       >
         {viewerIndex === null ? (
           <div className="flex flex-col max-h-[90vh]">
-            <DialogHeader className="p-6 sm:p-8 pb-5 border-b border-white/12 flex-shrink-0">
-              <DialogTitle className="text-[26px] sm:text-[34px] font-black tracking-[-0.03em] uppercase leading-[0.98] text-white">
-                {project.title}
-                <span className="block text-white/45">{project.subtitle}</span>
+            <DialogHeader className="p-6 sm:p-8 pb-5 border-b border-black/10 flex-shrink-0">
+              <DialogTitle className="font-display text-[28px] sm:text-[36px] font-semibold tracking-[-0.02em] leading-[1.02] text-black">
+                {project.title} <em className="italic text-black/45">{project.subtitle}</em>
               </DialogTitle>
               <DialogDescription>
-                <span className="inline-flex items-center gap-1.5 text-[10.5px] font-bold tracking-[0.16em] uppercase text-white/50 mt-3">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.14em] uppercase text-black/50 mt-3">
                   <MapPin className="w-3.5 h-3.5" aria-hidden />
-                  {project.location}
+                  {project.location}, {project.year}
                 </span>
-                <span className="block mt-3 text-[13.5px] text-white/60 leading-relaxed max-w-2xl">
+                <span className="block mt-3 text-[14px] text-black/60 leading-relaxed max-w-2xl">
                   {project.description}
                 </span>
                 <span className="flex flex-wrap gap-2 mt-4">
                   {project.tags.map((t) => (
-                    <span key={t} className="px-2.5 py-1 border border-white/20 text-[9.5px] font-bold uppercase tracking-[0.14em] text-white/60">
+                    <span key={t} className="px-2.5 py-1 border border-black/15 text-[10px] font-semibold tracking-[0.1em] uppercase text-black/55">
                       {t}
                     </span>
                   ))}
                 </span>
               </DialogDescription>
             </DialogHeader>
-            <div className="overflow-y-auto scrollbar-thin p-4 sm:p-6">
+            <div className="overflow-y-auto scrollbar-thin p-4 sm:p-6 bg-neutral-100">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                 {project.images.map((img, i) => (
                   <button
                     key={img}
                     onClick={() => setViewerIndex(i)}
-                    className="relative aspect-[4/3] overflow-hidden group focus:outline-none focus:ring-2 focus:ring-white/60"
+                    className="relative aspect-[4/3] overflow-hidden group bg-black focus:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
                     aria-label={`View photo ${i + 1} of ${project.images.length}`}
                   >
                     <Image src={img} alt="" fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="280px" />
-                    <span className="absolute top-2 left-2 text-[10px] font-bold tracking-widest text-white/70 mix-blend-difference">
+                    <span className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors" aria-hidden />
+                    <span className="absolute bottom-2 right-2 text-[10px] font-semibold tracking-widest text-white opacity-0 group-hover:opacity-100 transition-opacity">
                       {pad(i + 1)}
                     </span>
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors" aria-hidden />
                   </button>
                 ))}
               </div>
@@ -382,7 +526,7 @@ function ProjectGalleryModal({ project, onClose }: { project: Project | null; on
             >
               <ChevronRight className="w-5 h-5" aria-hidden />
             </button>
-            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 text-[12px] font-bold tracking-[0.2em] text-white/80 tabular-nums">
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 text-[12px] font-semibold tracking-[0.2em] text-white/80 tabular-nums">
               {pad(viewerIndex + 1)} / {pad(project.images.length)}
             </div>
           </div>
@@ -392,72 +536,190 @@ function ProjectGalleryModal({ project, onClose }: { project: Project | null; on
   );
 }
 
-// ── Full-screen project panel ────────────────────────────────
+// ── Work: interactive index with live preview ────────────────
 
-function ProjectPanel({
-  project,
-  index,
-  onOpen,
-}: {
-  project: Project;
-  index: number;
-  onOpen: () => void;
-}) {
-  const alignRight = index % 2 === 1;
+function WorkIndex({ onOpen }: { onOpen: (p: Project) => void }) {
+  const [active, setActive] = useState(0);
+  const current = PROJECTS[active];
 
   return (
-    <article className="relative min-h-[100svh] w-full overflow-hidden group">
-      <Image
-        src={project.cover}
-        alt={`${project.title} — ${project.location}`}
-        fill
-        className="object-cover transition-transform duration-[1400ms] ease-out group-hover:scale-[1.04]"
-        sizes="100vw"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/65" aria-hidden />
+    <div className="bg-black text-white px-5 sm:px-8 lg:px-12 py-16 sm:py-24">
+      <div className="max-w-[1700px] mx-auto">
+        {/* Desktop — index left, live preview right */}
+        <div className="hidden lg:grid grid-cols-[1fr_0.8fr] gap-16 xl:gap-24 items-start">
+          <div className="border-t border-white/15">
+            {PROJECTS.map((p, i) => (
+              <button
+                key={p.title}
+                onMouseEnter={() => setActive(i)}
+                onFocus={() => setActive(i)}
+                onClick={() => onOpen(p)}
+                aria-label={`View gallery — ${p.title}, ${p.subtitle}`}
+                className="group w-full text-left border-b border-white/15 py-7 flex items-center gap-8 transition-colors duration-300 focus:outline-none focus-visible:bg-white/10"
+              >
+                <span
+                  className={`text-[11px] font-semibold tracking-[0.2em] tabular-nums transition-colors duration-300 ${
+                    active === i ? 'text-white' : 'text-white/30'
+                  }`}
+                >
+                  {pad(i + 1)}
+                </span>
 
-      <div
-        className={`relative min-h-[100svh] flex flex-col justify-end px-5 sm:px-8 lg:px-12 pt-28 pb-14 sm:pb-20 ${
-          alignRight ? 'lg:items-end lg:text-right' : ''
-        }`}
-      >
-        <Reveal className={`max-w-3xl ${alignRight ? 'lg:ml-auto' : ''}`}>
-          <div
-            className={`flex flex-wrap items-center gap-x-4 gap-y-2 mb-5 ${alignRight ? 'lg:justify-end' : ''}`}
-          >
-            <span className="text-[11px] font-black tracking-[0.3em] text-white/55 tabular-nums whitespace-nowrap">
-              {pad(index + 1)} / {pad(PROJECTS.length)}
-            </span>
-            <span className="hidden sm:block h-px w-14 bg-white/30" aria-hidden />
-            <span className="inline-flex items-center gap-1.5 text-[10.5px] font-bold tracking-[0.16em] uppercase text-white/55">
-              <MapPin className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
-              {project.location}
-            </span>
+                <span className="flex-1 min-w-0">
+                  <span
+                    className={`block font-display text-[34px] xl:text-[42px] font-semibold tracking-[-0.02em] leading-[1.05] transition-colors duration-300 ${
+                      active === i ? 'text-white' : 'text-white/40'
+                    }`}
+                  >
+                    {p.title} <em className="italic opacity-70">{p.subtitle}</em>
+                  </span>
+                  <span
+                    className={`block text-[12px] font-medium tracking-[0.06em] uppercase mt-2 transition-colors duration-300 ${
+                      active === i ? 'text-white/60' : 'text-white/30'
+                    }`}
+                  >
+                    {p.location}, {p.year} · {p.images.length} photos
+                  </span>
+                </span>
+
+                <ArrowUpRight
+                  className={`w-6 h-6 flex-shrink-0 transition-all duration-300 ${
+                    active === i
+                      ? 'opacity-100 translate-x-0 translate-y-0'
+                      : 'opacity-0 -translate-x-2 translate-y-2'
+                  }`}
+                  aria-hidden
+                />
+              </button>
+            ))}
           </div>
 
-          <h3 className="text-[9.5vw] sm:text-[8vw] lg:text-[6.5vw] font-black uppercase tracking-[-0.045em] leading-[0.9] text-white mb-6">
-            {project.title}
-            <span className="block text-white/50">{project.subtitle}</span>
-          </h3>
+          {/* Live preview */}
+          <div className="sticky top-28">
+            <div className="relative aspect-[4/5] overflow-hidden bg-neutral-900">
+              {PROJECTS.map((p, i) => (
+                <Image
+                  key={p.title}
+                  src={p.cover}
+                  alt=""
+                  fill
+                  className={`object-cover transition-opacity duration-700 ease-out ${
+                    active === i ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  sizes="640px"
+                />
+              ))}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" aria-hidden />
+              <div className="absolute inset-x-0 bottom-0 p-6">
+                <p className="text-[11px] font-semibold tracking-[0.18em] uppercase text-white/70 mb-1.5">
+                  {pad(active + 1)} / {pad(PROJECTS.length)} — {current.location}
+                </p>
+                <p className="font-display text-[24px] font-semibold leading-tight">
+                  {current.title}
+                </p>
+              </div>
+            </div>
+            <p className="text-[13.5px] text-white/55 leading-relaxed mt-5">
+              {current.description}
+            </p>
+          </div>
+        </div>
 
-          <p className="text-[14px] sm:text-[15px] text-white/65 leading-relaxed max-w-lg mb-8 lg:inline-block">
-            {project.description}
-          </p>
+        {/* Mobile — stacked cards */}
+        <div className="lg:hidden space-y-10">
+          {PROJECTS.map((p, i) => (
+            <Reveal key={p.title}>
+              <button
+                onClick={() => onOpen(p)}
+                aria-label={`View gallery — ${p.title}, ${p.subtitle}`}
+                className="group block w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                <div className="relative aspect-[4/3] overflow-hidden bg-neutral-900 mb-4">
+                  <Image
+                    src={p.cover}
+                    alt=""
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    sizes="100vw"
+                  />
+                  <span className="absolute top-3 left-3 text-[11px] font-semibold tracking-[0.2em] text-white/80">
+                    {pad(i + 1)} / {pad(PROJECTS.length)}
+                  </span>
+                  <span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-black text-[10.5px] font-semibold tracking-[0.12em] uppercase">
+                    <Images className="w-3.5 h-3.5" aria-hidden />
+                    {p.images.length} photos
+                  </span>
+                </div>
+                <p className="font-display text-[27px] font-semibold tracking-[-0.02em] leading-[1.08]">
+                  {p.title} <em className="italic text-white/50">{p.subtitle}</em>
+                </p>
+                <p className="text-[11.5px] font-medium tracking-[0.06em] uppercase text-white/45 mt-2">
+                  {p.location}, {p.year}
+                </p>
+                <p className="text-[13.5px] text-white/60 leading-relaxed mt-3">{p.description}</p>
+              </button>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-          <div className={`flex ${alignRight ? 'lg:justify-end' : ''}`}>
-            <button
-              onClick={onOpen}
-              aria-label={`View gallery — ${project.title} ${project.subtitle}`}
-              className="inline-flex items-center gap-3 h-13 px-7 py-4 bg-white text-black text-[11px] font-black tracking-[0.18em] uppercase hover:bg-white/85 transition-colors duration-300"
-            >
-              <Images className="w-4 h-4" aria-hidden />
-              View {project.images.length} photos
-              <Plus className="w-3.5 h-3.5" aria-hidden />
-            </button>
+// ── Work: photo wall ─────────────────────────────────────────
+
+function PhotoWall({ onOpen }: { onOpen: (p: Project) => void }) {
+  return (
+    <div className="bg-white text-black px-5 sm:px-8 lg:px-12 py-20 sm:py-28">
+      <div className="max-w-[1700px] mx-auto">
+        <Reveal>
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5 mb-10">
+            <div>
+              <Eyebrow tone="light">Straight from site</Eyebrow>
+              <h3 className="font-display text-[8vw] sm:text-[4.5vw] lg:text-[3.2vw] font-semibold tracking-[-0.025em] leading-[1.03] max-w-2xl">
+                Fifty-two photographs, <em className="italic text-black/45">no stock imagery.</em>
+              </h3>
+            </div>
+            <p className="text-[13.5px] text-black/55 leading-relaxed max-w-xs">
+              Every picture on this page was taken on one of our own sites. Tap any frame to open
+              that project&apos;s full set.
+            </p>
           </div>
         </Reveal>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 auto-rows-[120px] sm:auto-rows-[150px] lg:auto-rows-[175px] gap-2 sm:gap-3">
+          {MOSAIC.map((tile, i) => {
+            const project = PROJECTS[tile.project];
+            return (
+              <Reveal key={tile.src + i} delay={Math.min(i, 8) * 45} className={tile.cls}>
+                <button
+                  onClick={() => onOpen(project)}
+                  aria-label={`View gallery — ${project.title}, ${project.subtitle}`}
+                  className="group relative block w-full h-full overflow-hidden bg-neutral-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
+                >
+                  <Image
+                    src={tile.src}
+                    alt=""
+                    fill
+                    className="object-cover transition-transform duration-[900ms] ease-out group-hover:scale-110"
+                    sizes="(min-width: 1024px) 380px, (min-width: 640px) 25vw, 50vw"
+                  />
+                  <span className="absolute inset-0 bg-black/0 group-hover:bg-black/45 transition-colors duration-400" aria-hidden />
+                  <span className="absolute inset-x-0 bottom-0 p-3 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-400">
+                    <span className="block text-[11px] font-semibold text-white leading-tight">
+                      {project.title}
+                    </span>
+                    <span className="block text-[10px] text-white/70 mt-0.5">
+                      {project.location} · {project.images.length} photos
+                    </span>
+                  </span>
+                </button>
+              </Reveal>
+            );
+          })}
+        </div>
       </div>
-    </article>
+    </div>
   );
 }
 
@@ -467,11 +729,12 @@ export default function LandingPage() {
   const [activeProject, setActiveProject] = useState<Project | null>(null);
 
   return (
-    <div className="flex flex-col min-h-screen bg-black text-white font-sans antialiased selection:bg-white selection:text-black">
+    <div className="flex flex-col min-h-screen bg-white text-black font-sans antialiased selection:bg-black selection:text-white">
+      <ScrollProgress />
       <Nav />
 
       {/* ── 1. Opening frame ──────────────────────────────── */}
-      <section className="relative min-h-[100svh] w-full overflow-hidden" aria-label="IN Builders">
+      <section className="relative min-h-[100svh] w-full overflow-hidden bg-black" aria-label="IN Builders">
         <Image
           src="/images/hero-roofing.jpg"
           alt=""
@@ -480,21 +743,18 @@ export default function LandingPage() {
           className="object-cover"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/65" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/60" aria-hidden />
 
         <div className="relative min-h-[100svh] flex flex-col justify-end px-5 sm:px-8 lg:px-12 pb-12 sm:pb-16">
           <div className="max-w-[1700px] mx-auto w-full">
-            <p className="text-[10.5px] sm:text-[11px] font-bold tracking-[0.3em] uppercase text-white/60 mb-6 sm:mb-8">
-              Sri Lanka — Building Contractors
-            </p>
+            <Eyebrow>Building contractors — Sri Lanka</Eyebrow>
 
-            <h1 className="text-[17vw] sm:text-[15vw] lg:text-[12.5vw] font-black uppercase tracking-[-0.05em] leading-[0.82] text-white mb-8 sm:mb-10">
-              We build
-              <span className="block text-white/45">it right</span>
+            <h1 className="font-display text-[15vw] sm:text-[11vw] lg:text-[8.5vw] font-semibold tracking-[-0.03em] leading-[0.95] text-white mb-8 sm:mb-10 max-w-[15ch]">
+              We build it <em className="italic text-white/70">right.</em>
             </h1>
 
             <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 border-t border-white/15 pt-8">
-              <p className="text-[14px] sm:text-[16px] text-white/65 leading-relaxed max-w-md">
+              <p className="text-[15px] sm:text-[16.5px] text-white/70 leading-relaxed max-w-md">
                 A Sri Lankan construction company delivering homes, renovations, roofing,
                 boundary walls, and commercial fit-outs — built on site, on schedule,
                 and done properly.
@@ -503,14 +763,14 @@ export default function LandingPage() {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <a
                   href="#work"
-                  className="inline-flex items-center justify-center gap-3 h-14 px-8 bg-white text-black text-[11px] font-black tracking-[0.18em] uppercase hover:bg-white/85 transition-colors duration-300"
+                  className="inline-flex items-center justify-center gap-3 h-14 px-8 bg-white text-black text-[11px] font-semibold tracking-[0.16em] uppercase hover:bg-white/85 transition-colors duration-300"
                 >
                   See the work
                   <ArrowDown className="w-4 h-4" aria-hidden />
                 </a>
                 <a
                   href="#contact"
-                  className="inline-flex items-center justify-center gap-3 h-14 px-8 border border-white/30 text-white text-[11px] font-black tracking-[0.18em] uppercase hover:bg-white hover:text-black transition-colors duration-300"
+                  className="inline-flex items-center justify-center gap-3 h-14 px-8 border border-white/35 text-white text-[11px] font-semibold tracking-[0.16em] uppercase hover:bg-white hover:text-black transition-colors duration-300"
                 >
                   Get a quote
                   <ArrowRight className="w-4 h-4" aria-hidden />
@@ -521,7 +781,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 2. Statement (stark white) ────────────────────── */}
+      {/* ── 2. Statement ──────────────────────────────────── */}
       <section
         id="about"
         className="scroll-mt-20 w-full bg-white text-black px-5 sm:px-8 lg:px-12 py-24 sm:py-36"
@@ -529,18 +789,18 @@ export default function LandingPage() {
       >
         <div className="max-w-[1700px] mx-auto">
           <Reveal>
+            <Eyebrow tone="light">Who we are</Eyebrow>
             <h2
               id="about-heading"
-              className="text-[8.5vw] sm:text-[6vw] lg:text-[4.6vw] font-black uppercase tracking-[-0.045em] leading-[0.92] max-w-5xl mb-16 sm:mb-24"
+              className="font-display text-[8vw] sm:text-[5.5vw] lg:text-[4vw] font-semibold tracking-[-0.025em] leading-[1.05] max-w-4xl mb-16 sm:mb-20"
             >
-              A hands-on building crew
-              <span className="text-black/30"> — not a call centre.</span>
+              A hands-on building crew, <em className="italic text-black/45">not a call centre.</em>
             </h2>
           </Reveal>
 
-          <div className="grid lg:grid-cols-[1fr_1fr] gap-12 lg:gap-20">
+          <div className="grid lg:grid-cols-[1fr_1fr] gap-12 lg:gap-20 items-start">
             <Reveal delay={80}>
-              <div className="space-y-5 text-[14.5px] sm:text-[16px] leading-relaxed text-black/65 max-w-xl">
+              <div className="space-y-5 text-[15px] sm:text-[16.5px] leading-relaxed text-black/65 max-w-xl">
                 <p>
                   IN Builders takes on residential construction, renovations, roofing, boundary
                   walls, and commercial fit-outs — based in the Kandy District, and equipped to
@@ -558,15 +818,18 @@ export default function LandingPage() {
             <Reveal delay={160}>
               <div className="border-t border-black/15">
                 {PRINCIPLES.map((p, i) => (
-                  <div key={p.title} className="flex gap-6 sm:gap-10 py-6 border-b border-black/15">
-                    <span className="text-[11px] font-black tracking-[0.2em] text-black/30 tabular-nums pt-1">
+                  <div
+                    key={p.title}
+                    className="group flex gap-6 sm:gap-10 py-6 border-b border-black/15 transition-colors duration-300 hover:bg-black/[0.03]"
+                  >
+                    <span className="text-[11px] font-semibold tracking-[0.18em] text-black/30 tabular-nums pt-2">
                       {pad(i + 1)}
                     </span>
                     <div>
-                      <h3 className="text-[17px] sm:text-[19px] font-black uppercase tracking-[-0.02em] mb-1.5">
+                      <h3 className="font-display text-[21px] sm:text-[23px] font-semibold tracking-[-0.015em] mb-1.5">
                         {p.title}
                       </h3>
-                      <p className="text-[13.5px] text-black/55 leading-relaxed">{p.description}</p>
+                      <p className="text-[14px] text-black/55 leading-relaxed">{p.description}</p>
                     </div>
                   </div>
                 ))}
@@ -576,76 +839,28 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 3. Work — full-screen project frames ──────────── */}
-      <section id="work" className="scroll-mt-0 w-full" aria-label="Our work">
-        <div className="px-5 sm:px-8 lg:px-12 py-20 sm:py-28 max-w-[1700px] mx-auto">
-          <Reveal>
-            <p className="text-[10.5px] font-bold tracking-[0.3em] uppercase text-white/45 mb-6">
-              Selected Work — {pad(PROJECTS.length)} Projects
-            </p>
-            <h2 className="text-[11vw] sm:text-[8vw] lg:text-[6vw] font-black uppercase tracking-[-0.05em] leading-[0.88] max-w-4xl">
-              Built on the
-              <span className="block text-white/35">ground.</span>
-            </h2>
-          </Reveal>
-        </div>
-
-        {PROJECTS.map((p, i) => (
-          <ProjectPanel key={p.title} project={p} index={i} onOpen={() => setActiveProject(p)} />
-        ))}
-      </section>
-
-      {/* ── 4. Capabilities over photo ────────────────────── */}
-      <section
-        id="services"
-        className="scroll-mt-20 relative w-full overflow-hidden"
-        aria-labelledby="services-heading"
-      >
-        <Image
-          src="/images/projects/villa-8.jpg"
-          alt=""
-          fill
-          className="object-cover"
-          sizes="100vw"
-        />
-        <div className="absolute inset-0 bg-black/86" aria-hidden />
-
-        <div className="relative px-5 sm:px-8 lg:px-12 py-24 sm:py-32 max-w-[1700px] mx-auto">
-          <Reveal>
-            <p className="text-[10.5px] font-bold tracking-[0.3em] uppercase text-white/45 mb-6">
-              Capabilities
-            </p>
-            <h2
-              id="services-heading"
-              className="text-[10vw] sm:text-[7vw] lg:text-[5vw] font-black uppercase tracking-[-0.05em] leading-[0.9] max-w-3xl mb-14 sm:mb-20"
-            >
-              From a single wall
-              <span className="block text-white/45">to a whole house.</span>
-            </h2>
-          </Reveal>
-
-          <div className="border-t border-white/15">
-            {SERVICES.map((s, i) => (
-              <Reveal key={s.title} delay={i * 60}>
-                <div className="group grid sm:grid-cols-[auto_1fr_1.1fr] items-baseline gap-x-6 sm:gap-x-10 gap-y-2 py-7 sm:py-8 border-b border-white/15 transition-colors duration-300 hover:bg-white/[0.04]">
-                  <span className="text-[11px] font-black tracking-[0.22em] text-white/35 tabular-nums">
-                    {pad(i + 1)}
-                  </span>
-                  <h3 className="text-[22px] sm:text-[30px] lg:text-[34px] font-black uppercase tracking-[-0.035em] leading-[1] text-white/85 group-hover:text-white transition-colors duration-300">
-                    {s.title}
-                  </h3>
-                  <p className="text-[13.5px] text-white/60 leading-relaxed max-w-md">
-                    {s.description}
-                  </p>
-                </div>
-              </Reveal>
-            ))}
+      {/* ── 3. Work — index + photo wall ──────────────────── */}
+      <section id="work" className="scroll-mt-20 w-full" aria-labelledby="work-heading">
+        <div className="bg-black text-white px-5 sm:px-8 lg:px-12 pt-20 sm:pt-28">
+          <div className="max-w-[1700px] mx-auto">
+            <Reveal>
+              <Eyebrow>Selected work — {pad(PROJECTS.length)} projects</Eyebrow>
+              <h2
+                id="work-heading"
+                className="font-display text-[9.5vw] sm:text-[6.5vw] lg:text-[4.5vw] font-semibold tracking-[-0.025em] leading-[1.02] max-w-3xl"
+              >
+                Built on the ground, <em className="italic text-white/55">across the island.</em>
+              </h2>
+            </Reveal>
           </div>
         </div>
+
+        <WorkIndex onOpen={setActiveProject} />
+        <PhotoWall onOpen={setActiveProject} />
       </section>
 
-      {/* ── 5. Numbers over photo ─────────────────────────── */}
-      <section className="relative w-full overflow-hidden" aria-label="By the numbers">
+      {/* ── 4. Numbers ────────────────────────────────────── */}
+      <section className="relative w-full overflow-hidden bg-black" aria-label="By the numbers">
         <Image
           src="/images/projects/villa-5.jpg"
           alt=""
@@ -653,22 +868,22 @@ export default function LandingPage() {
           className="object-cover"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-black/70" aria-hidden />
+        <div className="absolute inset-0 bg-black/75" aria-hidden />
 
         <div className="relative px-5 sm:px-8 lg:px-12 py-20 sm:py-28 max-w-[1700px] mx-auto">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
             {[
-              { value: '06', label: 'Projects showcased' },
-              { value: '52', label: 'Site photos on file' },
-              { value: 'LK', label: 'Island-wide coverage' },
-              { value: '100', label: '% site-supervised', suffix: true },
+              { node: <Counter to={6} padTo2 />,  label: 'Projects showcased' },
+              { node: <Counter to={52} />,        label: 'Site photos on file' },
+              { node: <><Counter to={100} />%</>, label: 'Site-supervised' },
+              { node: 'Island',                   label: 'Wide service coverage' },
             ].map((s, i) => (
               <Reveal key={s.label} delay={i * 90}>
                 <div>
-                  <p className="text-[16vw] sm:text-[9vw] lg:text-[6vw] font-black tracking-[-0.06em] leading-[0.82] text-white tabular-nums">
-                    {s.value}
+                  <p className="font-display text-[14vw] sm:text-[8vw] lg:text-[5vw] font-semibold tracking-[-0.03em] leading-[0.9] text-white tabular-nums">
+                    {s.node}
                   </p>
-                  <p className="text-[10.5px] font-bold tracking-[0.18em] uppercase text-white/50 mt-4 border-t border-white/20 pt-4">
+                  <p className="text-[11px] font-semibold tracking-[0.16em] uppercase text-white/55 mt-4 border-t border-white/20 pt-4">
                     {s.label}
                   </p>
                 </div>
@@ -678,33 +893,67 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 6. Process ────────────────────────────────────── */}
-      <section className="w-full bg-white text-black px-5 sm:px-8 lg:px-12 py-24 sm:py-36" aria-labelledby="process-heading">
+      {/* ── 5. Capabilities ───────────────────────────────── */}
+      <section
+        id="services"
+        className="scroll-mt-20 w-full bg-white text-black px-5 sm:px-8 lg:px-12 py-24 sm:py-36"
+        aria-labelledby="services-heading"
+      >
         <div className="max-w-[1700px] mx-auto">
           <Reveal>
-            <p className="text-[10.5px] font-bold tracking-[0.3em] uppercase text-black/40 mb-6">
-              How it runs
-            </p>
+            <Eyebrow tone="light">Capabilities</Eyebrow>
+            <h2
+              id="services-heading"
+              className="font-display text-[8.5vw] sm:text-[6vw] lg:text-[4vw] font-semibold tracking-[-0.025em] leading-[1.04] max-w-3xl mb-14 sm:mb-20"
+            >
+              From a single wall <em className="italic text-black/45">to a whole house.</em>
+            </h2>
+          </Reveal>
+
+          <div className="border-t border-black/15">
+            {SERVICES.map((s, i) => (
+              <Reveal key={s.title} delay={i * 55}>
+                <div className="group grid sm:grid-cols-[auto_1fr_1.1fr] items-baseline gap-x-6 sm:gap-x-10 gap-y-2 py-7 sm:py-8 border-b border-black/15 transition-colors duration-300 hover:bg-black/[0.03]">
+                  <span className="text-[11px] font-semibold tracking-[0.2em] text-black/30 tabular-nums">
+                    {pad(i + 1)}
+                  </span>
+                  <h3 className="font-display text-[26px] sm:text-[32px] lg:text-[36px] font-semibold tracking-[-0.02em] leading-[1.05] text-black/85 group-hover:text-black transition-colors duration-300">
+                    {s.title}
+                  </h3>
+                  <p className="text-[14px] text-black/55 leading-relaxed max-w-md">
+                    {s.description}
+                  </p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 6. Process ────────────────────────────────────── */}
+      <section className="w-full bg-neutral-100 text-black px-5 sm:px-8 lg:px-12 py-24 sm:py-36" aria-labelledby="process-heading">
+        <div className="max-w-[1700px] mx-auto">
+          <Reveal>
+            <Eyebrow tone="light">How it runs</Eyebrow>
             <h2
               id="process-heading"
-              className="text-[9.5vw] sm:text-[6.5vw] lg:text-[4.6vw] font-black uppercase tracking-[-0.05em] leading-[0.9] max-w-3xl mb-16 sm:mb-24"
+              className="font-display text-[8.5vw] sm:text-[6vw] lg:text-[4vw] font-semibold tracking-[-0.025em] leading-[1.04] max-w-3xl mb-16 sm:mb-24"
             >
-              Four steps
-              <span className="text-black/30"> — no surprises.</span>
+              Four steps, <em className="italic text-black/45">no surprises.</em>
             </h2>
           </Reveal>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
             {PROCESS.map((p, i) => (
               <Reveal key={p.step} delay={i * 90}>
-                <div className="border-t-2 border-black pt-6">
-                  <p className="text-[13vw] sm:text-[6vw] lg:text-[4vw] font-black tracking-[-0.06em] leading-[0.85] text-black/12 mb-4 tabular-nums">
+                <div className="group border-t-2 border-black pt-6">
+                  <p className="font-display text-[11vw] sm:text-[5.5vw] lg:text-[3.5vw] font-semibold tracking-[-0.03em] leading-[0.9] text-black/12 mb-4 tabular-nums transition-colors duration-500 group-hover:text-black/25">
                     {p.step}
                   </p>
-                  <h3 className="text-[17px] font-black uppercase tracking-[-0.02em] mb-2.5">
+                  <h3 className="font-display text-[21px] font-semibold tracking-[-0.015em] mb-2.5">
                     {p.title}
                   </h3>
-                  <p className="text-[13.5px] text-black/55 leading-relaxed">{p.description}</p>
+                  <p className="text-[14px] text-black/55 leading-relaxed">{p.description}</p>
                 </div>
               </Reveal>
             ))}
@@ -713,21 +962,23 @@ export default function LandingPage() {
       </section>
 
       {/* ── 7. Reviews ────────────────────────────────────── */}
-      <section id="reviews" className="scroll-mt-20 w-full bg-black px-5 sm:px-8 lg:px-12 py-24 sm:py-36" aria-labelledby="reviews-heading">
+      <section
+        id="reviews"
+        className="scroll-mt-20 w-full bg-white text-black px-5 sm:px-8 lg:px-12 py-24 sm:py-36"
+        aria-labelledby="reviews-heading"
+      >
         <div className="max-w-[1700px] mx-auto">
           <Reveal>
-            <p className="text-[10.5px] font-bold tracking-[0.3em] uppercase text-white/45 mb-6">
-              Client feedback
-            </p>
+            <Eyebrow tone="light">Client feedback</Eyebrow>
             <h2 id="reviews-heading" className="sr-only">What clients say</h2>
-            <blockquote className="text-[7vw] sm:text-[5vw] lg:text-[3.6vw] font-black uppercase tracking-[-0.04em] leading-[1.02] max-w-5xl mb-8">
+            <blockquote className="font-display text-[6.5vw] sm:text-[4.5vw] lg:text-[3.1vw] font-semibold tracking-[-0.02em] leading-[1.15] max-w-5xl mb-8">
               &ldquo;{REVIEWS[0].quote}&rdquo;
             </blockquote>
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pb-16 sm:pb-24 border-b border-white/15">
-              <Stars rating={REVIEWS[0].rating} className="text-white" />
-              <p className="text-[11px] font-bold tracking-[0.16em] uppercase text-white/70">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pb-16 sm:pb-20 border-b border-black/15">
+              <Stars rating={REVIEWS[0].rating} className="text-black" />
+              <p className="text-[12px] font-semibold tracking-[0.12em] uppercase text-black/70">
                 {REVIEWS[0].name}
-                <span className="text-white/35"> — {REVIEWS[0].location}</span>
+                <span className="text-black/35"> — {REVIEWS[0].location}</span>
               </p>
             </div>
           </Reveal>
@@ -736,11 +987,11 @@ export default function LandingPage() {
             {REVIEWS.slice(1).map((r, i) => (
               <Reveal key={r.name} delay={i * 70}>
                 <div>
-                  <Stars rating={r.rating} className="text-white/70 mb-4" />
-                  <p className="text-[14px] text-white/65 leading-relaxed mb-4">&ldquo;{r.quote}&rdquo;</p>
-                  <p className="text-[10.5px] font-bold tracking-[0.16em] uppercase text-white/70">
+                  <Stars rating={r.rating} className="text-black/70 mb-4" />
+                  <p className="text-[14.5px] text-black/65 leading-relaxed mb-4">&ldquo;{r.quote}&rdquo;</p>
+                  <p className="text-[11px] font-semibold tracking-[0.12em] uppercase text-black/70">
                     {r.name}
-                    <span className="text-white/35"> — {r.location}</span>
+                    <span className="text-black/35"> — {r.location}</span>
                   </p>
                 </div>
               </Reveal>
@@ -750,36 +1001,40 @@ export default function LandingPage() {
       </section>
 
       {/* ── 8. FAQ ────────────────────────────────────────── */}
-      <section className="w-full bg-black px-5 sm:px-8 lg:px-12 pb-24 sm:pb-36" aria-labelledby="faq-heading">
+      <section className="w-full bg-neutral-100 text-black px-5 sm:px-8 lg:px-12 py-24 sm:py-36" aria-labelledby="faq-heading">
         <div className="max-w-[1700px] mx-auto">
           <Reveal>
-            <p className="text-[10.5px] font-bold tracking-[0.3em] uppercase text-white/45 mb-6">
-              Common questions
-            </p>
-            <h2 id="faq-heading" className="text-[9vw] sm:text-[6vw] lg:text-[4vw] font-black uppercase tracking-[-0.05em] leading-[0.9] max-w-3xl mb-14">
-              Before you
-              <span className="block text-white/35">get a quote.</span>
+            <Eyebrow tone="light">Common questions</Eyebrow>
+            <h2
+              id="faq-heading"
+              className="font-display text-[8.5vw] sm:text-[6vw] lg:text-[3.6vw] font-semibold tracking-[-0.025em] leading-[1.04] max-w-3xl mb-14"
+            >
+              Before you <em className="italic text-black/45">get a quote.</em>
             </h2>
           </Reveal>
 
-          <div className="border-t border-white/15 max-w-4xl">
+          <div className="border-t border-black/15 max-w-4xl">
             {FAQS.map((f) => (
-              <details key={f.q} className="group border-b border-white/15">
+              <details key={f.q} className="group border-b border-black/15">
                 <summary className="flex items-center justify-between gap-6 py-6 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
-                  <span className="text-[16px] sm:text-[20px] font-black uppercase tracking-[-0.025em] text-white/80 group-hover:text-white transition-colors">
+                  <span className="font-display text-[19px] sm:text-[23px] font-semibold tracking-[-0.015em] text-black/80 group-hover:text-black transition-colors">
                     {f.q}
                   </span>
-                  <ChevronDown className="w-5 h-5 text-white/40 flex-shrink-0 transition-transform duration-300 group-open:rotate-180" aria-hidden />
+                  <ChevronDown className="w-5 h-5 text-black/40 flex-shrink-0 transition-transform duration-300 group-open:rotate-180" aria-hidden />
                 </summary>
-                <p className="pb-6 text-[14px] text-white/55 leading-relaxed max-w-2xl">{f.a}</p>
+                <p className="pb-6 text-[14.5px] text-black/60 leading-relaxed max-w-2xl">{f.a}</p>
               </details>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── 9. Contact — closing frame ────────────────────── */}
-      <section id="contact" className="scroll-mt-0 relative min-h-[100svh] w-full overflow-hidden" aria-label="Get in touch">
+      {/* ── 9. Contact ────────────────────────────────────── */}
+      <section
+        id="contact"
+        className="scroll-mt-0 relative min-h-[100svh] w-full overflow-hidden bg-black"
+        aria-label="Get in touch"
+      >
         <Image
           src="/images/projects/villa-13.jpg"
           alt=""
@@ -792,16 +1047,13 @@ export default function LandingPage() {
         <div className="relative min-h-[100svh] flex flex-col justify-end px-5 sm:px-8 lg:px-12 pt-28 pb-12 sm:pb-16">
           <div className="max-w-[1700px] mx-auto w-full">
             <Reveal>
-              <p className="text-[10.5px] font-bold tracking-[0.3em] uppercase text-white/55 mb-6 sm:mb-8">
-                Start a project
-              </p>
-              <h2 className="text-[15vw] sm:text-[12vw] lg:text-[10vw] font-black uppercase tracking-[-0.05em] leading-[0.84] text-white mb-10 sm:mb-14">
-                Let&apos;s build
-                <span className="block text-white/45">something.</span>
+              <Eyebrow>Start a project</Eyebrow>
+              <h2 className="font-display text-[13vw] sm:text-[10vw] lg:text-[7vw] font-semibold tracking-[-0.03em] leading-[0.98] text-white mb-10 sm:mb-14 max-w-[14ch]">
+                Let&apos;s build <em className="italic text-white/70">something.</em>
               </h2>
 
               <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 border-t border-white/15 pt-8">
-                <p className="text-[14px] sm:text-[16px] text-white/65 leading-relaxed max-w-md">
+                <p className="text-[15px] sm:text-[16.5px] text-white/70 leading-relaxed max-w-md">
                   Tell us about your project and we&apos;ll get back to you with next steps —
                   from a single wall to a full house build, anywhere on the island.
                 </p>
@@ -809,14 +1061,14 @@ export default function LandingPage() {
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   <a
                     href="tel:+94763667924"
-                    className="inline-flex items-center justify-center gap-3 h-14 px-8 bg-white text-black text-[12px] font-black tracking-[0.16em] uppercase hover:bg-white/85 transition-colors duration-300"
+                    className="inline-flex items-center justify-center gap-3 h-14 px-8 bg-white text-black text-[12.5px] font-semibold tracking-[0.1em] uppercase hover:bg-white/85 transition-colors duration-300"
                   >
                     <Phone className="w-4 h-4" aria-hidden />
                     076 366 7924
                   </a>
                   <a
                     href="mailto:info@inbuilders.lk"
-                    className="inline-flex items-center justify-center gap-3 h-14 px-8 border border-white/30 text-white text-[12px] font-black tracking-[0.16em] uppercase hover:bg-white hover:text-black transition-colors duration-300"
+                    className="inline-flex items-center justify-center gap-3 h-14 px-8 border border-white/35 text-white text-[12.5px] font-semibold tracking-[0.1em] uppercase hover:bg-white hover:text-black transition-colors duration-300"
                   >
                     <Mail className="w-4 h-4" aria-hidden />
                     Email us
@@ -835,14 +1087,14 @@ export default function LandingPage() {
             <div className="relative w-7 h-7 overflow-hidden bg-white flex-shrink-0" aria-hidden>
               <Image src="/images/logo.png" alt="" fill className="object-contain p-0.5" sizes="28px" />
             </div>
-            <span className="text-[12px] font-black tracking-[0.16em] uppercase text-white">IN Builders</span>
+            <span className="font-display text-[16px] font-semibold tracking-tight text-white">IN&nbsp;Builders</span>
           </div>
 
-          <p className="text-[10.5px] font-medium tracking-[0.1em] uppercase text-white/35">
+          <p className="text-[11.5px] text-white/35">
             &copy; {new Date().getFullYear()}{' '}IN Builders — Building contractors, Sri Lanka
           </p>
 
-          <div className="flex items-center gap-6 text-[10.5px] font-bold tracking-[0.16em] uppercase text-white/45">
+          <div className="flex items-center gap-6 text-[11px] font-semibold tracking-[0.12em] uppercase text-white/45">
             <a href="tel:+94763667924" className="hover:text-white transition-colors">076 366 7924</a>
             <Link href="/login" className="hover:text-white transition-colors">Team Login</Link>
           </div>
