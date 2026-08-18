@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Fraunces } from "next/font/google";
+import { Geist, Geist_Mono, Oswald } from "next/font/google";
 import "./globals.css";
 import AppProviders from "@/providers/app-providers";
 
@@ -13,11 +13,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Display face for editorial headlines (marketing pages).
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
+// Condensed industrial display face for the marketing page (spec-sheet / engineering feel).
+const oswald = Oswald({
+  variable: "--font-oswald",
   subsets: ["latin"],
-  style: ["normal", "italic"],
+  weight: ["500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -34,7 +34,7 @@ export default function RootLayout({
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${oswald.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans antialiased">
         <AppProviders>{children}</AppProviders>
