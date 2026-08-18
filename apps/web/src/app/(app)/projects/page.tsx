@@ -52,7 +52,7 @@ const projectSchema = z.object({
   contractValue:  z.coerce.number().min(0, 'Contract value must be positive or zero').default(0),
   startDate:      z.string().optional(),
   endDate:        z.string().optional(),
-  status:   z.enum(['PLANNING', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELLED']).default('PLANNING'),
+  status:   z.enum(['PENDING', 'PLANNING', 'UPCOMING', 'DONE', 'BLOCKED']).default('PLANNING'),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).default('MEDIUM'),
 });
 
@@ -73,11 +73,12 @@ const priorityMeta: Record<string, { label: string; className: string }> = {
 };
 
 const STATUS_FILTERS = [
-  { value: 'ALL',         label: 'All' },
-  { value: 'IN_PROGRESS', label: 'Active' },
-  { value: 'PLANNING',    label: 'Planning' },
-  { value: 'ON_HOLD',     label: 'On Hold' },
-  { value: 'COMPLETED',   label: 'Done' },
+  { value: 'ALL',      label: 'All' },
+  { value: 'PENDING',  label: 'Pending' },
+  { value: 'PLANNING', label: 'Planning' },
+  { value: 'UPCOMING', label: 'Upcoming' },
+  { value: 'DONE',     label: 'Done' },
+  { value: 'BLOCKED',  label: 'Blocked' },
 ];
 
 // ── Input style ─────────────────────────────────────────────
@@ -397,11 +398,11 @@ export default function ProjectsPage() {
                 <div className="space-y-1.5">
                   <Label htmlFor="proj-status" className="text-[12px] font-semibold text-foreground/80">Status</Label>
                   <select id="proj-status" className={inputCls} {...register('status')}>
+                    <option value="PENDING">Pending</option>
                     <option value="PLANNING">Planning</option>
-                    <option value="IN_PROGRESS">In Progress</option>
-                    <option value="ON_HOLD">On Hold</option>
-                    <option value="COMPLETED">Completed</option>
-                    <option value="CANCELLED">Cancelled</option>
+                    <option value="UPCOMING">Upcoming</option>
+                    <option value="DONE">Done</option>
+                    <option value="BLOCKED">Blocked</option>
                   </select>
                 </div>
                 <div className="space-y-1.5">

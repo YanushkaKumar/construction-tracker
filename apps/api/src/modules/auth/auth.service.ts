@@ -167,6 +167,12 @@ export class AuthService {
    */
   async register(dto: RegisterDto) {
 
+    // This deployment is single-tenant: once a company has registered, block all further sign-ups.
+    const companyCount = await this.prisma.company.count();
+    if (companyCount > 0) {
+      throw new ConflictException('Company registration is closed. Contact your administrator for an account.');
+    }
+
     // Check if email already exists
     const existingUser = await this.prisma.user.findFirst({
       where: { email: dto.email },

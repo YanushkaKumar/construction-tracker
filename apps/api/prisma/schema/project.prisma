@@ -3,11 +3,11 @@
 // ============================================
 
 enum ProjectStatus {
+  PENDING
   PLANNING
-  IN_PROGRESS
-  ON_HOLD
-  COMPLETED
-  CANCELLED
+  UPCOMING
+  DONE
+  BLOCKED
 }
 
 enum Priority {

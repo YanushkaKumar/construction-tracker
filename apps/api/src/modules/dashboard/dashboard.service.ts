@@ -19,7 +19,7 @@ export class DashboardService {
       projectsByStatus,
       expenseByCategory,
     ] = await Promise.all([
-      this.prisma.project.count({ where: { companyId, status: 'IN_PROGRESS' } }),
+      this.prisma.project.count({ where: { companyId, status: 'UPCOMING' } }),
       this.prisma.project.count({ where: { companyId } }),
       this.prisma.expense.count({ where: { status: 'PENDING', project: { companyId } } }),
       this.prisma.expense.aggregate({ where: { status: 'PENDING', project: { companyId } }, _sum: { amount: true } }),
@@ -31,7 +31,7 @@ export class DashboardService {
 
     // Budget utilization
     const budgetData = await this.prisma.project.aggregate({
-      where: { companyId, status: { in: ['IN_PROGRESS', 'COMPLETED'] } },
+      where: { companyId, status: { in: ['UPCOMING', 'DONE'] } },
       _sum: { budgetEstimate: true, budgetActual: true },
     });
 

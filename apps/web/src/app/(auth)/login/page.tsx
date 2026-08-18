@@ -202,12 +202,9 @@ export default function LoginPage() {
         </>
       )}
 
-      {/* Register link */}
-      <p className="text-center text-[12px] text-muted-foreground/60 font-medium">
-        Don&apos;t have an account?{' '}
-        <Link href="/register" className="font-bold text-foreground hover:underline underline-offset-4">
-          Register your company
-        </Link>
+      {/* Company registration is closed — single-tenant deployment */}
+      <p className="text-center text-[12px] text-muted-foreground/50 font-medium">
+        Need an account? Contact your company administrator.
       </p>
     </div>
   );

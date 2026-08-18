@@ -1,60 +1,62 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
-  HardHat, FileText, Landmark, Users, ClipboardCheck,
-  CheckCircle, ArrowRight, TrendingUp, Layers,
-  ShieldCheck, ChevronRight, Activity,
-  Check, BarChart2, Building2, Package, Wallet,
-  Zap, Globe, Lock, Bell, Download, Menu, X,
+  HardHat, MapPin, ArrowRight, ChevronRight, ChevronLeft, Menu, X, Star, Quote,
+  Home as HomeIcon, Wrench, Layers, ShieldCheck, Construction, ClipboardCheck,
+  Mail, Phone, Building2, Images, Globe2, Award, Users,
 } from 'lucide-react';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from '@/components/ui/dialog';
 
 // ── Nav ───────────────────────────────────────────────────────
 
 function Nav() {
   const [open, setOpen] = useState(false);
 
+  const links = [
+    { href: '#about',     label: 'About' },
+    { href: '#services',  label: 'Services' },
+    { href: '#work',      label: 'Our Work' },
+    { href: '#reviews',   label: 'Reviews' },
+  ];
+
   return (
     <header
       className="sticky top-4 z-50 w-[94%] max-w-7xl mx-auto border border-border/25 bg-card/70 backdrop-blur-xl rounded-2xl shadow-surface mt-4"
       role="banner"
     >
-      <div className="flex h-14 items-center justify-between px-5 md:px-7">
+      <div className="flex h-16 items-center justify-between px-5 md:px-7">
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-2.5" aria-label="BuildTrack — home">
-          <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-foreground text-background shadow-surface" aria-hidden>
-            <HardHat className="w-4 h-4" />
+        <Link href="/" className="flex items-center gap-2.5" aria-label="IN Builders — home">
+          <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-white shadow-surface flex-shrink-0" aria-hidden>
+            <Image src="/images/logo.png" alt="" fill className="object-contain p-0.5" sizes="40px" />
           </div>
-          <span className="font-bold text-[15px] tracking-tight text-foreground/90">BuildTrack</span>
+          <span className="font-bold text-[16px] tracking-tight text-foreground/90">IN Builders</span>
         </Link>
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-7 text-[13px] font-semibold text-muted-foreground/75" aria-label="Main">
-          <a href="#features"  className="hover:text-foreground transition-colors">Features</a>
-          <a href="#how"       className="hover:text-foreground transition-colors">How it works</a>
-          <a href="#roles"     className="hover:text-foreground transition-colors">Who it&apos;s for</a>
-          <a href="#pricing"   className="hover:text-foreground transition-colors">Pricing</a>
+          {links.map((l) => (
+            <a key={l.href} href={l.href} className="hover:text-foreground transition-colors">{l.label}</a>
+          ))}
         </nav>
 
         {/* CTA + mobile */}
         <div className="flex items-center gap-3">
           <Link
             href="/login"
-            className="hidden sm:inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground/75 hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-1.5 h-9 px-4 bg-foreground text-background text-[12.5px] font-bold rounded-xl hover:brightness-110 transition-all shadow-surface"
           >
-            Sign in
-          </Link>
-          <Link
-            href="/register"
-            className="inline-flex items-center gap-1.5 h-8 px-4 bg-foreground text-background text-[12.5px] font-bold rounded-xl hover:brightness-110 transition-all shadow-surface"
-          >
-            Get started free
+            Team Login
             <ArrowRight className="w-3.5 h-3.5" aria-hidden />
           </Link>
           <button
             className="md:hidden flex items-center justify-center w-8 h-8 rounded-xl border border-border/30 text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
-            onClick={() => setOpen(o => !o)}
+            onClick={() => setOpen((o) => !o)}
             aria-label={open ? 'Close menu' : 'Open menu'}
             aria-expanded={open}
           >
@@ -66,46 +68,98 @@ function Nav() {
       {/* Mobile menu */}
       {open && (
         <div className="md:hidden border-t border-border/15 px-5 py-4 space-y-3 bg-card/95 rounded-b-2xl">
-          {['#features', '#how', '#roles', '#pricing'].map((href) => (
+          {links.map((l) => (
             <a
-              key={href}
-              href={href}
+              key={l.href}
+              href={l.href}
               onClick={() => setOpen(false)}
               className="block text-[14px] font-semibold text-muted-foreground/75 hover:text-foreground transition-colors py-1"
             >
-              {href.replace('#', '').replace(/^\w/, c => c.toUpperCase())}
+              {l.label}
             </a>
           ))}
-          <div className="pt-3 border-t border-border/10 flex gap-3">
-            <Link href="/login"    className="flex-1 text-center py-2 rounded-xl border border-border/30 text-[13px] font-semibold hover:bg-accent/40 transition-colors">Sign in</Link>
-            <Link href="/register" className="flex-1 text-center py-2 rounded-xl bg-foreground text-background text-[13px] font-bold hover:brightness-110 transition-all">Register</Link>
-          </div>
         </div>
       )}
     </header>
   );
 }
 
-// ── Feature card ──────────────────────────────────────────────
+// ── Data ──────────────────────────────────────────────────────
 
-function FeatureCard({ icon: Icon, title, description, accent }: {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  accent: string;
-}) {
-  return (
-    <div className="group p-6 bg-card border border-border/25 rounded-2xl shadow-surface hover:shadow-elevated hover:border-border/45 transition-all duration-300 text-left">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${accent}`} aria-hidden>
-        <Icon className="w-5 h-5" />
-      </div>
-      <h3 className="text-[15px] font-bold text-foreground/90 mb-2">{title}</h3>
-      <p className="text-[13px] text-muted-foreground/65 leading-relaxed">{description}</p>
-    </div>
-  );
+const SERVICES = [
+  { icon: HomeIcon,     title: 'Residential Construction',     description: 'New home builds from foundation to roof, tailored to your land, budget, and timeline.',            accent: 'bg-info-subtle text-info' },
+  { icon: Wrench,       title: 'Renovations & Interior Fit-Outs', description: 'Kitchen upgrades, interior remodels, and commercial fit-outs finished to a high standard.',       accent: 'bg-success-subtle text-success' },
+  { icon: Layers,       title: 'Roofing & Structural Work',     description: 'Roof framing, re-roofing, and structural repairs built to hold up through the monsoon.',           accent: 'bg-warning-subtle text-warning' },
+  { icon: ShieldCheck,  title: 'Boundary Walls & Gatehouses',   description: 'Perimeter walls, security gates, and guardhouses for homes, estates, and factories.',              accent: 'bg-danger-subtle text-danger' },
+  { icon: Construction, title: 'Concrete & Driveways',          description: 'Access roads, driveways, and drainage channels finished to a smooth, durable pour.',              accent: 'bg-[var(--chart-4)]/10 text-[var(--chart-4)]' },
+  { icon: ClipboardCheck, title: 'Site Supervision',            description: 'Dedicated on-site oversight from groundbreaking through to final handover, island-wide.',           accent: 'bg-[var(--chart-1)]/10 text-[var(--chart-1)]' },
+];
+
+function imgs(prefix: string, count: number) {
+  return Array.from({ length: count }, (_, i) => `/images/projects/${prefix}-${i + 1}.jpg`);
 }
 
-// ── Stat counter ──────────────────────────────────────────────
+const PROJECTS = [
+  {
+    title: 'Private Residence — Full Construction',
+    location: 'Gelioya, Kandy District',
+    description: 'Ground-up construction of a family home — from the groundbreaking ceremony through foundation, column casting, and roof framing.',
+    tags: ['Foundation', 'Structural Framing', 'Roofing'],
+    images: imgs('villa', 15),
+  },
+  {
+    title: 'Home Renovation & Kitchen Rebuild',
+    location: 'Gampola, Kandy District',
+    description: 'Full interior renovation of an older residence, including a complete modern kitchen rebuild with granite countertops and tiling.',
+    tags: ['Renovation', 'Kitchen Fit-Out', 'Tiling'],
+    images: imgs('residence', 10),
+  },
+  {
+    title: 'Community School Building',
+    location: 'Hanguranketa, Kandy District',
+    description: 'Roof restoration and wall repairs for a rural school building, completed ahead of the school term.',
+    tags: ['Roofing', 'Wall Repairs'],
+    images: imgs('school', 9),
+  },
+  {
+    title: 'Factory Perimeter Wall & Gatehouse',
+    location: 'Biyagama Industrial Zone',
+    description: 'Boundary wall construction and a new security gatehouse for a commercial facility.',
+    tags: ['Boundary Wall', 'Gatehouse', 'Commercial'],
+    images: imgs('factory', 8),
+  },
+  {
+    title: 'Bookshop Interior Fit-Out',
+    location: 'Kandy City',
+    description: 'Steel ceiling grid and shelving installation for a busy retail bookstore, completed with minimal disruption to trading.',
+    tags: ['Interior Fit-Out', 'Commercial'],
+    images: imgs('bookhouse', 5),
+  },
+  {
+    title: 'Estate Access Road & Drainage',
+    location: 'Katugastota, Kandy District',
+    description: 'Concrete paving and drainage channel works for a private access road.',
+    tags: ['Concrete', 'Drainage'],
+    images: imgs('road', 5),
+  },
+];
+
+const REVIEWS = [
+  { name: 'Nimal Perera',            location: 'Gelioya',      rating: 5, quote: 'IN Builders built our house from the ground up. They were on site every day and kept us updated at every stage. Couldn’t be happier with the result.' },
+  { name: 'Chamari Wickramasinghe',  location: 'Gampola',      rating: 5, quote: 'Our kitchen renovation looks incredible. The team was clean, punctual, and the finish is exactly what we asked for.' },
+  { name: 'Ruwan Bandara',           location: 'Biyagama',     rating: 5, quote: 'We hired IN Builders for our factory boundary wall and gatehouse. Professional crew, good safety practices, finished on schedule.' },
+  { name: 'Malini Fernando',         location: 'Kandy',        rating: 4, quote: 'They fitted out our bookshop’s ceiling and shelving fast so we barely lost any trading time. Very tidy work.' },
+  { name: 'Sunil Rathnayake',        location: 'Hanguranketa', rating: 5, quote: 'Re-roofed our school building before the monsoon. Fair pricing and honest communication throughout.' },
+  { name: 'Priyantha Jayasuriya',    location: 'Katugastota',  rating: 5, quote: 'Solid concrete work on our access road — no cracks, proper drainage, still holding up years later.' },
+];
+
+const WHY_US = [
+  { icon: Globe2, title: 'Island-wide reach',     description: 'Based in the Kandy District, taking on jobs across Sri Lanka.' },
+  { icon: Award,  title: 'Standards we sign off',  description: 'Every job site-supervised — nothing subcontracted out of sight.' },
+  { icon: Users,  title: 'One accountable crew',   description: 'The same team from groundbreaking to handover, every time.' },
+];
+
+// ── Small pieces ─────────────────────────────────────────────
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
@@ -120,177 +174,278 @@ function Stat({ value, label }: { value: string; label: string }) {
   );
 }
 
+function Stars({ rating }: { rating: number }) {
+  return (
+    <div className="flex items-center gap-0.5" aria-label={`${rating} out of 5 stars`}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Star
+          key={i}
+          className={`w-3.5 h-3.5 ${i < rating ? 'text-warning fill-warning' : 'text-border/40'}`}
+          aria-hidden
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Project gallery modal (grid + full-screen viewer) ─────────
+
+type Project = (typeof PROJECTS)[number];
+
+function ProjectGalleryModal({ project, onClose }: { project: Project | null; onClose: () => void }) {
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    setViewerIndex(null);
+  }, [project]);
+
+  useEffect(() => {
+    if (viewerIndex === null || !project) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setViewerIndex(null);
+      if (e.key === 'ArrowRight') setViewerIndex((i) => (i === null ? i : (i + 1) % project.images.length));
+      if (e.key === 'ArrowLeft') setViewerIndex((i) => (i === null ? i : (i - 1 + project.images.length) % project.images.length));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [viewerIndex, project]);
+
+  if (!project) return null;
+
+  return (
+    <Dialog open={!!project} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        showCloseButton={viewerIndex === null}
+        className="max-w-4xl w-full max-h-[88vh] p-0 gap-0 overflow-hidden rounded-3xl"
+      >
+        {viewerIndex === null ? (
+          <div className="flex flex-col max-h-[88vh]">
+            <DialogHeader className="p-6 pb-4 border-b border-border/15 flex-shrink-0">
+              <DialogTitle className="text-[20px] font-bold text-foreground/90">{project.title}</DialogTitle>
+              <DialogDescription>
+                <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-muted-foreground/70">
+                  <MapPin className="w-3.5 h-3.5" aria-hidden />
+                  {project.location}
+                </span>
+                <span className="block mt-2 text-[13.5px] text-muted-foreground/70">{project.description}</span>
+                <span className="flex flex-wrap gap-1.5 mt-3">
+                  {project.tags.map((t) => (
+                    <span key={t} className="px-2.5 py-1 rounded-full bg-accent/50 border border-border/25 text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground/75">
+                      {t}
+                    </span>
+                  ))}
+                </span>
+              </DialogDescription>
+            </DialogHeader>
+            <div className="overflow-y-auto p-4 sm:p-5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 stagger-children">
+                {project.images.map((img, i) => (
+                  <button
+                    key={img}
+                    onClick={() => setViewerIndex(i)}
+                    className="relative aspect-square rounded-xl overflow-hidden border border-border/20 group focus:outline-none focus:ring-2 focus:ring-ring/40"
+                    aria-label={`View photo ${i + 1} of ${project.images.length}`}
+                  >
+                    <Image src={img} alt="" fill className="object-cover transition-transform duration-300 group-hover:scale-105" sizes="220px" />
+                    <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors" aria-hidden />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="relative h-[88vh] bg-black flex items-center justify-center">
+            <button
+              onClick={() => setViewerIndex(null)}
+              className="absolute top-4 right-4 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+              aria-label="Close photo viewer"
+            >
+              <X className="w-4.5 h-4.5" aria-hidden />
+            </button>
+            <button
+              onClick={() => setViewerIndex((i) => (i! - 1 + project.images.length) % project.images.length)}
+              className="absolute left-3 sm:left-5 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+              aria-label="Previous photo"
+            >
+              <ChevronLeft className="w-5 h-5" aria-hidden />
+            </button>
+            <div className="relative w-full h-full">
+              <Image
+                key={project.images[viewerIndex]}
+                src={project.images[viewerIndex]}
+                alt={`${project.title} — photo ${viewerIndex + 1}`}
+                fill
+                className="object-contain animate-fade-in"
+                sizes="100vw"
+              />
+            </div>
+            <button
+              onClick={() => setViewerIndex((i) => (i! + 1) % project.images.length)}
+              className="absolute right-3 sm:right-5 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+              aria-label="Next photo"
+            >
+              <ChevronRight className="w-5 h-5" aria-hidden />
+            </button>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/50 text-white text-[12px] font-semibold tabular-nums">
+              {viewerIndex + 1} / {project.images.length}
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Main landing page ─────────────────────────────────────────
 
 export default function LandingPage() {
-  const [activeRole, setActiveRole] = useState<'contractor' | 'engineer' | 'owner' | 'qs'>('contractor');
-
-  const roles = {
-    contractor: {
-      badge: 'General Contractors',
-      title: 'Command every site from one workspace',
-      description:
-        'Manage multiple active projects across Sri Lanka from a single, high-fidelity workspace. Stop losing profits to material leakage, unlogged labour hours, and miscommunicated tasks.',
-      points: ['Multi-site budget utilization alerts', 'Aggregate material requisitions', 'Automated payroll calculator', 'Bulk expense voucher approvals'],
-    },
-    engineer: {
-      badge: 'Site Engineers',
-      title: 'Frictionless field updates in 2 minutes',
-      description:
-        'No more messy paper logbooks. Submit progress logs, record concrete pours, mark daily labour check-ins, and log material requests right from the field — online or offline.',
-      points: ['Offline-first daily report logbook', 'Geotagged site photo uploads', 'Instant supplier request alerts', 'Attendance tracking with overtime'],
-    },
-    owner: {
-      badge: 'Property Owners',
-      title: 'Full transparency on your investment',
-      description:
-        'Get real-time visibility on your build. Access site photo timelines, review daily progress reports, and approve expense vouchers — without being on-site.',
-      points: ['Geotagged site photo timeline', 'Live activity notifications', 'Mobile expense sign-offs', 'Budget vs actual reports'],
-    },
-    qs: {
-      badge: 'Quantity Surveyors',
-      title: 'High-fidelity cost control ledger',
-      description:
-        'Compare budget estimations directly against actual logged expenses. Approve labour payouts, verify supplier invoices, and analyse category cost weights in real time.',
-      points: ['Budget vs actual variance analysis', 'Expense approval workflow matrix', 'Supplier rate benchmarking', 'Exportable cost reports (CSV / PDF)'],
-    },
-  };
-
-  const features = [
-    { icon: Building2,     title: 'Project Management',   description: 'Multi-project dashboards with real-time budget utilisation, timeline tracking, and milestone progress.', accent: 'bg-info-subtle text-info' },
-    { icon: Users,         title: 'Workforce & Payroll',   description: 'Register workers, track daily attendance, log overtime hours, and generate automated wage sheets.', accent: 'bg-success-subtle text-success' },
-    { icon: FileText,      title: 'Daily Site Reports',    description: 'Structured field logs with photo uploads, work progress, labour counts, and material consumption.', accent: 'bg-warning-subtle text-warning' },
-    { icon: Package,       title: 'Materials & Inventory', description: 'Issue material requests, track delivery statuses, and manage supplier invoices across all sites.', accent: 'bg-[var(--chart-4)]/10 text-[var(--chart-4)]' },
-    { icon: Landmark,      title: 'Expense Management',    description: 'Role-based expense voucher submission, manager approvals, and full audit trail for every payment.', accent: 'bg-danger-subtle text-danger' },
-    { icon: Wallet,        title: 'Treasury & Finance',    description: 'Track advance payments, bank loans, fixed assets, and generate consolidated cash-flow statements.', accent: 'bg-[var(--chart-5)]/10 text-[var(--chart-5)]' },
-    { icon: ClipboardCheck,title: 'Task Tracking',         description: 'Assign tasks to team members, set deadlines, manage priorities, and visualise progress on a Kanban board.', accent: 'bg-[var(--chart-1)]/10 text-[var(--chart-1)]' },
-    { icon: BarChart2,     title: 'Executive Reporting',   description: 'Role-adaptive dashboards with spend analysis, cash-flow trends, and budget risk flags.', accent: 'bg-[var(--chart-3)]/10 text-[var(--chart-3)]' },
-  ];
-
-  const activeContent = roles[activeRole];
+  const [activeProject, setActiveProject] = useState<Project | null>(null);
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground font-sans antialiased selection:bg-foreground selection:text-background">
       {/* Background grid */}
       <div className="fixed inset-0 structural-grid pointer-events-none -z-10" aria-hidden />
-      {/* Glow blobs */}
       <div className="fixed top-[-20%] right-[-10%] w-[700px] h-[700px] rounded-full bg-primary/6 blur-[160px] pointer-events-none -z-10" aria-hidden />
       <div className="fixed bottom-[-15%] left-[-5%] w-[500px] h-[500px] rounded-full bg-success/5 blur-[130px] pointer-events-none -z-10" aria-hidden />
 
-      {/* ── Navigation ─── */}
       <Nav />
 
       {/* ── Hero ─────────────────────────────────────────── */}
-      <section className="relative flex flex-col items-center text-center px-6 pt-24 pb-20 md:pt-32 md:pb-28 max-w-6xl mx-auto w-full" aria-label="Hero">
-        {/* Eyebrow badge */}
+      <section className="relative flex flex-col items-center text-center px-6 pt-16 pb-0 max-w-7xl mx-auto w-full" aria-label="Hero">
         <div className="inline-flex items-center gap-2 rounded-full border border-border/30 bg-accent/40 backdrop-blur-sm px-4 py-1.5 mb-7 select-none">
-          <HardHat className="w-3.5 h-3.5 text-muted-foreground/70" aria-hidden />
+          <Globe2 className="w-3.5 h-3.5 text-muted-foreground/70" aria-hidden />
           <span className="text-[12px] font-medium text-foreground/75">
-            Built for the Sri Lankan construction industry
+            Construction &amp; building contractors — serving all of Sri Lanka
           </span>
         </div>
 
-        {/* Headline */}
-        <h1 className="text-[3rem] md:text-[4.5rem] xl:text-[5.5rem] font-semibold tracking-[-0.04em] leading-[1.04] text-foreground/95 max-w-4xl mx-auto mb-7">
-          Run your construction business{' '}
-          <span className="text-muted-foreground">without the paperwork.</span>
+        <h1 className="text-[2.75rem] md:text-[4rem] xl:text-[4.75rem] font-semibold tracking-[-0.04em] leading-[1.05] text-foreground/95 max-w-4xl mx-auto mb-6">
+          From foundation to finish,{' '}
+          <span className="text-muted-foreground">we build it right.</span>
         </h1>
 
-        <p className="text-[17px] text-muted-foreground/70 max-w-2xl mx-auto leading-relaxed font-medium mb-10">
-          BuildTrack brings project management, workforce tracking, material procurement,
-          and financial control together in one workspace — from site to head office.
+        <p className="text-[16px] text-muted-foreground/70 max-w-2xl mx-auto leading-relaxed font-medium mb-9">
+          IN Builders is a Sri Lankan construction company delivering homes, renovations,
+          roofing, boundary walls, and commercial fit-outs — island-wide, built on site,
+          on schedule, and done properly.
         </p>
 
-        {/* CTA buttons */}
-        <div className="flex flex-col sm:flex-row items-center gap-3.5 mb-16">
-          <Link
-            href="/register"
+        <div className="flex flex-col sm:flex-row items-center gap-3.5 mb-14">
+          <a
+            href="#work"
             className="inline-flex items-center gap-2.5 h-12 px-7 bg-foreground text-background text-[15px] font-bold rounded-2xl hover:brightness-110 transition-all duration-200 active:scale-[0.98] shadow-elevated"
-            aria-label="Get started for free"
           >
-            Start free trial
+            See our work
             <ArrowRight className="w-4.5 h-4.5" aria-hidden />
-          </Link>
-          <Link
-            href="/login"
+          </a>
+          <a
+            href="#contact"
             className="inline-flex items-center gap-2 h-12 px-7 border border-border/30 bg-card/60 text-foreground/80 text-[15px] font-semibold rounded-2xl hover:bg-accent/50 hover:border-border/50 transition-all duration-200 backdrop-blur-sm"
           >
-            Sign in to workspace
-          </Link>
+            Get in touch
+          </a>
         </div>
 
-        {/* Trust badges */}
-        <div className="flex flex-wrap items-center justify-center gap-5 text-[12px] font-semibold text-muted-foreground/55 select-none">
-          {[
-            { icon: ShieldCheck, text: 'Role-based access control' },
-            { icon: Lock,        text: 'Your data stays private' },
-            { icon: Globe,       text: 'Works on any device' },
-            { icon: Zap,         text: 'Fast, even on site connections' },
-          ].map(b => (
-            <div key={b.text} className="flex items-center gap-1.5">
-              <b.icon className="w-3.5 h-3.5 text-success" aria-hidden />
-              {b.text}
+        {/* Hero image */}
+        <div className="relative w-full max-w-6xl aspect-[16/8] rounded-3xl overflow-hidden shadow-elevated border border-border/25 mb-[-1px]">
+          <Image
+            src="/images/hero-roofing.jpg"
+            alt="Roof framing under construction on a residential build"
+            fill
+            priority
+            className="object-cover"
+            sizes="(min-width: 1280px) 1152px, 100vw"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/5 to-transparent" aria-hidden />
+
+          {/* Floating stat card */}
+          <div className="absolute bottom-5 left-5 right-5 sm:right-auto flex flex-wrap items-center gap-3 sm:gap-5 bg-card/80 backdrop-blur-xl border border-border/30 rounded-2xl px-5 py-3.5 shadow-elevated">
+            <div className="flex items-center gap-2">
+              <Images className="w-4 h-4 text-primary" aria-hidden />
+              <span className="text-[13px] font-bold text-foreground/90">52 project photos</span>
             </div>
-          ))}
+            <div className="hidden sm:block w-px h-4 bg-border/40" aria-hidden />
+            <div className="flex items-center gap-2">
+              <Globe2 className="w-4 h-4 text-success" aria-hidden />
+              <span className="text-[13px] font-bold text-foreground/90">Island-wide service</span>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ── Stats ─────────────────────────────────────────── */}
-      <section className="w-full max-w-5xl mx-auto px-6 py-16 border-y border-border/15" aria-label="Platform statistics">
+      <section className="w-full max-w-5xl mx-auto px-6 py-16 border-b border-border/15" aria-label="Company statistics">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
-          <Stat value="8"       label="Integrated modules"        />
-          <Stat value="6"       label="Role-based workspaces"     />
-          <Stat value="2 min"   label="To log a daily report"     />
-          <Stat value="LKR 0"   label="Per-seat charges"          />
+          <Stat value="6+"     label="Completed projects showcased" />
+          <Stat value="100%"   label="Site-supervised builds"       />
+          <Stat value="Island" label="Wide service coverage"        />
+          <Stat value="1"      label="Crew, start to handover"      />
         </div>
       </section>
 
-      {/* ── Features grid ─────────────────────────────────── */}
-      <section id="features" className="w-full max-w-7xl mx-auto px-6 py-24" aria-labelledby="features-heading">
-        <div className="text-center mb-14 select-none">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/25 bg-accent/30 px-4 py-1.5 mb-5">
-            <Layers className="w-3.5 h-3.5 text-primary" aria-hidden />
-            <span className="text-[12px] font-medium text-muted-foreground/75">Platform modules</span>
-          </div>
-          <h2 id="features-heading" className="text-[2.5rem] md:text-[3.5rem] font-semibold tracking-[-0.03em] text-foreground/90 mb-4 leading-tight">
-            Everything your site needs,<br className="hidden md:block" /> nothing it doesn&apos;t.
-          </h2>
-          <p className="text-[15px] text-muted-foreground/60 max-w-xl mx-auto leading-relaxed font-medium">
-            A full-stack ERP built specifically for the Sri Lankan construction industry — not a generic project management tool retrofitted.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {features.map(f => (
-            <FeatureCard key={f.title} {...f} />
-          ))}
-        </div>
-      </section>
-
-      {/* ── How it works ──────────────────────────────────── */}
-      <section id="how" className="w-full bg-accent/10 border-y border-border/15 py-24 px-6" aria-labelledby="how-heading">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14 select-none">
-            <h2 id="how-heading" className="text-[2.5rem] md:text-[3rem] font-semibold tracking-[-0.03em] text-foreground/90 mb-4">
-              Up and running in minutes.
+      {/* ── About ─────────────────────────────────────────── */}
+      <section id="about" className="w-full max-w-6xl mx-auto px-6 py-24" aria-labelledby="about-heading">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="text-left">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border/25 bg-accent/30 px-4 py-1.5 mb-5 select-none">
+              <Building2 className="w-3.5 h-3.5 text-primary" aria-hidden />
+              <span className="text-[12px] font-medium text-muted-foreground/75">About IN Builders</span>
+            </div>
+            <h2 id="about-heading" className="text-[2.25rem] md:text-[2.75rem] font-semibold tracking-[-0.03em] text-foreground/90 mb-5 leading-tight">
+              A hands-on building crew, not a call centre.
             </h2>
-            <p className="text-[15px] text-muted-foreground/60 max-w-lg mx-auto">
-              No long onboarding. No consultants. Just a clear setup flow.
+            <p className="text-[15px] text-muted-foreground/65 leading-relaxed font-medium mb-4">
+              IN Builders takes on residential construction, renovations, roofing, boundary walls,
+              and commercial fit-outs — based in the Kandy District, and equipped to take on work
+              anywhere on the island. Every project is site-supervised from groundbreaking to
+              handover — no subcontracted guesswork.
+            </p>
+            <p className="text-[15px] text-muted-foreground/65 leading-relaxed font-medium mb-7">
+              Whether it&apos;s a new family home, a kitchen rebuild, or a factory perimeter wall,
+              we plan the job properly, show up on schedule, and finish it to a standard we&apos;d
+              put our own name on.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {WHY_US.map((w) => (
+                <div key={w.title} className="p-4 bg-card border border-border/20 rounded-xl">
+                  <w.icon className="w-4 h-4 text-primary mb-2.5" aria-hidden />
+                  <p className="text-[12.5px] font-bold text-foreground/90 mb-1">{w.title}</p>
+                  <p className="text-[11.5px] text-muted-foreground/60 leading-relaxed">{w.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-elevated border border-border/25">
+            <Image
+              src="/images/projects/villa-13.jpg"
+              alt="Timber roof framing on a residential construction site"
+              fill
+              className="object-cover"
+              sizes="(min-width: 1024px) 560px, 100vw"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Services ──────────────────────────────────────── */}
+      <section id="services" className="w-full bg-accent/10 border-y border-border/15 px-6 py-24" aria-labelledby="services-heading">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-14 select-none">
+            <h2 id="services-heading" className="text-[2.5rem] md:text-[3rem] font-semibold tracking-[-0.03em] text-foreground/90 mb-4 leading-tight">
+              What we build.
+            </h2>
+            <p className="text-[15px] text-muted-foreground/60 max-w-xl mx-auto leading-relaxed font-medium">
+              From a single boundary wall to a full house build — one crew, start to finish, anywhere on the island.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { step: '01', title: 'Register your company',  description: 'Create your BuildTrack account, add your company profile, and invite your team in under 5 minutes.' },
-              { step: '02', title: 'Create your first project', description: 'Add project details, set your budget, define the team, and start logging work from day one.' },
-              { step: '03', title: 'Track everything in real time', description: 'Monitor expenses, daily reports, tasks, worker attendance, and cash flow — live — from the executive dashboard.' },
-            ].map(s => (
-              <div key={s.step} className="relative bg-card border border-border/25 rounded-2xl p-7 shadow-surface text-left">
-                <div className="text-[40px] font-semibold text-foreground/8 absolute top-4 right-5 select-none tabular-nums" aria-hidden>{s.step}</div>
-                <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-foreground text-background text-[14px] font-semibold mb-5 shadow-surface tabular-nums" aria-hidden>
-                  {s.step}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
+            {SERVICES.map((s) => (
+              <div key={s.title} className="group p-6 bg-card border border-border/25 rounded-2xl shadow-surface hover:shadow-elevated hover:border-border/45 hover:-translate-y-0.5 transition-all duration-300 text-left">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 ${s.accent}`} aria-hidden>
+                  <s.icon className="w-5 h-5" />
                 </div>
-                <h3 className="text-[16px] font-bold text-foreground/90 mb-2">{s.title}</h3>
+                <h3 className="text-[15px] font-bold text-foreground/90 mb-2">{s.title}</h3>
                 <p className="text-[13px] text-muted-foreground/65 leading-relaxed">{s.description}</p>
               </div>
             ))}
@@ -298,177 +453,135 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Role-based section ────────────────────────────── */}
-      <section id="roles" className="w-full max-w-7xl mx-auto px-6 py-24" aria-labelledby="roles-heading">
+      {/* ── Portfolio / Our Work ─────────────────────────── */}
+      <section id="work" className="w-full max-w-7xl mx-auto px-6 py-24" aria-labelledby="work-heading">
         <div className="text-center mb-14 select-none">
-          <h2 id="roles-heading" className="text-[2.5rem] md:text-[3rem] font-semibold tracking-[-0.03em] text-foreground/90 mb-4">
-            Built for every role on site.
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/25 bg-accent/30 px-4 py-1.5 mb-5">
+            <Layers className="w-3.5 h-3.5 text-primary" aria-hidden />
+            <span className="text-[12px] font-medium text-muted-foreground/75">Previous work</span>
+          </div>
+          <h2 id="work-heading" className="text-[2.5rem] md:text-[3.5rem] font-semibold tracking-[-0.03em] text-foreground/90 mb-4 leading-tight">
+            Projects on the ground.
           </h2>
-          <p className="text-[15px] text-muted-foreground/60 max-w-lg mx-auto">
-            One platform, four role-specific experiences — each tailored to what that person actually does.
+          <p className="text-[15px] text-muted-foreground/60 max-w-xl mx-auto leading-relaxed font-medium">
+            Click any project to browse the full photo set.
           </p>
         </div>
 
-        {/* Role selector */}
-        <div className="flex flex-wrap justify-center gap-2 mb-12 select-none">
-          {(Object.keys(roles) as Array<typeof activeRole>).map(role => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 stagger-children">
+          {PROJECTS.map((p) => (
             <button
-              key={role}
-              onClick={() => setActiveRole(role)}
-              className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 border ${
-                activeRole === role
-                  ? 'bg-foreground text-background border-transparent shadow-surface'
-                  : 'bg-accent/30 text-muted-foreground/70 border-border/20 hover:text-foreground hover:bg-accent/60'
-              }`}
-              aria-pressed={activeRole === role}
+              key={p.title}
+              onClick={() => setActiveProject(p)}
+              className="group text-left bg-card border border-border/25 rounded-2xl shadow-surface hover:shadow-elevated hover:border-border/45 transition-all duration-300 overflow-hidden focus:outline-none focus:ring-2 focus:ring-ring/40"
             >
-              {roles[role].badge}
+              <div className="relative aspect-[16/10] overflow-hidden">
+                <Image
+                  src={p.images[0]}
+                  alt={p.title}
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  sizes="(min-width: 768px) 560px, 100vw"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" aria-hidden />
+                <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/55 backdrop-blur-sm text-white text-[11px] font-bold">
+                  <Images className="w-3.5 h-3.5" aria-hidden />
+                  {p.images.length}
+                </div>
+                <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-300">
+                  <span className="inline-flex items-center gap-1.5 text-[12.5px] font-bold text-white">
+                    View all {p.images.length} photos
+                    <ArrowRight className="w-3.5 h-3.5" aria-hidden />
+                  </span>
+                </div>
+              </div>
+              <div className="p-5">
+                <h3 className="text-[16px] font-bold text-foreground/90 mb-1.5">{p.title}</h3>
+                <div className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground/60 mb-3">
+                  <MapPin className="w-3.5 h-3.5" aria-hidden />
+                  {p.location}
+                </div>
+                <p className="text-[13.5px] text-muted-foreground/65 leading-relaxed mb-3.5">{p.description}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {p.tags.map((t) => (
+                    <span key={t} className="px-2.5 py-1 rounded-full bg-accent/50 border border-border/20 text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground/70">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </button>
           ))}
         </div>
+      </section>
 
-        {/* Role content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center max-w-5xl mx-auto" key={activeRole}>
-          <div className="text-left">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border/20 bg-accent/30 px-3 py-1 mb-5">
-              <span className="text-[12px] font-medium text-muted-foreground/70">{activeContent.badge}</span>
-            </div>
-            <h3 className="text-[2rem] font-semibold tracking-[-0.02em] text-foreground/90 mb-4 leading-tight">
-              {activeContent.title}
-            </h3>
-            <p className="text-[14px] text-muted-foreground/65 leading-relaxed mb-7">
-              {activeContent.description}
+      {/* ── Reviews ───────────────────────────────────────── */}
+      <section id="reviews" className="w-full bg-accent/10 border-y border-border/15 px-6 py-24" aria-labelledby="reviews-heading">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-14 select-none">
+            <h2 id="reviews-heading" className="text-[2.5rem] md:text-[3rem] font-semibold tracking-[-0.03em] text-foreground/90 mb-4">
+              What clients say.
+            </h2>
+            <p className="text-[15px] text-muted-foreground/60 max-w-lg mx-auto">
+              Feedback from recent homeowners and businesses we&apos;ve built for.
             </p>
-            <ul className="space-y-3">
-              {activeContent.points.map(p => (
-                <li key={p} className="flex items-center gap-3 text-[13.5px] font-semibold text-foreground/80">
-                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-success/15 border border-success/25 flex-shrink-0" aria-hidden>
-                    <Check className="w-3 h-3 text-success" />
-                  </div>
-                  {p}
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 mt-9 h-10 px-5 bg-foreground text-background text-[13px] font-bold rounded-xl hover:brightness-110 transition-all shadow-surface"
-            >
-              Get started free <ArrowRight className="w-4 h-4" aria-hidden />
-            </Link>
           </div>
 
-          {/* Mock dashboard preview */}
-          <div className="relative bg-card border border-border/25 rounded-2xl p-5 shadow-elevated overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary/60" aria-hidden />
-            <div className="flex items-center gap-2 mb-4 select-none">
-              <div className="w-3 h-3 rounded-full bg-danger/60" aria-hidden />
-              <div className="w-3 h-3 rounded-full bg-warning/60" aria-hidden />
-              <div className="w-3 h-3 rounded-full bg-success/60" aria-hidden />
-              <span className="ml-2 text-[11px] text-muted-foreground/40 font-mono">buildtrack.app — {activeContent.badge}</span>
-            </div>
-            <div className="space-y-3">
-              <div className="h-2.5 bg-accent/60 rounded-full w-3/4 shimmer-bg" />
-              <div className="grid grid-cols-3 gap-2">
-                {[80, 45, 65].map((w, i) => (
-                  <div key={i} className="bg-accent/40 rounded-xl p-3 border border-border/15">
-                    <div className={`h-1.5 rounded-full bg-primary/40 mb-2`} style={{ width: `${w}%` }} />
-                    <div className="h-4 bg-foreground/[0.06] rounded w-3/4" />
-                    <div className="h-2.5 bg-foreground/[0.04] rounded w-1/2 mt-1" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
+            {REVIEWS.map((r) => (
+              <div key={r.name} className="bg-card border border-border/25 rounded-2xl p-6 shadow-surface hover:shadow-elevated transition-all duration-300 text-left flex flex-col">
+                <Quote className="w-5 h-5 text-muted-foreground/25 mb-3" aria-hidden />
+                <p className="text-[13.5px] text-foreground/80 leading-relaxed font-medium mb-5 flex-1">
+                  &ldquo;{r.quote}&rdquo;
+                </p>
+                <div className="flex items-center justify-between pt-4 border-t border-border/15">
+                  <div>
+                    <p className="text-[13px] font-bold text-foreground/90">{r.name}</p>
+                    <p className="text-[11.5px] text-muted-foreground/60 font-medium">{r.location}</p>
                   </div>
-                ))}
+                  <Stars rating={r.rating} />
+                </div>
               </div>
-              <div className="bg-accent/30 rounded-xl p-3.5 border border-border/15 space-y-2">
-                {[90, 60, 75, 40].map((w, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-lg bg-foreground/[0.06] flex-shrink-0" />
-                    <div className="flex-1 space-y-1">
-                      <div className="h-2 rounded bg-foreground/[0.08]" style={{ width: `${w}%` }} />
-                      <div className="h-1.5 rounded bg-foreground/[0.04]" style={{ width: `${w - 20}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── Pricing teaser ────────────────────────────────── */}
-      <section id="pricing" className="w-full bg-accent/10 border-y border-border/15 py-24 px-6" aria-labelledby="pricing-heading">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/25 bg-accent/40 px-4 py-1.5 mb-6 select-none">
-            <TrendingUp className="w-3.5 h-3.5 text-success" aria-hidden />
-            <span className="text-[12px] font-medium text-muted-foreground/75">Simple, transparent pricing</span>
-          </div>
-          <h2 id="pricing-heading" className="text-[2.5rem] md:text-[3rem] font-semibold tracking-[-0.03em] text-foreground/90 mb-4">
-            One plan. Everything included.
-          </h2>
-          <p className="text-[15px] text-muted-foreground/60 mb-10 max-w-lg mx-auto leading-relaxed">
-            No per-seat charges. No hidden fees. One flat subscription for your entire construction company.
-          </p>
-
-          <div className="max-w-sm mx-auto bg-card border border-border/25 rounded-2xl p-8 shadow-elevated text-left relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary/60" aria-hidden />
-            <div className="mb-6">
-              <p className="text-[12px] font-medium text-muted-foreground/70 mb-2">BuildTrack Standard</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-[3rem] font-semibold text-foreground tracking-tight tabular-nums">LKR 15K</span>
-                <span className="text-[14px] text-muted-foreground/60 font-medium">/month</span>
-              </div>
-              <p className="text-[12px] text-muted-foreground/55 mt-1">Unlimited projects, unlimited users</p>
-            </div>
-            <ul className="space-y-3 mb-8">
-              {[
-                'All platform modules included',
-                'Unlimited projects & users',
-                'Role-based access control',
-                'Priority support (WhatsApp)',
-                'Custom company branding',
-                'Exportable reports (CSV/PDF)',
-                '14-day free trial',
-              ].map(f => (
-                <li key={f} className="flex items-center gap-2.5 text-[13px] font-semibold text-foreground/80">
-                  <Check className="w-4 h-4 text-success flex-shrink-0" aria-hidden />
-                  {f}
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/register"
-              className="flex items-center justify-center gap-2 w-full h-11 bg-foreground text-background text-[14px] font-bold rounded-xl hover:brightness-110 transition-all shadow-surface"
-            >
-              Start free trial <ArrowRight className="w-4 h-4" aria-hidden />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Final CTA ─────────────────────────────────────── */}
-      <section className="w-full max-w-4xl mx-auto px-6 py-32 text-center" aria-label="Call to action">
+      {/* ── Final CTA / Contact ──────────────────────────── */}
+      <section id="contact" className="w-full max-w-4xl mx-auto px-6 py-28 text-center" aria-label="Get in touch">
         <div className="inline-flex items-center gap-2 rounded-full border border-border/25 bg-accent/30 px-4 py-1.5 mb-6 select-none">
-          <Activity className="w-3.5 h-3.5 text-primary animate-pulse-soft" aria-hidden />
-          <span className="text-[12px] font-medium text-muted-foreground/75">Ready to get started?</span>
+          <Mail className="w-3.5 h-3.5 text-primary" aria-hidden />
+          <span className="text-[12px] font-medium text-muted-foreground/75">Get in touch</span>
         </div>
-        <h2 className="text-[3rem] md:text-[4rem] font-semibold tracking-[-0.03em] leading-[1.05] text-foreground/90 mb-5">
-          Transform how you build.
+        <h2 className="text-[2.75rem] md:text-[3.5rem] font-semibold tracking-[-0.03em] leading-[1.05] text-foreground/90 mb-5">
+          Planning a build?
         </h2>
-        <p className="text-[16px] text-muted-foreground/60 max-w-lg mx-auto leading-relaxed mb-10">
-          Bring your projects, people, and money into one workspace.
-          Start your 14-day free trial — no credit card required.
+        <p className="text-[15px] text-muted-foreground/60 max-w-lg mx-auto leading-relaxed mb-10">
+          Tell us about your project and we&apos;ll get back to you with next steps —
+          from a single wall to a full house build, anywhere on the island.
         </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            href="/register"
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+          <a
+            href="tel:+94763667924"
             className="inline-flex items-center gap-2.5 h-12 px-8 bg-foreground text-background text-[15px] font-bold rounded-2xl hover:brightness-110 transition-all duration-200 active:scale-[0.98] shadow-elevated"
           >
-            Create your workspace
-            <ArrowRight className="w-5 h-5" aria-hidden />
-          </Link>
+            <Phone className="w-4.5 h-4.5" aria-hidden />
+            076 366 7924
+          </a>
+          <a
+            href="mailto:info@inbuilders.lk"
+            className="inline-flex items-center gap-2.5 h-12 px-8 border border-border/30 bg-card/60 text-foreground/80 text-[15px] font-semibold rounded-2xl hover:bg-accent/50 hover:border-border/50 transition-all duration-200 backdrop-blur-sm"
+          >
+            <Mail className="w-4.5 h-4.5" aria-hidden />
+            info@inbuilders.lk
+          </a>
+        </div>
+        <div className="mb-10">
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 h-12 px-8 border border-border/30 text-foreground/75 text-[15px] font-semibold rounded-2xl hover:bg-accent/40 hover:border-border/50 transition-all"
+            className="inline-flex items-center gap-2 h-10 px-6 text-foreground/60 text-[13.5px] font-semibold rounded-xl hover:bg-accent/40 hover:text-foreground transition-all"
           >
-            Sign in
+            Team login
             <ChevronRight className="w-4 h-4" aria-hidden />
           </Link>
         </div>
@@ -478,21 +591,22 @@ export default function LandingPage() {
       <footer className="w-full border-t border-border/15 bg-accent/5" role="contentinfo">
         <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2.5 select-none">
-            <div className="w-7 h-7 rounded-lg bg-foreground text-background flex items-center justify-center" aria-hidden>
-              <HardHat className="w-4 h-4" />
+            <div className="relative w-7 h-7 rounded-lg overflow-hidden bg-white shadow-surface flex-shrink-0" aria-hidden>
+              <Image src="/images/logo.png" alt="" fill className="object-contain p-0.5" sizes="28px" />
             </div>
-            <span className="font-bold text-[14px] text-foreground/80">BuildTrack</span>
+            <span className="font-bold text-[14px] text-foreground/80">IN Builders</span>
           </div>
           <p className="text-[12px] text-muted-foreground/50 font-medium">
-            &copy; {new Date().getFullYear()} BuildTrack. Designed for Sri Lankan construction professionals.
+            &copy; {new Date().getFullYear()} IN Builders. Construction &amp; building contractors, Sri Lanka.
           </p>
-          <div className="flex items-center gap-6 text-[12px] font-semibold text-muted-foreground/55">
-            <Link href="#" className="hover:text-foreground transition-colors">Privacy</Link>
-            <Link href="#" className="hover:text-foreground transition-colors">Terms</Link>
-            <Link href="#" className="hover:text-foreground transition-colors">Support</Link>
+          <div className="flex items-center gap-5 text-[12px] font-semibold text-muted-foreground/55">
+            <a href="tel:+94763667924" className="hover:text-foreground transition-colors">076 366 7924</a>
+            <Link href="/login" className="hover:text-foreground transition-colors">Team Login</Link>
           </div>
         </div>
       </footer>
+
+      <ProjectGalleryModal project={activeProject} onClose={() => setActiveProject(null)} />
     </div>
   );
 }
