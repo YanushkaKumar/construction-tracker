@@ -176,6 +176,7 @@ jobs:
           port: 22
           envs: DOCKERHUB_USERNAME,DOCKERHUB_TOKEN
           script: |
+            set -euo pipefail
             cd /home/${{ secrets.EC2_USER }}/buildtrack
             # Log in to Docker Hub to access private images
             echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
@@ -185,11 +186,15 @@ jobs:
               echo "Creating a dummy .env file. Please configure the environment variables on the host!"
               cp .env.example .env
             fi
-            
+
             # Pull the latest images and restart the services
             export IMAGE_TAG=${{ github.sha }}
             docker compose pull
             docker compose up -d --remove-orphans
-            
+
+            # Verify what actually ended up running
+            echo "── Running image digests ──"
+            docker compose images
+
             # Prune unused images to optimize disk space
             docker image prune -f
