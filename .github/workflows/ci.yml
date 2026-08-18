@@ -198,6 +198,10 @@ jobs:
             docker compose pull
             docker compose up -d --remove-orphans
 
+            # nginx config is bind-mounted, so compose won't restart it just
+            # because the file content changed underneath it — reload explicitly
+            docker compose exec -T nginx nginx -s reload
+
             # Verify what actually ended up running
             echo "── Running image digests ──"
             docker compose images

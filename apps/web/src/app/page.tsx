@@ -4,9 +4,10 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
-  HardHat, MapPin, ArrowRight, ChevronRight, ChevronLeft, Menu, X, Star, Quote,
+  HardHat, MapPin, ArrowRight, ChevronRight, ChevronLeft, ChevronDown, Menu, X, Star, Quote,
   Home as HomeIcon, Wrench, Layers, ShieldCheck, Construction, ClipboardCheck,
   Mail, Phone, Building2, Images, Globe2, Award, Users,
+  PhoneCall, FileSpreadsheet, KeyRound,
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -157,6 +158,22 @@ const WHY_US = [
   { icon: Globe2, title: 'Island-wide reach',     description: 'Based in the Kandy District, taking on jobs across Sri Lanka.' },
   { icon: Award,  title: 'Standards we sign off',  description: 'Every job site-supervised — nothing subcontracted out of sight.' },
   { icon: Users,  title: 'One accountable crew',   description: 'The same team from groundbreaking to handover, every time.' },
+];
+
+const PROCESS = [
+  { step: '01', icon: PhoneCall,       title: 'Site visit & consultation', description: 'We walk the site with you, talk through what you need, and understand the land, access, and budget before anything is priced.' },
+  { step: '02', icon: FileSpreadsheet, title: 'Quotation & planning',      description: 'A clear, itemised quote — materials, labour, and timeline — so there are no surprises once work starts.' },
+  { step: '03', icon: HardHat,         title: 'Construction & supervision', description: 'Work begins on the agreed schedule, with the same crew on site every day and progress you can check in on.' },
+  { step: '04', icon: KeyRound,        title: 'Handover & support',        description: 'A final walkthrough before handover, and we stay reachable after the job is done — not gone the day the invoice is paid.' },
+];
+
+const FAQS = [
+  { q: 'Do you supply materials, or just labour?', a: 'Both. We source and supply materials as part of the job, or work with materials you’ve already bought — whichever suits your budget and preferences.' },
+  { q: 'Do you only work in the Kandy District?', a: 'Kandy is where we’re based, but we take on projects island-wide. Distance just gets factored into the quotation.' },
+  { q: 'How does pricing and quotation work?', a: 'After a site visit, you get an itemised quote covering materials, labour, and an expected timeline — before any work or payment starts.' },
+  { q: 'Can I visit the site while work is in progress?', a: 'Yes — every project is site-supervised, and you’re welcome to check in on progress whenever you like.' },
+  { q: 'What size of job do you take on?', a: 'Anything from a single boundary wall or interior fit-out to a full house build or commercial site — the crew and timeline scale to the job.' },
+  { q: 'What happens after handover?', a: 'We do a final walkthrough with you before handover, and stay reachable afterwards if anything needs following up.' },
 ];
 
 // ── Small pieces ─────────────────────────────────────────────
@@ -347,19 +364,21 @@ export default function LandingPage() {
         </div>
 
         {/* Hero image */}
-        <div className="relative w-full max-w-6xl aspect-[16/8] rounded-3xl overflow-hidden shadow-elevated border border-border/25 mb-[-1px]">
-          <Image
-            src="/images/hero-roofing.jpg"
-            alt="Roof framing under construction on a residential build"
-            fill
-            priority
-            className="object-cover"
-            sizes="(min-width: 1280px) 1152px, 100vw"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/5 to-transparent" aria-hidden />
+        <div className="relative w-full max-w-6xl rounded-3xl overflow-hidden shadow-elevated border border-border/25">
+          <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] lg:aspect-[16/8]">
+            <Image
+              src="/images/hero-roofing.jpg"
+              alt="Roof framing under construction on a residential build"
+              fill
+              priority
+              className="object-cover"
+              sizes="(min-width: 1280px) 1152px, 100vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/5 to-transparent" aria-hidden />
+          </div>
 
-          {/* Floating stat card */}
-          <div className="absolute bottom-5 left-5 right-5 sm:right-auto flex flex-wrap items-center gap-3 sm:gap-5 bg-card/80 backdrop-blur-xl border border-border/30 rounded-2xl px-5 py-3.5 shadow-elevated">
+          {/* Stat strip — stacked below the image on mobile, floating overlay from sm+ */}
+          <div className="relative sm:absolute sm:bottom-5 sm:left-5 sm:right-auto flex flex-wrap items-center gap-3 sm:gap-5 bg-card sm:bg-card/80 sm:backdrop-blur-xl border-t sm:border border-border/30 sm:rounded-2xl px-5 py-3.5 sm:shadow-elevated">
             <div className="flex items-center gap-2">
               <Images className="w-4 h-4 text-primary" aria-hidden />
               <span className="text-[13px] font-bold text-foreground/90">52 project photos</span>
@@ -384,7 +403,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── About ─────────────────────────────────────────── */}
-      <section id="about" className="w-full max-w-6xl mx-auto px-6 py-24" aria-labelledby="about-heading">
+      <section id="about" className="scroll-mt-28 w-full max-w-6xl mx-auto px-6 py-24" aria-labelledby="about-heading">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="text-left">
             <div className="inline-flex items-center gap-2 rounded-full border border-border/25 bg-accent/30 px-4 py-1.5 mb-5 select-none">
@@ -427,8 +446,33 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Process / How We Work ─────────────────────────── */}
+      <section className="w-full max-w-6xl mx-auto px-6 pb-24" aria-labelledby="process-heading">
+        <div className="text-center mb-14 select-none">
+          <h2 id="process-heading" className="text-[2.25rem] md:text-[2.75rem] font-semibold tracking-[-0.03em] text-foreground/90 mb-4 leading-tight">
+            How a project runs with us.
+          </h2>
+          <p className="text-[15px] text-muted-foreground/60 max-w-lg mx-auto leading-relaxed font-medium">
+            Four steps, start to finish — no surprises in between.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
+          {PROCESS.map((p) => (
+            <div key={p.step} className="relative bg-card border border-border/25 rounded-2xl p-6 shadow-surface text-left overflow-hidden">
+              <div className="text-[40px] font-semibold text-foreground/[0.06] absolute top-3 right-4 select-none tabular-nums" aria-hidden>{p.step}</div>
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-foreground text-background mb-4 shadow-surface" aria-hidden>
+                <p.icon className="w-4.5 h-4.5" />
+              </div>
+              <h3 className="text-[15px] font-bold text-foreground/90 mb-2">{p.title}</h3>
+              <p className="text-[13px] text-muted-foreground/65 leading-relaxed">{p.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ── Services ──────────────────────────────────────── */}
-      <section id="services" className="w-full bg-accent/10 border-y border-border/15 px-6 py-24" aria-labelledby="services-heading">
+      <section id="services" className="scroll-mt-28 w-full bg-accent/10 border-y border-border/15 px-6 py-24" aria-labelledby="services-heading">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14 select-none">
             <h2 id="services-heading" className="text-[2.5rem] md:text-[3rem] font-semibold tracking-[-0.03em] text-foreground/90 mb-4 leading-tight">
@@ -454,7 +498,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Portfolio / Our Work ─────────────────────────── */}
-      <section id="work" className="w-full max-w-7xl mx-auto px-6 py-24" aria-labelledby="work-heading">
+      <section id="work" className="scroll-mt-28 w-full max-w-7xl mx-auto px-6 py-24" aria-labelledby="work-heading">
         <div className="text-center mb-14 select-none">
           <div className="inline-flex items-center gap-2 rounded-full border border-border/25 bg-accent/30 px-4 py-1.5 mb-5">
             <Layers className="w-3.5 h-3.5 text-primary" aria-hidden />
@@ -516,7 +560,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Reviews ───────────────────────────────────────── */}
-      <section id="reviews" className="w-full bg-accent/10 border-y border-border/15 px-6 py-24" aria-labelledby="reviews-heading">
+      <section id="reviews" className="scroll-mt-28 w-full bg-accent/10 border-y border-border/15 px-6 py-24" aria-labelledby="reviews-heading">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14 select-none">
             <h2 id="reviews-heading" className="text-[2.5rem] md:text-[3rem] font-semibold tracking-[-0.03em] text-foreground/90 mb-4">
@@ -547,8 +591,32 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── FAQ ───────────────────────────────────────────── */}
+      <section className="w-full max-w-3xl mx-auto px-6 py-24" aria-labelledby="faq-heading">
+        <div className="text-center mb-12 select-none">
+          <h2 id="faq-heading" className="text-[2.25rem] md:text-[2.75rem] font-semibold tracking-[-0.03em] text-foreground/90 mb-4 leading-tight">
+            Common questions.
+          </h2>
+          <p className="text-[15px] text-muted-foreground/60 max-w-lg mx-auto leading-relaxed font-medium">
+            Everything most people ask before getting a quote.
+          </p>
+        </div>
+
+        <div className="space-y-2.5 stagger-children">
+          {FAQS.map((f) => (
+            <details key={f.q} className="group bg-card border border-border/25 rounded-2xl overflow-hidden">
+              <summary className="flex items-center justify-between gap-3 px-5 py-4 cursor-pointer select-none text-left text-[14.5px] font-bold text-foreground/90 list-none [&::-webkit-details-marker]:hidden">
+                {f.q}
+                <ChevronDown className="w-4 h-4 text-muted-foreground/50 flex-shrink-0 transition-transform duration-200 group-open:rotate-180" aria-hidden />
+              </summary>
+              <p className="px-5 pb-4 text-[13.5px] text-muted-foreground/65 leading-relaxed">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
       {/* ── Final CTA / Contact ──────────────────────────── */}
-      <section id="contact" className="w-full max-w-4xl mx-auto px-6 py-28 text-center" aria-label="Get in touch">
+      <section id="contact" className="scroll-mt-28 w-full max-w-4xl mx-auto px-6 py-28 text-center" aria-label="Get in touch">
         <div className="inline-flex items-center gap-2 rounded-full border border-border/25 bg-accent/30 px-4 py-1.5 mb-6 select-none">
           <Mail className="w-3.5 h-3.5 text-primary" aria-hidden />
           <span className="text-[12px] font-medium text-muted-foreground/75">Get in touch</span>
