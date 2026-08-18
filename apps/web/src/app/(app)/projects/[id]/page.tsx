@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   Building2, MapPin, User, Calendar, ArrowLeft, Phone, Mail, 
@@ -68,17 +68,20 @@ const catLabel: Record<string, string> = {
 };
 
 const statusMeta: Record<string, { label: string; dotClass: string }> = {
+  PENDING: { label: 'Pending', dotClass: 'status-paused' },
   PLANNING: { label: 'Planning', dotClass: 'status-planning' },
-  IN_PROGRESS: { label: 'Active', dotClass: 'status-active' },
-  ON_HOLD: { label: 'Paused', dotClass: 'status-paused' },
-  COMPLETED: { label: 'Done', dotClass: 'status-complete' },
-  CANCELLED: { label: 'Cancelled', dotClass: 'status-critical' },
+  UPCOMING: { label: 'Upcoming', dotClass: 'status-active' },
+  DONE: { label: 'Done', dotClass: 'status-complete' },
+  BLOCKED: { label: 'Blocked', dotClass: 'status-critical' },
 };
+
+const STATUS_OPTIONS = ['PENDING', 'PLANNING', 'UPCOMING', 'DONE', 'BLOCKED'] as const;
 
 export default function ProjectDetailsPage() {
   const router = useRouter();
   const { id } = useParams() as { id: string };
   const [activeTab, setActiveTab] = useState<string>('overview');
+  const queryClient = useQueryClient();
 
   const { data: project, isLoading } = useQuery<ProjectDetails>({
     queryKey: ['project', id],
@@ -87,6 +90,17 @@ export default function ProjectDetailsPage() {
       return response.data;
     },
     retry: 1,
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async (status: string) => {
+      const response = await apiClient.patch(`/projects/${id}`, { status });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project', id] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
   });
 
   const { data: projectPurchases, isLoading: isPurchasesLoading } = useQuery<any[]>({
@@ -165,7 +179,16 @@ export default function ProjectDetailsPage() {
               <span className="text-[13px] font-bold text-muted-foreground/50 font-mono">{project.code}</span>
               <div className="flex items-center gap-1.5">
                 <span className={`status-dot ${meta.dotClass}`} />
-                <span className="text-[13px] font-semibold text-muted-foreground">{meta.label}</span>
+                <select
+                  value={project.status}
+                  disabled={updateStatusMutation.isPending}
+                  onChange={(e) => updateStatusMutation.mutate(e.target.value)}
+                  className="text-[13px] font-semibold text-muted-foreground bg-transparent border border-border/30 rounded-lg px-1.5 py-0.5 outline-none focus:border-foreground/30 focus:ring-2 focus:ring-ring/20 cursor-pointer disabled:opacity-50"
+                >
+                  {STATUS_OPTIONS.map((s) => (
+                    <option key={s} value={s}>{statusMeta[s].label}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <h1 className="text-3xl md:text-4xl lg:text-[40px] font-semibold tracking-tight text-foreground/90">{project.name}</h1>
