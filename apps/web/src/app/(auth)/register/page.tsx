@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, AlertCircle, ArrowRight } from 'lucide-react';
+import { Loader2, AlertCircle, ArrowRight, Check, X } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 import { apiClient } from '@/lib/api-client';
 import { createClient } from '@/utils/supabase/client';
@@ -15,13 +15,27 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+const PASSWORD_REQUIREMENTS = [
+  { label: 'At least 10 characters', test: (v: string) => v.length >= 10 },
+  { label: 'An uppercase letter', test: (v: string) => /[A-Z]/.test(v) },
+  { label: 'A lowercase letter', test: (v: string) => /[a-z]/.test(v) },
+  { label: 'A number', test: (v: string) => /\d/.test(v) },
+  { label: 'A special character', test: (v: string) => /[^A-Za-z0-9]/.test(v) },
+];
+
 const registerSchema = z.object({
   companyName: z.string().min(2, 'Company name must be at least 2 characters'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Please enter a valid email address'),
   phone: z.string().optional(),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z
+    .string()
+    .min(10, 'Password must be at least 10 characters')
+    .regex(/[A-Z]/, 'Password must include an uppercase letter')
+    .regex(/[a-z]/, 'Password must include a lowercase letter')
+    .regex(/\d/, 'Password must include a number')
+    .regex(/[^A-Za-z0-9]/, 'Password must include a special character'),
 });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
@@ -36,6 +50,7 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -48,6 +63,8 @@ export default function RegisterPage() {
       password: '',
     },
   });
+
+  const passwordValue = watch('password') || '';
 
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
@@ -187,7 +204,7 @@ export default function RegisterPage() {
           <Input
             id="password"
             type="password"
-            placeholder="Minimum 8 characters"
+            placeholder="At least 10 characters"
             disabled={isLoading}
             {...register('password')}
             className={errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}
@@ -195,6 +212,26 @@ export default function RegisterPage() {
           {errors.password && (
             <p className="text-xs font-medium text-destructive">{errors.password.message}</p>
           )}
+          <ul className="grid grid-cols-2 gap-x-3 gap-y-1 pt-1">
+            {PASSWORD_REQUIREMENTS.map((req) => {
+              const met = req.test(passwordValue);
+              return (
+                <li
+                  key={req.label}
+                  className={`flex items-center gap-1.5 text-[11px] font-medium transition-colors ${
+                    met ? 'text-emerald-600 dark:text-emerald-500' : 'text-zinc-400 dark:text-zinc-500'
+                  }`}
+                >
+                  {met ? (
+                    <Check className="h-3 w-3 flex-shrink-0" />
+                  ) : (
+                    <X className="h-3 w-3 flex-shrink-0" />
+                  )}
+                  {req.label}
+                </li>
+              );
+            })}
+          </ul>
         </div>
 
         <Button type="submit" className="w-full bg-amber-500 text-zinc-950 hover:bg-amber-600 font-semibold" disabled={isLoading}>
