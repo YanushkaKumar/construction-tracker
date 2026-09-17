@@ -115,6 +115,14 @@ export class UserService {
       }
     }
 
+    // Reset the password when one is supplied, and revoke existing refresh
+    // tokens so any session opened with the old credentials stops working.
+    let passwordHash: string | undefined;
+    if (dto.password) {
+      passwordHash = await bcrypt.hash(dto.password, 12);
+      await this.prisma.refreshToken.deleteMany({ where: { userId: id } });
+    }
+
     const updatedUser = await this.prisma.user.update({
       where: { id },
       data: {
@@ -123,6 +131,7 @@ export class UserService {
         phone: dto.phone,
         roleId: dto.roleId,
         isActive: dto.isActive,
+        ...(passwordHash ? { passwordHash } : {}),
       },
       include: { role: true },
     });

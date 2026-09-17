@@ -2,11 +2,21 @@
 # BuildTrack — Production Docker Compose
 # ============================================
 
+# Docker's default json-file driver keeps container logs forever. On a 19GB
+# root volume a chatty container will eventually fill the disk and take the
+# whole stack down, so every service caps and rotates its logs.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   # ── Reverse Proxy ────────────────────────────
   nginx:
     image: nginx:1.27-alpine
     container_name: buildtrack-nginx
+    logging: *default-logging
     restart: unless-stopped
     ports:
       - "80:80"
@@ -27,6 +37,7 @@ services:
   web:
     image: yanushka101/build-rack:web-${IMAGE_TAG:-latest}
     container_name: buildtrack-web
+    logging: *default-logging
     restart: unless-stopped
     environment:
       - NEXT_PUBLIC_API_URL=${API_URL}/api/v1
@@ -41,6 +52,7 @@ services:
   api:
     image: yanushka101/build-rack:api-${IMAGE_TAG:-latest}
     container_name: buildtrack-api
+    logging: *default-logging
     restart: unless-stopped
     environment:
       - NODE_ENV=production
@@ -90,6 +102,7 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: buildtrack-postgres
+    logging: *default-logging
     restart: unless-stopped
     environment:
       - POSTGRES_DB=${DB_NAME:-buildtrack}
@@ -112,6 +125,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: buildtrack-redis
+    logging: *default-logging
     restart: unless-stopped
     command: redis-server --appendonly yes ${REDIS_PASSWORD:+--requirepass $REDIS_PASSWORD}
     volumes:
@@ -130,6 +144,7 @@ services:
   minio:
     image: minio/minio:latest
     container_name: buildtrack-minio
+    logging: *default-logging
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -152,6 +167,7 @@ services:
   prometheus:
     image: prom/prometheus:v2.53.0
     container_name: buildtrack-prometheus
+    logging: *default-logging
     restart: unless-stopped
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -165,6 +181,7 @@ services:
   grafana:
     image: grafana/grafana:11.1.0
     container_name: buildtrack-grafana
+    logging: *default-logging
     restart: unless-stopped
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}

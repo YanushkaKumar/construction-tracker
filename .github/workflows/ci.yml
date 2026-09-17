@@ -238,6 +238,19 @@ jobs:
             # login" error, aborting the whole deploy before it touches a
             # container.
             export IMAGE_TAG=${{ github.sha }}
+
+            # Persist the tag into .env as well. docker-compose.yml resolves
+            # images as `:${IMAGE_TAG:-latest}`, and deploys only ever pull the
+            # sha-tagged images — the `:latest` tag on the host is never
+            # refreshed. So any later `docker compose up` run by hand (without
+            # this variable exported) silently rolls production back to
+            # whatever `:latest` happened to be, which can be weeks old.
+            if grep -q '^IMAGE_TAG=' .env; then
+              sed -i "s|^IMAGE_TAG=.*|IMAGE_TAG=${IMAGE_TAG}|" .env
+            else
+              echo "IMAGE_TAG=${IMAGE_TAG}" >> .env
+            fi
+
             docker compose pull api web
 
             # Sync the production database schema to match this deploy's Prisma

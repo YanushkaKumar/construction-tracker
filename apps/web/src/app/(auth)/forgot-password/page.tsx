@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, AlertCircle, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,8 +19,6 @@ type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPasswordPage() {
   const [isSuccess, setIsSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   const {
     register,
@@ -34,18 +32,11 @@ export default function ForgotPasswordPage() {
   });
 
   const onSubmit = async (data: ForgotPasswordFormValues) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Simulate sending recovery email
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setIsSuccess(true);
-    } catch (err) {
-      setError('An error occurred. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+    // Self-service reset needs a backend endpoint and working SMTP, neither of
+    // which exists yet. This screen used to wait a second and claim an email
+    // had been sent, which left people waiting for mail that was never coming.
+    // Until it's built, say what actually recovers the account.
+    setIsSuccess(true);
   };
 
   return (
@@ -55,17 +46,20 @@ export default function ForgotPasswordPage() {
           Reset password
         </h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Enter your email to receive a password reset link
+          How to get back into your account
         </p>
       </div>
 
       {isSuccess ? (
         <div className="space-y-4">
-          <Alert className="border-success bg-success-subtle text-success">
-            <CheckCircle2 className="h-4 w-4 text-success" />
-            <AlertTitle>Email Sent</AlertTitle>
+          <Alert className="border-warning bg-warning-subtle text-warning">
+            <CheckCircle2 className="h-4 w-4 text-warning" />
+            <AlertTitle>Ask your company owner to reset it</AlertTitle>
             <AlertDescription>
-              We have sent a password reset link to your email address if it is registered in our system.
+              Automatic password reset emails aren&apos;t available yet. Your
+              company owner can set a new password for you from{' '}
+              <span className="font-semibold">Settings → Team</span>, and you
+              can sign in with it straight away.
             </AlertDescription>
           </Alert>
           <Link href="/login" className="block">
@@ -77,21 +71,12 @@ export default function ForgotPasswordPage() {
         </div>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
           <div className="space-y-2">
             <Label htmlFor="email">Email address</Label>
             <Input
               id="email"
               type="email"
               placeholder="name@company.com"
-              disabled={isLoading}
               {...register('email')}
               className={errors.email ? 'border-destructive focus-visible:ring-destructive' : ''}
             />
@@ -100,15 +85,8 @@ export default function ForgotPasswordPage() {
             )}
           </div>
 
-          <Button type="submit" className="w-full bg-amber-500 text-zinc-950 hover:bg-amber-600 font-semibold" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sending link...
-              </>
-            ) : (
-              'Send reset link'
-            )}
+          <Button type="submit" className="w-full bg-amber-500 text-zinc-950 hover:bg-amber-600 font-semibold">
+            Continue
           </Button>
 
           <div className="text-center">
