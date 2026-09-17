@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { assertContractInCompany } from '../../common/utils/tenant.util';
 
@@ -128,23 +128,53 @@ export class SubcontractorService {
 
   async createPayment(contractId: string, companyId: string, data: any) {
     await assertContractInCompany(this.prisma, contractId, companyId);
-    const payment = await this.prisma.subcontractorPayment.create({
-      data: {
-        contractId,
-        amount: data.amount,
-        payDate: new Date(data.payDate),
-        reference: data.reference,
-        notes: data.notes,
-      },
-    });
 
-    // Update paid amount on contract
-    await this.prisma.subcontractorContract.update({
-      where: { id: contractId },
-      data: { paidAmount: { increment: data.amount } },
-    });
+    const amount = Number(data.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new BadRequestException('Payment amount must be a positive number');
+    }
 
-    return payment;
+    const payDate = new Date(data.payDate);
+    if (Number.isNaN(payDate.getTime())) {
+      throw new BadRequestException('A valid payment date is required');
+    }
+
+    // Recording the payment and moving the contract's paid total are one
+    // fact, not two. Run separately, a failure on the second leaves a payment
+    // row that the contract balance doesn't account for.
+    return this.prisma.$transaction(async (tx) => {
+      const contract = await tx.subcontractorContract.findUnique({
+        where: { id: contractId },
+        select: { contractAmount: true, paidAmount: true },
+      });
+      if (!contract) throw new NotFoundException('Contract not found');
+
+      const newPaid = Number(contract.paidAmount) + amount;
+      if (newPaid > Number(contract.contractAmount)) {
+        throw new BadRequestException(
+          `Payment would exceed the contract value. Contract: LKR ${Number(contract.contractAmount).toLocaleString()}, ` +
+            `already paid: LKR ${Number(contract.paidAmount).toLocaleString()}, ` +
+            `this payment: LKR ${amount.toLocaleString()}`,
+        );
+      }
+
+      const payment = await tx.subcontractorPayment.create({
+        data: {
+          contractId,
+          amount,
+          payDate,
+          reference: data.reference,
+          notes: data.notes,
+        },
+      });
+
+      await tx.subcontractorContract.update({
+        where: { id: contractId },
+        data: { paidAmount: { increment: amount } },
+      });
+
+      return payment;
+    });
   }
 
   async getPayments(contractId: string, companyId: string) {

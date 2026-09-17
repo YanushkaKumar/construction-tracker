@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { parseAmount } from '../../common/utils/money.util';
 import { BankLoanStatus } from '@prisma/client';
 
 @Injectable()
@@ -188,7 +189,7 @@ export class BankLoanService {
     });
     const currentRepaid = Number(totalRepaidResult._sum.amount || 0);
     const outstanding = Number(loan.loanAmount) - currentRepaid;
-    const repaymentAmount = Number(data.amount);
+    const repaymentAmount = parseAmount(data.amount, 'Repayment amount');
 
     if (repaymentAmount > outstanding + 0.01) {
       throw new BadRequestException(

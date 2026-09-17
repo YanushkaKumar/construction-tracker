@@ -146,6 +146,19 @@ describe('ExpenseService — money paths', () => {
       prisma.project.findFirst.mockResolvedValue(null);
       await expect(service.create('missing', 'c1', 'u1', baseData)).rejects.toThrow(NotFoundException);
     });
+
+    it('asks for a real funding source instead of fabricating an empty one', async () => {
+      // No allocations given and the company has no cash pool. This used to
+      // silently create a zero-balance "Primary Company Cash Pool" and then
+      // fail on its balance; it should just say what's missing.
+      prisma.project.findFirst.mockResolvedValue({ id: 'p1' });
+      prisma.fundingSource.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.create('p1', 'c1', 'u1', { ...baseData, allocations: [] }),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.fundingSource.createMany).not.toHaveBeenCalled();
+    });
   });
 
   describe('approve', () => {

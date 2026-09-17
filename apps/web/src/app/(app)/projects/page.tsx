@@ -91,9 +91,34 @@ function ProjectCard({ project }: { project: Project }) {
     : 0;
   const pmeta = priorityMeta[project.priority] ?? priorityMeta.MEDIUM;
   const isOverBudget = budgetPercent > 90;
-  const daysLeft = project.endDate
-    ? Math.ceil((new Date(project.endDate).getTime() - Date.now()) / 86_400_000)
-    : null;
+
+  const now = Date.now();
+  const startMs = project.startDate ? new Date(project.startDate).getTime() : null;
+  const endMs = project.endDate ? new Date(project.endDate).getTime() : null;
+
+  const daysLeft = endMs ? Math.ceil((endMs - now) / 86_400_000) : null;
+  const daysRunning = startMs ? Math.floor((now - startMs) / 86_400_000) : null;
+
+  // A project with no finish date isn't "untracked" — it runs until it's
+  // closed out, so it still gets a time indicator, just an open-ended one.
+  const isOngoing = endMs === null;
+  const isOverdue = daysLeft !== null && daysLeft < 0;
+
+  // How much of the scheduled window has been used up.
+  const schedulePercent =
+    startMs !== null && endMs !== null && endMs > startMs
+      ? Math.min(Math.max(Math.round(((now - startMs) / (endMs - startMs)) * 100), 0), 100)
+      : null;
+
+  // The signal worth surfacing: calendar burned faster than work delivered.
+  const isBehindSchedule =
+    schedulePercent !== null && schedulePercent - project.progressPercent >= 15;
+
+  const scheduleColor = isOverdue || isBehindSchedule
+    ? 'oklch(0.60 0.20 25)'
+    : daysLeft !== null && daysLeft < 14
+    ? 'oklch(0.72 0.14 55)'
+    : 'oklch(0.62 0.12 250)';
 
   return (
     <Link href={`/projects/${project.id}`} className="group block select-none">
@@ -141,17 +166,22 @@ function ProjectCard({ project }: { project: Project }) {
                 <User className="w-3 h-3" aria-hidden /> {project.clientName}
               </span>
             )}
-            {daysLeft !== null && (
+            {isOngoing ? (
+              <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-lg border bg-info-subtle border-info/25 text-info">
+                <Clock className="w-3 h-3" aria-hidden />
+                {daysRunning !== null ? `Ongoing · ${daysRunning}d` : 'Ongoing'}
+              </span>
+            ) : (
               <span className={cn(
                 'flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-lg border',
-                daysLeft < 0
+                isOverdue
                   ? 'bg-danger-subtle border-danger/25 text-danger'
-                  : daysLeft < 14
+                  : daysLeft! < 14
                   ? 'bg-warning-subtle border-warning/25 text-warning'
                   : 'bg-accent/40 border-border/20 text-muted-foreground/70'
               )}>
                 <Clock className="w-3 h-3" aria-hidden />
-                {daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : `${daysLeft}d left`}
+                {isOverdue ? `${Math.abs(daysLeft!)}d overdue` : `${daysLeft}d left`}
               </span>
             )}
           </div>
@@ -177,6 +207,48 @@ function ProjectCard({ project }: { project: Project }) {
                 height={4}
                 color={isOverBudget ? 'oklch(0.60 0.20 22)' : undefined}
               />
+            </div>
+
+            {/* Timeline — how much of the schedule is gone, next to how much
+                work is actually done. Ongoing sites have no end date to
+                measure against, so they get an open-ended bar instead. */}
+            <div>
+              <div className="flex justify-between text-[11px] font-semibold text-muted-foreground/60 mb-1.5">
+                <span>
+                  Timeline
+                  {isBehindSchedule && (
+                    <span className="ml-1.5 text-danger font-bold">· behind</span>
+                  )}
+                </span>
+                <span className={cn(
+                  'font-bold font-mono',
+                  isOverdue || isBehindSchedule ? 'text-danger' : 'text-foreground/75'
+                )}>
+                  {isOngoing
+                    ? daysRunning !== null ? `${daysRunning}d running` : 'Ongoing'
+                    : schedulePercent !== null
+                    ? `${schedulePercent}%`
+                    : isOverdue ? `${Math.abs(daysLeft!)}d over` : `${daysLeft}d left`}
+                </span>
+              </div>
+              {isOngoing || schedulePercent === null ? (
+                <div
+                  className="w-full rounded-full overflow-hidden"
+                  style={{ height: 4, background: 'var(--border)' }}
+                  role="img"
+                  aria-label={isOngoing ? 'Ongoing project, no end date set' : 'No schedule set'}
+                >
+                  <div
+                    className="h-full w-full rounded-full opacity-60"
+                    style={{
+                      background:
+                        'repeating-linear-gradient(90deg, oklch(0.62 0.12 250) 0 8px, transparent 8px 16px)',
+                    }}
+                  />
+                </div>
+              ) : (
+                <ProgressBar value={schedulePercent} height={4} color={scheduleColor} />
+              )}
             </div>
           </div>
 

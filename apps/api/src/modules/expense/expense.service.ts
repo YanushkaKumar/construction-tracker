@@ -1,5 +1,6 @@
 import { Injectable, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { parseAmount } from '../../common/utils/money.util';
 
 @Injectable()
 export class ExpenseService {
@@ -23,7 +24,7 @@ export class ExpenseService {
   }
 
   async create(projectId: string, companyId: string, submittedById: string, data: any) {
-    const amount = Number(data.amount || 0);
+    const amount = parseAmount(data.amount, 'Expense amount');
     const rawAllocations = data.allocations || [];
 
     return this.prisma.$transaction(async (tx) => {
@@ -36,37 +37,31 @@ export class ExpenseService {
       });
       if (!project) throw new NotFoundException('Project not found');
 
-      // Populate default COMPANY_CASH allocation if none provided
+      // Fall back to the company cash pool when the caller didn't pick one.
+      // Previously this auto-created an empty pool, which only moved the
+      // failure one step later ("Insufficient balance" against a pool the
+      // user never set up) — so ask for a real funding source instead.
       let allocationsToProcess = rawAllocations;
       if (allocationsToProcess.length === 0) {
-        // Auto-seed default pools if empty
-        const count = await tx.fundingSource.count({ where: { companyId } });
-        if (count === 0) {
-          await tx.fundingSource.createMany({
-            data: [
-              {
-                companyId,
-                type: 'COMPANY_CASH',
-                name: 'Primary Company Cash Pool',
-                openingBalance: 0,
-                currentBalance: 0,
-                originalAmount: 0,
-                remainingAmount: 0,
-                status: 'ACTIVE',
-                sourceCategory: 'capital',
-              },
-            ],
-          });
-        }
-
         const companyCash = await tx.fundingSource.findFirst({
-          where: { companyId, type: 'COMPANY_CASH' }
+          where: { companyId, type: 'COMPANY_CASH', status: 'ACTIVE' },
+          orderBy: { currentBalance: 'desc' },
         });
-        if (!companyCash) throw new NotFoundException('Default company cash funding source not found');
+        if (!companyCash) {
+          throw new BadRequestException(
+            'No company cash funding source exists yet. Add a funding source under Finance before recording expenses.',
+          );
+        }
         allocationsToProcess = [{ fundingSourceId: companyCash.id, amount }];
       }
 
-      // Validate allocations sum to total amount
+      // Validate allocations sum to total amount. Each line is parsed on its
+      // own as well: a sum check alone would accept a +X / -X pair that nets
+      // out while still crediting one of the pools.
+      allocationsToProcess = allocationsToProcess.map((a: any) => ({
+        ...a,
+        amount: parseAmount(a.amount, 'Allocation amount'),
+      }));
       const allocationsSum = allocationsToProcess.reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
       if (Math.abs(allocationsSum - amount) > 0.01) {
         throw new BadRequestException(`Allocated funds (LKR ${allocationsSum.toLocaleString()}) must match total expense (LKR ${amount.toLocaleString()})`);
@@ -260,7 +255,7 @@ export class ExpenseService {
       await tx.fundingAllocation.deleteMany({ where: { expenseId: id } });
 
       // 2. Validate and process new allocations
-      const amount = data.amount !== undefined ? Number(data.amount) : Number(expense.amount);
+      const amount = data.amount !== undefined ? parseAmount(data.amount, 'Expense amount') : Number(expense.amount);
       const rawAllocations = data.allocations || [];
 
       let allocationsToProcess = rawAllocations;

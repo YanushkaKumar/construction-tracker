@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { parseAmount } from '../../common/utils/money.util';
 
 @Injectable()
 export class AdvanceService {
@@ -33,7 +34,7 @@ export class AdvanceService {
       });
 
       // Auto-create corresponding FundingSource
-      const amt = Number(data.amount);
+      const amt = parseAmount(data.amount, 'Advance amount');
       await tx.fundingSource.create({
         data: {
           companyId,
@@ -135,7 +136,7 @@ export class AdvanceService {
       if (data.amount !== undefined) {
         const source = await tx.fundingSource.findFirst({ where: { projectAdvanceId: id } });
         if (source) {
-          const amt = Number(data.amount);
+          const amt = parseAmount(data.amount, 'Advance amount');
           const difference = amt - Number(source.originalAmount);
           await tx.fundingSource.update({
             where: { id: source.id },

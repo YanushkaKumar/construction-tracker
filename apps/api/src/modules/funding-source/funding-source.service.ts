@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { parseAmount } from '../../common/utils/money.util';
 import { AuditService } from '../audit/audit.service';
 
 // Source category groupings for the enterprise treasury
@@ -67,7 +68,7 @@ export class FundingSourceService {
   ) {}
 
   async create(companyId: string, data: any, userId?: string) {
-    const amount = Number(data.amount || 0);
+    const amount = parseAmount(data.amount, 'Funding amount', { allowZero: true });
     const sourceCategory = data.sourceCategory || getSourceCategory(data.type || 'COMPANY_CASH');
 
     const source = await this.prisma.fundingSource.create({
@@ -115,9 +116,6 @@ export class FundingSourceService {
   }
 
   async findAll(companyId: string, projectId?: string) {
-    // Automatically make sure default sources exist for this company
-    await this.ensureDefaultSources(companyId);
-
     const where: any = { companyId };
     if (projectId) {
       where.OR = [
@@ -144,26 +142,42 @@ export class FundingSourceService {
   }
 
   async update(id: string, companyId: string, data: any) {
-    const source = await this.prisma.fundingSource.findFirst({ where: { id, companyId } });
-    if (!source) throw new NotFoundException('Funding source not found');
+    // Read and write in one transaction: resizing a pool is a
+    // read-modify-write on its balances, so two concurrent edits done
+    // separately would silently drop one.
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const source = await tx.fundingSource.findFirst({ where: { id, companyId } });
+      if (!source) throw new NotFoundException('Funding source not found');
 
-    const updateData: any = {};
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.status !== undefined) updateData.status = data.status;
-    if (data.description !== undefined) updateData.description = data.description;
-    if (data.metadata !== undefined) updateData.metadata = data.metadata;
-    if (data.amount !== undefined) {
-      const amt = Number(data.amount);
-      const difference = amt - Number(source.originalAmount);
-      updateData.originalAmount = amt;
-      updateData.openingBalance = amt;
-      updateData.currentBalance = Number(source.currentBalance) + difference;
-      updateData.remainingAmount = Number(source.remainingAmount) + difference;
-    }
+      const updateData: any = {};
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.status !== undefined) updateData.status = data.status;
+      if (data.description !== undefined) updateData.description = data.description;
+      if (data.metadata !== undefined) updateData.metadata = data.metadata;
+      if (data.amount !== undefined) {
+        const amt = parseAmount(data.amount, 'Funding amount', { allowZero: true });
 
-    const updated = await this.prisma.fundingSource.update({
-      where: { id },
-      data: updateData,
+        const difference = amt - Number(source.originalAmount);
+        const newCurrent = Number(source.currentBalance) + difference;
+        const newRemaining = Number(source.remainingAmount) + difference;
+
+        // Shrinking a pool below what has already been drawn from it would
+        // leave a negative balance, which reads as free cash elsewhere.
+        if (newCurrent < 0 || newRemaining < 0) {
+          const spent = Number(source.originalAmount) - Number(source.remainingAmount);
+          throw new BadRequestException(
+            `Cannot reduce this funding source to LKR ${amt.toLocaleString()} — ` +
+              `LKR ${spent.toLocaleString()} has already been allocated from it.`,
+          );
+        }
+
+        updateData.originalAmount = amt;
+        updateData.openingBalance = amt;
+        updateData.currentBalance = newCurrent;
+        updateData.remainingAmount = newRemaining;
+      }
+
+      return tx.fundingSource.update({ where: { id }, data: updateData });
     });
 
     return {
@@ -188,46 +202,11 @@ export class FundingSourceService {
     return this.prisma.fundingSource.delete({ where: { id } });
   }
 
-  async ensureDefaultSources(companyId: string) {
-    const count = await this.prisma.fundingSource.count({ where: { companyId } });
-    if (count === 0) {
-      // Spawn default Company Cash and Owner Capital pools for new companies
-      await this.prisma.fundingSource.createMany({
-        data: [
-          {
-            companyId,
-            type: 'COMPANY_CASH',
-            name: 'Primary Company Cash Pool',
-            openingBalance: 0,
-            currentBalance: 0,
-            originalAmount: 0,
-            remainingAmount: 0,
-            status: 'ACTIVE',
-            sourceCategory: 'capital',
-          },
-          {
-            companyId,
-            type: 'OWNER_CAPITAL',
-            name: 'Director Owner Capital Pool',
-            openingBalance: 0,
-            currentBalance: 0,
-            originalAmount: 0,
-            remainingAmount: 0,
-            status: 'ACTIVE',
-            sourceCategory: 'capital',
-          },
-        ],
-      });
-    }
-  }
-
   getSourceCategories() {
     return SOURCE_CATEGORIES;
   }
 
   async getDashboard(companyId: string) {
-    await this.ensureDefaultSources(companyId);
-
     const sources = await this.prisma.fundingSource.findMany({
       where: { companyId },
       include: {
