@@ -2,37 +2,42 @@ import { Controller, Get, Post, Param, Body, Query, UseGuards } from '@nestjs/co
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { DailyReportService } from './daily-report.service';
-import { CurrentUser, CompanyId } from '../../common/decorators';
+import { CurrentUser, CompanyId, RequirePermissions } from '../../common/decorators';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import { JwtPayload } from '../../common/types/jwt-payload.type';
 
 @ApiTags('Daily Reports')
 @ApiBearerAuth('JWT-auth')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), RolesGuard)
 @Controller()
 export class DailyReportController {
   constructor(private readonly dailyReportService: DailyReportService) {}
 
   @Post('projects/:projectId/daily-reports')
   @ApiOperation({ summary: 'Submit daily report' })
-  create(@Param('projectId') projectId: string, @CurrentUser() user: JwtPayload, @Body() data: any) {
-    return this.dailyReportService.create(projectId, user.sub, data);
+  @RequirePermissions('daily_reports:submit')
+  create(@Param('projectId') projectId: string, @CompanyId() companyId: string, @CurrentUser() user: JwtPayload, @Body() data: any) {
+    return this.dailyReportService.create(projectId, companyId, user.sub, data);
   }
 
   @Get('projects/:projectId/daily-reports')
   @ApiOperation({ summary: 'List project daily reports' })
-  findByProject(@Param('projectId') projectId: string, @Query('page') page?: number, @Query('limit') limit?: number) {
-    return this.dailyReportService.findByProject(projectId, page, limit);
+  @RequirePermissions('daily_reports:view')
+  findByProject(@Param('projectId') projectId: string, @CompanyId() companyId: string, @Query('page') page?: number, @Query('limit') limit?: number) {
+    return this.dailyReportService.findByProject(projectId, companyId, page, limit);
   }
 
   @Get('daily-reports')
   @ApiOperation({ summary: 'List all daily reports for the company' })
+  @RequirePermissions('daily_reports:view')
   findByCompany(@CompanyId() companyId: string, @Query('page') page?: number, @Query('limit') limit?: number) {
     return this.dailyReportService.findByCompany(companyId, page, limit);
   }
 
   @Get('daily-reports/:id')
   @ApiOperation({ summary: 'Get daily report details' })
-  findOne(@Param('id') id: string) {
-    return this.dailyReportService.findById(id);
+  @RequirePermissions('daily_reports:view')
+  findOne(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.dailyReportService.findById(id, companyId);
   }
 }

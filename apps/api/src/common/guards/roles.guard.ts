@@ -15,6 +15,14 @@ const PERMISSION_IMPLIES: Record<string, string[]> = {
   'projects:manage_all': ['projects:manage_assigned', 'projects:view'],
   'expenses:view_all': ['expenses:view_own'],
   'attendance:view': ['attendance:view_own'],
+  'finance:manage': ['finance:view'],
+  'boq:manage': ['boq:view'],
+  // finance:view / boq:view were introduced after the first companies were
+  // created, and roles store their permissions as a snapshot at registration
+  // time. Treating the pre-existing financial permission as implying the new
+  // read permission keeps those companies working without rewriting role rows.
+  'reports:financial': ['finance:view'],
+  'company:manage': ['finance:view', 'boq:view'],
 };
 
 function expandPermissions(granted: string[]): Set<string> {

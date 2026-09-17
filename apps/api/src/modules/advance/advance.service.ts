@@ -52,9 +52,9 @@ export class AdvanceService {
     });
   }
 
-  async findByProject(projectId: string) {
+  async findByProject(projectId: string, companyId: string) {
     return this.prisma.projectAdvance.findMany({
-      where: { projectId },
+      where: { projectId, project: { companyId } },
       include: {
         receivedBy: { select: { id: true, firstName: true, lastName: true } },
       },

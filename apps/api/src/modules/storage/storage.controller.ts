@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { StorageService } from './storage.service';
@@ -36,7 +36,18 @@ export class StorageController {
 
   @Post('presigned-download')
   @ApiOperation({ summary: 'Get pre-signed URL for file download' })
-  async getPresignedDownloadUrl(@Body('key') key: string) {
+  async getPresignedDownloadUrl(
+    @Body('key') key: string,
+    @CompanyId() companyId: string,
+  ) {
+    // Keys are generated as `<companyId>/<path>/<file>` (see
+    // StorageService.generateKey). Without this check any authenticated user
+    // could ask for a download URL for an arbitrary key and read another
+    // tenant's files. The `..` guard stops a traversal-style key from
+    // climbing back out of the company prefix.
+    if (!key || key.includes('..') || !key.startsWith(`${companyId}/`)) {
+      throw new NotFoundException('File not found');
+    }
     const url = await this.storageService.getPresignedDownloadUrl(key);
     return { url };
   }

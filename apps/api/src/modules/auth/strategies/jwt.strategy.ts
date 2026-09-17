@@ -14,21 +14,23 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      // Use Supabase JWT secret if available, fallback to custom secret
-      secretOrKey: process.env.SUPABASE_JWT_SECRET || configService.get<string>('auth.jwtSecret')!,
+      // Must be the same secret AuthModule signs with — reading a different
+      // one here (e.g. a Supabase secret) silently invalidates every token
+      // this API issues.
+      secretOrKey: configService.get<string>('auth.jwtSecret')!,
     });
   }
 
-  async validate(payload: any): Promise<JwtPayload> {
-    // payload could be a Supabase JWT (contains email) or custom JWT
-    const email = payload.email;
-
-    if (!email) {
+  async validate(payload: JwtPayload): Promise<JwtPayload> {
+    // Resolve by user id, never by email: email is only unique *per company*
+    // (@@unique([companyId, email])), so an email lookup can match a user in
+    // a different tenant entirely.
+    if (!payload.sub) {
       throw new UnauthorizedException('Invalid token payload');
     }
 
     const user = await this.prisma.user.findFirst({
-      where: { email, isActive: true },
+      where: { id: payload.sub, isActive: true },
       include: { role: true },
     });
 
@@ -36,11 +38,15 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new UnauthorizedException('User not found in system');
     }
 
-    let permissions = [];
+    let permissions: string[] = [];
     if (typeof user.role.permissions === 'string') {
       try { permissions = JSON.parse(user.role.permissions); } catch (e) {}
     } else if (Array.isArray(user.role.permissions)) {
-      permissions = user.role.permissions;
+      // Stored as Prisma Json, so the array members are JsonValue — keep only
+      // the strings rather than trusting the column's shape.
+      permissions = user.role.permissions.filter(
+        (p): p is string => typeof p === 'string',
+      );
     }
 
     return {

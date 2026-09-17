@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { assertProjectInCompany } from '../../common/utils/tenant.util';
 
 @Injectable()
 export class MaterialService {
@@ -13,7 +14,8 @@ export class MaterialService {
     return this.prisma.material.create({ data: { ...data, companyId } });
   }
 
-  async createRequest(projectId: string, requestedById: string, data: any) {
+  async createRequest(projectId: string, companyId: string, requestedById: string, data: any) {
+    await assertProjectInCompany(this.prisma, projectId, companyId);
     return this.prisma.materialRequest.create({
       data: { ...data, projectId, requestedById },
       include: { material: true, supplier: true },
@@ -40,8 +42,18 @@ export class MaterialService {
     });
   }
 
-  async updateRequestStatus(id: string, status: string) {
-    return this.prisma.materialRequest.update({ where: { id }, data: { status: status as any } });
+  async updateRequestStatus(id: string, companyId: string, status: string) {
+    // updateMany so the company filter is part of the write itself — a plain
+    // update() can only be keyed by id and would cross tenants.
+    const result = await this.prisma.materialRequest.updateMany({
+      where: { id, project: { companyId } },
+      data: { status: status as any },
+    });
+    if (result.count === 0) throw new NotFoundException('Material request not found');
+    return this.prisma.materialRequest.findFirst({
+      where: { id, project: { companyId } },
+      include: { material: true, supplier: true },
+    });
   }
 
   // Supplier methods

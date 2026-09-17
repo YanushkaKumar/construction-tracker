@@ -2,25 +2,28 @@ import { Controller, Get, Post, Param, Body, Query, UseGuards } from '@nestjs/co
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { AttendanceService } from './attendance.service';
-import { CompanyId, CurrentUser } from '../../common/decorators';
+import { CompanyId, CurrentUser, RequirePermissions } from '../../common/decorators';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import { JwtPayload } from '../../common/types/jwt-payload.type';
 
 @ApiTags('Attendance')
 @ApiBearerAuth('JWT-auth')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), RolesGuard)
 @Controller()
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
   @Post('projects/:projectId/attendance')
   @ApiOperation({ summary: 'Mark attendance (batch)' })
-  markBatch(@Param('projectId') projectId: string, @CurrentUser() user: JwtPayload, @Body('records') records: any[]) {
-    return this.attendanceService.markBatch(projectId, user.sub, records);
+  @RequirePermissions('attendance:mark')
+  markBatch(@Param('projectId') projectId: string, @CompanyId() companyId: string, @CurrentUser() user: JwtPayload, @Body('records') records: any[]) {
+    return this.attendanceService.markBatch(projectId, companyId, user.sub, records);
   }
 
   @Get('projects/:projectId/attendance')
   @ApiOperation({ summary: 'List project attendance' })
-  findByProject(@Param('projectId') projectId: string, @Query('date') date?: string) {
-    return this.attendanceService.findByProject(projectId, date);
+  @RequirePermissions('attendance:view')
+  findByProject(@Param('projectId') projectId: string, @CompanyId() companyId: string, @Query('date') date?: string) {
+    return this.attendanceService.findByProject(projectId, companyId, date);
   }
 }

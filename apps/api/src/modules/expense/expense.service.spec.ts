@@ -49,7 +49,7 @@ describe('ExpenseService — money paths', () => {
       prisma.project.findFirst.mockResolvedValue({ companyId: 'c1' });
 
       await expect(
-        service.create('p1', 'u1', {
+        service.create('p1', 'c1', 'u1', {
           ...baseData,
           allocations: [
             { fundingSourceId: 'fs1', amount: 60_000 },
@@ -72,7 +72,7 @@ describe('ExpenseService — money paths', () => {
       });
 
       await expect(
-        service.create('p1', 'u1', {
+        service.create('p1', 'c1', 'u1', {
           ...baseData,
           allocations: [{ fundingSourceId: 'fs1', amount: 100_000 }],
         }),
@@ -87,7 +87,7 @@ describe('ExpenseService — money paths', () => {
       prisma.fundingSource.findFirst.mockResolvedValue(null);
 
       await expect(
-        service.create('p1', 'u1', {
+        service.create('p1', 'c1', 'u1', {
           ...baseData,
           allocations: [{ fundingSourceId: 'other-company-fs', amount: 100_000 }],
         }),
@@ -110,7 +110,7 @@ describe('ExpenseService — money paths', () => {
       });
       prisma.expense.create.mockResolvedValue({ id: 'e1', title: 'Cement purchase', category: 'MATERIAL', description: null });
 
-      await service.create('p1', 'u1', {
+      await service.create('p1', 'c1', 'u1', {
         ...baseData,
         allocations: [{ fundingSourceId: 'fs1', amount: 100_000 }],
       });
@@ -135,7 +135,7 @@ describe('ExpenseService — money paths', () => {
       });
       prisma.expense.create.mockResolvedValue({ id: 'e1', title: 'Cement purchase', category: 'MATERIAL', description: null });
 
-      await service.create('p1', 'u1', { ...baseData, allocations: [] });
+      await service.create('p1', 'c1', 'u1', { ...baseData, allocations: [] });
 
       expect(prisma.fundingAllocation.create).toHaveBeenCalledWith({
         data: { fundingSourceId: 'cash', amount: 100_000, expenseId: 'e1' },
@@ -144,17 +144,17 @@ describe('ExpenseService — money paths', () => {
 
     it('throws when the project does not exist', async () => {
       prisma.project.findFirst.mockResolvedValue(null);
-      await expect(service.create('missing', 'u1', baseData)).rejects.toThrow(NotFoundException);
+      await expect(service.create('missing', 'c1', 'u1', baseData)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('approve', () => {
     it('approves a pending expense and recalculates the project budget', async () => {
-      prisma.expense.findUnique.mockResolvedValue({ id: 'e1', status: 'PENDING', projectId: 'p1' });
+      prisma.expense.findFirst.mockResolvedValue({ id: 'e1', status: 'PENDING', projectId: 'p1' });
       prisma.expense.update.mockResolvedValue({ id: 'e1', status: 'APPROVED', projectId: 'p1' });
       prisma.expense.aggregate.mockResolvedValue({ _sum: { amount: 100_000 } });
 
-      const result = await service.approve('e1', 'approver');
+      const result = await service.approve('e1', 'c1', 'approver');
 
       expect(result.status).toBe('APPROVED');
       expect(prisma.project.update).toHaveBeenCalledWith({
@@ -164,20 +164,28 @@ describe('ExpenseService — money paths', () => {
     });
 
     it('refuses to approve a non-pending expense', async () => {
-      prisma.expense.findUnique.mockResolvedValue({ id: 'e1', status: 'APPROVED', projectId: 'p1' });
-      await expect(service.approve('e1', 'approver')).rejects.toThrow(ForbiddenException);
+      prisma.expense.findFirst.mockResolvedValue({ id: 'e1', status: 'APPROVED', projectId: 'p1' });
+      await expect(service.approve('e1', 'c1', 'approver')).rejects.toThrow(ForbiddenException);
       expect(prisma.expense.update).not.toHaveBeenCalled();
     });
 
     it('refuses to approve a missing expense', async () => {
-      prisma.expense.findUnique.mockResolvedValue(null);
-      await expect(service.approve('nope', 'approver')).rejects.toThrow(ForbiddenException);
+      prisma.expense.findFirst.mockResolvedValue(null);
+      await expect(service.approve('nope', 'c1', 'approver')).rejects.toThrow(NotFoundException);
+    });
+
+    it('refuses to approve an expense belonging to another company', async () => {
+      // The company-scoped lookup finds nothing, so the caller cannot tell
+      // whether the id exists at all.
+      prisma.expense.findFirst.mockResolvedValue(null);
+      await expect(service.approve('e1', 'other-co', 'approver')).rejects.toThrow(NotFoundException);
+      expect(prisma.expense.update).not.toHaveBeenCalled();
     });
   });
 
   describe('reject', () => {
     it('restores funding source balances for every allocation', async () => {
-      prisma.expense.findUnique.mockResolvedValue({
+      prisma.expense.findFirst.mockResolvedValue({
         id: 'e1',
         status: 'PENDING',
         projectId: 'p1',
@@ -188,7 +196,7 @@ describe('ExpenseService — money paths', () => {
       });
       prisma.expense.update.mockResolvedValue({ id: 'e1', status: 'REJECTED', projectId: 'p1' });
 
-      await service.reject('e1', 'approver', 'duplicate voucher');
+      await service.reject('e1', 'c1', 'approver', 'duplicate voucher');
 
       expect(prisma.fundingSource.update).toHaveBeenCalledWith({
         where: { id: 'fs1' },
@@ -201,8 +209,13 @@ describe('ExpenseService — money paths', () => {
     });
 
     it('throws when the expense does not exist', async () => {
-      prisma.expense.findUnique.mockResolvedValue(null);
-      await expect(service.reject('nope', 'approver', 'reason')).rejects.toThrow(NotFoundException);
+      prisma.expense.findFirst.mockResolvedValue(null);
+      await expect(service.reject('nope', 'c1', 'approver', 'reason')).rejects.toThrow(NotFoundException);
+    });
+
+    it('refuses to reject an expense belonging to another company', async () => {
+      prisma.expense.findFirst.mockResolvedValue(null);
+      await expect(service.reject('e1', 'other-co', 'approver', 'reason')).rejects.toThrow(NotFoundException);
     });
   });
 

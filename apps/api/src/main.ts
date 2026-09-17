@@ -3,13 +3,19 @@
 // ============================================
 
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Requests arrive through nginx, which sets X-Forwarded-For. Without this,
+  // Express reports the proxy's IP for every request — which would make the
+  // per-IP rate limiter bucket the entire user base into a single counter.
+  app.set('trust proxy', 1);
 
   // ── Security ─────────────────────────────
   app.use(helmet());

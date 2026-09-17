@@ -2,7 +2,7 @@ import { Controller, Get, Post, Patch, Delete, Param, Query, Body, UseGuards, Fo
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from './user.service';
-import { CompanyId, CurrentUser, Roles } from '../../common/decorators';
+import { CompanyId, CurrentUser, Roles, RequirePermissions } from '../../common/decorators';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -18,18 +18,21 @@ export class UserController {
 
   @Get('roles')
   @ApiOperation({ summary: 'List roles available in company' })
+  @RequirePermissions('users:view')
   findRoles(@CompanyId() companyId: string) {
     return this.userService.findRoles(companyId);
   }
 
   @Get()
   @ApiOperation({ summary: 'List company users' })
+  @RequirePermissions('users:view')
   findAll(@CompanyId() companyId: string, @Query() query: PaginationDto) {
     return this.userService.findAll(companyId, query);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get user details' })
+  @RequirePermissions('users:view')
   findOne(@Param('id') id: string, @CompanyId() companyId: string) {
     return this.userService.findById(id, companyId);
   }
@@ -37,6 +40,7 @@ export class UserController {
   @Post()
   @Roles('COMPANY_OWNER', 'PROJECT_MANAGER')
   @ApiOperation({ summary: 'Create a new team member' })
+  @RequirePermissions('users:manage')
   create(
     @CompanyId() companyId: string,
     @Body() dto: CreateUserDto,
@@ -47,6 +51,7 @@ export class UserController {
   @Patch(':id')
   @Roles('COMPANY_OWNER', 'PROJECT_MANAGER')
   @ApiOperation({ summary: 'Update a team member details' })
+  @RequirePermissions('users:manage')
   update(
     @Param('id') id: string,
     @CompanyId() companyId: string,
@@ -58,6 +63,7 @@ export class UserController {
   @Delete(':id')
   @Roles('COMPANY_OWNER', 'PROJECT_MANAGER')
   @ApiOperation({ summary: 'Delete or deactivate a team member' })
+  @RequirePermissions('users:manage')
   remove(
     @Param('id') id: string,
     @CompanyId() companyId: string,

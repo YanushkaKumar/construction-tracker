@@ -22,18 +22,19 @@ export class ExpenseService {
     });
   }
 
-  async create(projectId: string, submittedById: string, data: any) {
+  async create(projectId: string, companyId: string, submittedById: string, data: any) {
     const amount = Number(data.amount || 0);
     const rawAllocations = data.allocations || [];
 
     return this.prisma.$transaction(async (tx) => {
-      // Find companyId from project
+      // Scope by the caller's companyId (from their token) — looking the
+      // project up by id alone would let one tenant post expenses into
+      // another tenant's project.
       const project = await tx.project.findFirst({
-        where: { id: projectId },
-        select: { companyId: true }
+        where: { id: projectId, companyId },
+        select: { id: true }
       });
       if (!project) throw new NotFoundException('Project not found');
-      const companyId = project.companyId;
 
       // Populate default COMPANY_CASH allocation if none provided
       let allocationsToProcess = rawAllocations;
@@ -190,9 +191,12 @@ export class ExpenseService {
     });
   }
 
-  async approve(id: string, approvedById: string) {
-    const expense = await this.prisma.expense.findUnique({ where: { id } });
-    if (expense?.status !== 'PENDING') throw new ForbiddenException('Expense is not pending');
+  async approve(id: string, companyId: string, approvedById: string) {
+    const expense = await this.prisma.expense.findFirst({
+      where: { id, project: { companyId } },
+    });
+    if (!expense) throw new NotFoundException('Expense not found');
+    if (expense.status !== 'PENDING') throw new ForbiddenException('Expense is not pending');
 
     const result = await this.prisma.expense.update({
       where: { id },
@@ -203,9 +207,9 @@ export class ExpenseService {
     return result;
   }
 
-  async reject(id: string, approvedById: string, reason: string) {
-    const expense = await this.prisma.expense.findUnique({
-      where: { id },
+  async reject(id: string, companyId: string, approvedById: string, reason: string) {
+    const expense = await this.prisma.expense.findFirst({
+      where: { id, project: { companyId } },
       include: { allocations: true }
     });
     if (!expense) throw new NotFoundException('Expense not found');

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { assertContractInCompany } from '../../common/utils/tenant.util';
 
 @Injectable()
 export class SubcontractorService {
@@ -125,7 +126,8 @@ export class SubcontractorService {
 
   // ── Payments ──────────────────────────────
 
-  async createPayment(contractId: string, data: any) {
+  async createPayment(contractId: string, companyId: string, data: any) {
+    await assertContractInCompany(this.prisma, contractId, companyId);
     const payment = await this.prisma.subcontractorPayment.create({
       data: {
         contractId,
@@ -145,7 +147,8 @@ export class SubcontractorService {
     return payment;
   }
 
-  async getPayments(contractId: string) {
+  async getPayments(contractId: string, companyId: string) {
+    await assertContractInCompany(this.prisma, contractId, companyId);
     return this.prisma.subcontractorPayment.findMany({
       where: { contractId },
       orderBy: { payDate: 'desc' },

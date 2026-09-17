@@ -1,19 +1,16 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { parseRequiredDateRange } from '../../common/utils/date-range.util';
+import { assertProjectInCompany } from '../../common/utils/tenant.util';
 
 @Injectable()
 export class AttendanceService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async markBatch(projectId: string, markedById: string, records: any[]) {
-    // Find companyId from project
-    const project = await this.prisma.project.findFirst({
-      where: { id: projectId },
-      select: { companyId: true }
-    });
-    if (!project) throw new NotFoundException('Project not found');
-    const companyId = project.companyId;
+  async markBatch(projectId: string, companyId: string, markedById: string, records: any[]) {
+    // companyId comes from the caller's token; this confirms the project is
+    // actually theirs rather than reading the owner off the project itself.
+    await assertProjectInCompany(this.prisma, projectId, companyId);
 
     const workerIds = records.map((r) => r.workerId);
     const workersList = await this.prisma.worker.findMany({
@@ -105,9 +102,13 @@ export class AttendanceService {
     });
   }
 
-  async findByProject(projectId: string, date?: string) {
+  async findByProject(projectId: string, companyId: string, date?: string) {
     return this.prisma.attendance.findMany({
-      where: { projectId, ...(date ? { date: new Date(date) } : {}) },
+      where: {
+        projectId,
+        project: { companyId },
+        ...(date ? { date: new Date(date) } : {}),
+      },
       include: { worker: { select: { id: true, firstName: true, lastName: true, skillType: true, dailyRate: true } } },
       orderBy: { date: 'desc' },
     });

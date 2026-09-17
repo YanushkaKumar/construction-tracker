@@ -4,7 +4,7 @@
 
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 
 // Infrastructure Modules
@@ -39,7 +39,7 @@ import { SubcontractorModule } from './modules/subcontractor/subcontractor.modul
 import { FundingSourceModule } from './modules/funding-source/funding-source.module';
 
 import { AppController } from './app.controller';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AuditInterceptor } from './modules/audit/audit.interceptor';
 
 // Configuration
@@ -55,6 +55,12 @@ import { notificationConfig } from './config/notification.config';
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditInterceptor,
+    },
+    // ThrottlerModule only configures the limits — without this guard the
+    // rate limiting is never actually applied to any request.
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
   ],
   imports: [

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards } f
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { ProjectService } from './project.service';
+import { CreateProjectDto, UpdateProjectDto } from './dto/create-project.dto';
 import { CompanyId } from '../../common/decorators';
 import { RequirePermissions } from '../../common/decorators';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -17,7 +18,7 @@ export class ProjectController {
   @Post()
   @RequirePermissions('projects:create')
   @ApiOperation({ summary: 'Create a new project' })
-  create(@CompanyId() companyId: string, @Body() data: any) {
+  create(@CompanyId() companyId: string, @Body() data: CreateProjectDto) {
     return this.projectService.create(companyId, data);
   }
 
@@ -38,7 +39,7 @@ export class ProjectController {
   @Patch(':id')
   @RequirePermissions('projects:manage_assigned')
   @ApiOperation({ summary: 'Update project' })
-  update(@Param('id') id: string, @CompanyId() companyId: string, @Body() data: any) {
+  update(@Param('id') id: string, @CompanyId() companyId: string, @Body() data: UpdateProjectDto) {
     return this.projectService.update(id, companyId, data);
   }
 

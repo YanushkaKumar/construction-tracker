@@ -71,21 +71,28 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      // 1. Create user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            first_name: data.firstName,
-            last_name: data.lastName,
-            company_name: data.companyName,
+      // 1. Mirror the account into Supabase Auth (best effort).
+      //    The backend is the source of truth for accounts — login only ever
+      //    checks NestJS — so a Supabase failure here (e.g. the address is
+      //    left over in auth.users from a previous signup) must not block
+      //    registration.
+      try {
+        const { error: authError } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: {
+            data: {
+              first_name: data.firstName,
+              last_name: data.lastName,
+              company_name: data.companyName,
+            },
           },
-        },
-      });
-
-      if (authError) {
-        throw new Error(authError.message || 'Supabase signup failed');
+        });
+        if (authError) {
+          console.warn('Supabase signup skipped:', authError.message);
+        }
+      } catch (supabaseErr) {
+        console.warn('Supabase signup skipped:', supabaseErr);
       }
 
       // 2. Create the company and user in the NestJS backend

@@ -23,8 +23,13 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run db:generate
+      # Lint is advisory for now: the web app carries ~300 pre-existing
+      # no-explicit-any / unused-var findings. Drop the `|| true` once those
+      # are cleared so new ones can't slip in.
       - run: npm run lint || true
-      - run: npm run type-check || true
+      # Type errors DO fail the build — all three workspaces are clean today,
+      # so anything that breaks here is new.
+      - run: npm run type-check
 
   test-api:
     name: Backend Tests
@@ -170,22 +175,49 @@ jobs:
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          PROD_ENV_FILE_B64: ${{ secrets.PROD_ENV_FILE_B64 }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
-          envs: DOCKERHUB_USERNAME,DOCKERHUB_TOKEN
+          envs: DOCKERHUB_USERNAME,DOCKERHUB_TOKEN,PROD_ENV_FILE_B64
           script: |
             set -euo pipefail
             cd /home/${{ secrets.EC2_USER }}/buildtrack
             # Log in to Docker Hub to access private images
             echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
 
-            # Create a basic .env file if it does not exist
-            if [ ! -f .env ]; then
-              echo "Creating a dummy .env file. Please configure the environment variables on the host!"
-              cp .env.example .env
+            # ── Environment file ────────────────────────────────────────
+            # The whole .env is kept in the PROD_ENV_FILE_B64 repository
+            # secret (base64 of the complete file, so multi-line content and
+            # special characters survive the trip over SSH). Rewriting it on
+            # every deploy means the server's config can't quietly drift from
+            # what's in the secret, and a rebuilt host comes back configured.
+            #
+            # To change any variable: edit the file, re-run `base64 -w0 .env`,
+            # and update the secret. Do NOT hand-edit .env on the server, it
+            # will be overwritten on the next deploy.
+            if [ -n "${PROD_ENV_FILE_B64:-}" ]; then
+              echo "$PROD_ENV_FILE_B64" | base64 -d > .env.deploy.tmp
+
+              # Only replace the live .env once the decode produced something
+              # usable — a truncated or corrupt secret must not take down a
+              # working deployment.
+              if [ -s .env.deploy.tmp ] && grep -q '^DATABASE_URL=' .env.deploy.tmp; then
+                mv .env.deploy.tmp .env
+                chmod 600 .env
+                echo ".env written from PROD_ENV_FILE_B64 ($(grep -c '=' .env) variables)"
+              else
+                rm -f .env.deploy.tmp
+                echo "::error::PROD_ENV_FILE_B64 decoded to an invalid .env (empty, or no DATABASE_URL). Keeping the existing file."
+                exit 1
+              fi
+            elif [ ! -f .env ]; then
+              echo "::error::No .env on the host and PROD_ENV_FILE_B64 is not set. Refusing to deploy with placeholder config."
+              exit 1
+            else
+              echo "PROD_ENV_FILE_B64 not set — using the .env already on the host."
             fi
 
             # Reclaim disk space from old tagged images (every deploy tags a
