@@ -59,9 +59,16 @@ export function FundingAllocationBuilder({
     const key = `${projectId ?? 'none'}:${totalAmount}`;
     if (autoFilledFor.current === key) return;
 
-    const mainAccount = sourceList
-      .filter(src => src.type === 'COMPANY_CASH')
-      .sort((a, b) => Number(b.currentBalance) - Number(a.currentBalance))[0];
+    // Prefer the company cash pool — the main account. Companies that keep
+    // their funds under other headings (a client payment, a loan) would
+    // otherwise get no pre-selection at all, so fall back to whichever source
+    // actually holds the most money.
+    const byBalance = [...sourceList].sort(
+      (a, b) => Number(b.currentBalance) - Number(a.currentBalance),
+    );
+    const mainAccount =
+      byBalance.find(src => src.type === 'COMPANY_CASH' && Number(src.currentBalance) > 0) ??
+      byBalance.find(src => Number(src.currentBalance) > 0);
     if (!mainAccount) return;
 
     // Cap at what the account actually holds, so an underfunded account still
