@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { normalizeEmail } from '../../common/utils/email.util';
 
 @Injectable()
 export class UserService {
@@ -72,12 +73,23 @@ export class UserService {
       throw new NotFoundException('Selected role not found');
     }
 
+    // [companyId, email] is unique, so a repeat address would otherwise
+    // surface as a raw Prisma P2002 and a 500. Check it up front, and match
+    // case-insensitively so "Sam@x.com" cannot shadow an existing "sam@x.com".
+    const email = normalizeEmail(dto.email);
+    const duplicate = await this.prisma.user.findFirst({
+      where: { companyId, email: { equals: email, mode: 'insensitive' } },
+    });
+    if (duplicate) {
+      throw new ConflictException('A team member with this email already exists');
+    }
+
     const passwordHash = await bcrypt.hash(dto.password, 12);
 
     const user = await this.prisma.user.create({
       data: {
         companyId,
-        email: dto.email,
+        email,
         passwordHash,
         firstName: dto.firstName,
         lastName: dto.lastName,

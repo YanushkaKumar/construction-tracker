@@ -9,7 +9,6 @@ import * as z from 'zod';
 import { AlertCircle, ArrowRight, User } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 import { apiClient } from '@/lib/api-client';
-import { createClient } from '@/utils/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -25,7 +24,6 @@ export default function LoginPage() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const [error, setError]       = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const supabase = createClient();
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -36,16 +34,13 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
     try {
-      // Try to authenticate with Supabase Auth (for frontend supabase features, if they have an account)
-      // We ignore the error object because team members only exist in our local DB, not Supabase
-      await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
-
-      // Authenticate with NestJS backend to get backend session
+      // The NestJS backend is the only source of truth for accounts. A
+      // parallel Supabase sign-in used to run first "in case they have an
+      // account there": it sent every password typed on this page to a
+      // third-party service that never authorises anything, failed with a
+      // console 400 on every single login, and delayed the real request.
       const backendRes = await apiClient.post('/auth/login', {
-        email: data.email,
+        email: data.email.trim(),
         password: data.password,
       });
       

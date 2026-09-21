@@ -9,7 +9,6 @@ import * as z from 'zod';
 import { Loader2, AlertCircle, ArrowRight, Check, X } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 import { apiClient } from '@/lib/api-client';
-import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,7 +44,6 @@ export default function RegisterPage() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const supabase = createClient();
 
   const {
     register,
@@ -71,34 +69,12 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      // 1. Mirror the account into Supabase Auth (best effort).
-      //    The backend is the source of truth for accounts — login only ever
-      //    checks NestJS — so a Supabase failure here (e.g. the address is
-      //    left over in auth.users from a previous signup) must not block
-      //    registration.
-      try {
-        const { error: authError } = await supabase.auth.signUp({
-          email: data.email,
-          password: data.password,
-          options: {
-            data: {
-              first_name: data.firstName,
-              last_name: data.lastName,
-              company_name: data.companyName,
-            },
-          },
-        });
-        if (authError) {
-          console.warn('Supabase signup skipped:', authError.message);
-        }
-      } catch (supabaseErr) {
-        console.warn('Supabase signup skipped:', supabaseErr);
-      }
-
-      // 2. Create the company and user in the NestJS backend
+      // The NestJS backend owns accounts. Registration used to also mirror
+      // the credentials into Supabase Auth, which authorised nothing and only
+      // put the user's password on the wire to a second service.
       const registerRes = await apiClient.post('/auth/register', data);
 
-      // 3. Log them in directly using the backend tokens!
+      // Log them in directly using the backend tokens.
       if (registerRes.data && registerRes.data.accessToken) {
         const { user, company, accessToken, refreshToken } = registerRes.data;
         

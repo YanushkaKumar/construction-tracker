@@ -7,6 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
+import { normalizeEmail } from '../../common/utils/email.util';
 import { v4 as uuidv4 } from 'uuid';
 import { PrismaService } from '../database/prisma.service';
 import { JwtPayload, JwtRefreshPayload } from '../../common/types/jwt-payload.type';
@@ -191,7 +192,7 @@ export class AuthService {
   async register(dto: RegisterDto) {
     // Check if email already exists
     const existingUser = await this.prisma.user.findFirst({
-      where: { email: dto.email },
+      where: { email: { equals: normalizeEmail(dto.email), mode: 'insensitive' } },
     });
 
     if (existingUser) {
@@ -208,9 +209,9 @@ export class AuthService {
       // Create company
       const company = await tx.company.create({
         data: {
-          name: dto.companyName,
+          name: dto.companyName.trim(),
           slug: this.slugify(dto.companyName),
-          email: dto.email,
+          email: normalizeEmail(dto.email),
           phone: dto.phone,
         },
       });
@@ -223,7 +224,7 @@ export class AuthService {
       const user = await tx.user.create({
         data: {
           companyId: company.id,
-          email: dto.email,
+          email: normalizeEmail(dto.email),
           passwordHash,
           firstName: dto.firstName,
           lastName: dto.lastName,
@@ -265,17 +266,29 @@ export class AuthService {
    */
   async login(dto: LoginDto) {
 
-    const user = await this.prisma.user.findFirst({
-      where: { email: dto.email, isActive: true },
+    const email = normalizeEmail(dto.email);
+
+    // One address can legitimately exist in more than one company: the
+    // uniqueness constraint is [companyId, email], not email alone. The old
+    // `findFirst` grabbed whichever row came back first and compared only that
+    // one hash, so the second company's account was unreachable forever — its
+    // owner got "Invalid credentials" no matter what they typed. Load every
+    // candidate and let the password decide which account is meant.
+    const candidates = await this.prisma.user.findMany({
+      where: { email: { equals: email, mode: 'insensitive' }, isActive: true },
       include: { role: true, company: true },
+      orderBy: { createdAt: 'asc' },
     });
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+    let user: (typeof candidates)[number] | undefined;
+    for (const candidate of candidates) {
+      if (await bcrypt.compare(dto.password, candidate.passwordHash)) {
+        user = candidate;
+        break;
+      }
     }
 
-    const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!isPasswordValid) {
+    if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
