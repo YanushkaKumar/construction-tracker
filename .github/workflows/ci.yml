@@ -199,7 +199,32 @@ jobs:
             # and update the secret. Do NOT hand-edit .env on the server, it
             # will be overwritten on the next deploy.
             if [ -n "${PROD_ENV_FILE_B64:-}" ]; then
-              echo "$PROD_ENV_FILE_B64" | base64 -d > .env.deploy.tmp
+              # `set -e` would abort the whole deploy the instant base64 exits
+              # non-zero, skipping the validation below and its explanatory
+              # error. Run the decode inside an `if` so a bad secret is
+              # diagnosed rather than just killing the script with
+              # "base64: invalid input".
+              if echo "$PROD_ENV_FILE_B64" | base64 -d > .env.deploy.tmp 2>/dev/null; then
+                :
+              elif printf '%s' "$PROD_ENV_FILE_B64" | grep -q '^[A-Z_][A-Z0-9_]*='; then
+                # The secret holds the .env verbatim instead of base64 of it.
+                # Accept it rather than failing the deploy, but say so, because
+                # a raw multi-line secret is fragile over SSH env passing.
+                echo "::warning::PROD_ENV_FILE_B64 is not base64 — using it as literal .env content. Re-create it with: base64 -w0 .env"
+                printf '%s\n' "$PROD_ENV_FILE_B64" > .env.deploy.tmp
+              else
+                rm -f .env.deploy.tmp
+                # A malformed secret must not be able to freeze production on
+                # old code. If the host already has a usable .env, deploy the
+                # new images against it and warn loudly; only refuse when there
+                # is no working config to fall back to.
+                if [ -f .env ] && grep -q '^DATABASE_URL=' .env; then
+                  echo "::warning::PROD_ENV_FILE_B64 is neither valid base64 nor a plain .env — deploying with the .env already on the host. Fix the secret with:  base64 -w0 .env"
+                else
+                  echo "::error::PROD_ENV_FILE_B64 is neither valid base64 nor a plain .env, and the host has no usable .env. Regenerate it on a machine holding the real .env with:  base64 -w0 .env  then paste the ENTIRE single-line output into the secret."
+                  exit 1
+                fi
+              fi
 
               # Only replace the live .env once the decode produced something
               # usable — a truncated or corrupt secret must not take down a
@@ -208,9 +233,12 @@ jobs:
                 mv .env.deploy.tmp .env
                 chmod 600 .env
                 echo ".env written from PROD_ENV_FILE_B64 ($(grep -c '=' .env) variables)"
+              elif [ -f .env ] && grep -q '^DATABASE_URL=' .env; then
+                rm -f .env.deploy.tmp
+                echo "::warning::PROD_ENV_FILE_B64 decoded to an invalid .env (empty, or no DATABASE_URL) — deploying with the .env already on the host."
               else
                 rm -f .env.deploy.tmp
-                echo "::error::PROD_ENV_FILE_B64 decoded to an invalid .env (empty, or no DATABASE_URL). Keeping the existing file."
+                echo "::error::PROD_ENV_FILE_B64 decoded to an invalid .env and the host has no usable .env either. Refusing to deploy with placeholder config."
                 exit 1
               fi
             elif [ ! -f .env ]; then
