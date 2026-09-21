@@ -10,6 +10,7 @@ import {
   ChevronRight, FileText, Banknote, Building2
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
+import { invalidateFinancials } from '@/lib/invalidate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -92,7 +93,7 @@ export default function SubcontractorsPage() {
   const conForm = useForm({ resolver: zodResolver(contractSchema), defaultValues: { subcontractorId: '', projectId: '', workScope: '', contractAmount: 0, retentionPercent: 5, startDate: '', endDate: '', notes: '' } });
   const payForm = useForm({ resolver: zodResolver(paymentSchema), defaultValues: { amount: 0, payDate: new Date().toISOString().split('T')[0], reference: '', notes: '' } });
 
-  const invalidateAll = () => { queryClient.invalidateQueries({ queryKey: ['subcontractors'] }); queryClient.invalidateQueries({ queryKey: ['subcontractor-contracts'] }); };
+  const invalidateAll = () => { queryClient.invalidateQueries({ queryKey: ['subcontractors'] }); invalidateFinancials(queryClient); queryClient.invalidateQueries({ queryKey: ['subcontractor-contracts'] }); };
 
   const createSub = useMutation({
     mutationFn: async (v: any) => (await apiClient.post('/subcontractors', v)).data,

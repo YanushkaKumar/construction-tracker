@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Plus, CheckCircle2, AlertTriangle, AlertCircle, Loader2, Download, Coins, ChevronRight } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
+import { invalidateFinancials } from '@/lib/invalidate';
 import { ProgressBar, DonutChart } from '@/components/ui/custom-charts';
 import { SkeletonStatGrid, SkeletonChart } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -43,6 +44,7 @@ export function FundingDashboardTab() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['funding-dashboard'] });
       qc.invalidateQueries({ queryKey: ['finance-overview'] });
+      invalidateFinancials(qc);
       closeWizard();
     },
     onError: (err: any) => {

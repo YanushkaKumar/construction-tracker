@@ -9,6 +9,7 @@ import {
   Plus, AlertCircle, ShoppingCart, Calendar, Building2, MapPin, Search, Receipt
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
+import { invalidateFinancials } from '@/lib/invalidate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -76,7 +77,7 @@ export default function PurchasesPage() {
       return (await apiClient.post('/purchases', data)).data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['purchases'] });
+      queryClient.invalidateQueries({ queryKey: ['purchases'] }); invalidateFinancials(queryClient);
       queryClient.invalidateQueries({ queryKey: ['finance-overview'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       setIsDialogOpen(false);
@@ -147,7 +148,7 @@ export default function PurchasesPage() {
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit((v) => { setMutateError(null); createPurchaseMutation.mutate(v); })} className="space-y-4">
+            <form onSubmit={handleSubmit(async (v) => { setMutateError(null); await createPurchaseMutation.mutateAsync(v).catch(() => {}); })} className="space-y-4">
               <div className="space-y-1.5">
                 <Label className="text-[12px] font-semibold text-foreground/80">
                   What did you buy? <span className="text-danger">*</span>

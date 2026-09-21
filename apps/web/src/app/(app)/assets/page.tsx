@@ -9,6 +9,7 @@ import {
   Plus, AlertCircle, HardHat, Calendar, Building2, Search, Wrench, Car
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
+import { invalidateFinancials } from '@/lib/invalidate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -64,7 +65,7 @@ export default function AssetsPage() {
       return (await apiClient.post('/assets', { ...values, fundingAllocations: allocations })).data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['assets'] }); invalidateFinancials(queryClient);
       queryClient.invalidateQueries({ queryKey: ['finance-overview'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       setIsDialogOpen(false);
@@ -138,7 +139,7 @@ export default function AssetsPage() {
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit((v) => { setMutateError(null); createAssetMutation.mutate(v); })} className="space-y-4">
+            <form onSubmit={handleSubmit(async (v) => { setMutateError(null); await createAssetMutation.mutateAsync(v).catch(() => {}); })} className="space-y-4">
               <div className="space-y-1.5">
                 <Label className="text-[12px] font-semibold text-foreground/80">
                   Asset Name <span className="text-danger">*</span>

@@ -253,13 +253,13 @@ export default function MaterialsPage() {
   const requests = requestsData || [];
   const projectsList = projectsData?.data || [];
 
-  const handleCreateRequest = (values: any) => {
+  const handleCreateRequest = async (values: any) => {
     if (selectedProjectId === 'ALL') {
       setMutateError('Please select a specific project first to submit the procurement request.');
       return;
     }
     setMutateError(null);
-    createRequestMutation.mutate(values);
+    await createRequestMutation.mutateAsync(values).catch(() => {});
   };
 
   const selectStyle = "h-8.5 rounded-xl border border-border/25 bg-background px-3 py-1 text-xs outline-none focus-visible:border-foreground/30 font-semibold";
@@ -378,7 +378,7 @@ export default function MaterialsPage() {
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5 font-medium">Add a custom material item to your master inventory list.</DialogDescription>
               </DialogHeader>
 
-              <form onSubmit={handleSubmitMaterial((values) => createMaterialMutation.mutate(values))} className="space-y-4 font-semibold text-left">
+              <form onSubmit={handleSubmitMaterial(async (values) => { await createMaterialMutation.mutateAsync(values).catch(() => {}); })} className="space-y-4 font-semibold text-left">
                 <div className="space-y-1.5">
                   <Label htmlFor="name" className="text-xs font-semibold text-foreground/80">Material Name *</Label>
                   <Input id="name" placeholder="e.g. Paint (White)" {...registerMaterial('name')} className={inputStyle} />
@@ -434,7 +434,7 @@ export default function MaterialsPage() {
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5 font-medium">Add a supplier or vendor to your directory.</DialogDescription>
               </DialogHeader>
 
-              <form onSubmit={handleSubmitSupplier((values) => createSupplierMutation.mutate(values))} className="space-y-4 font-semibold text-left">
+              <form onSubmit={handleSubmitSupplier(async (values) => { await createSupplierMutation.mutateAsync(values).catch(() => {}); })} className="space-y-4 font-semibold text-left">
                 <div className="space-y-1.5">
                   <Label htmlFor="supp-name" className="text-xs font-semibold text-foreground/80">Company Name *</Label>
                   <Input id="supp-name" placeholder="e.g. Apex Hardware" {...registerSupplier('name')} className={inputStyle} />

@@ -52,7 +52,7 @@ export default function LoginPage() {
       const { user, company, accessToken, refreshToken } = backendRes.data;
 
       setAuth(user, company, accessToken, refreshToken);
-      router.push('/dashboard');
+      router.replace('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message ?? err.message ?? 'Invalid email or password. Please try again.');
     } finally {

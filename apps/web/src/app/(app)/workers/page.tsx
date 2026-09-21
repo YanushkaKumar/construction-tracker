@@ -10,6 +10,7 @@ import {
   Contact, SlidersHorizontal, CheckCircle2, CalendarDays, Coins
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
+import { invalidateWorkforce } from '@/lib/invalidate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -132,7 +133,7 @@ export default function WorkersPage() {
       return (await apiClient.post('/workers', values)).data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workers'] });
+      queryClient.invalidateQueries({ queryKey: ['workers'] }); invalidateWorkforce(queryClient);
       setIsDialogOpen(false);
       resetForm();
     },
@@ -185,9 +186,9 @@ export default function WorkersPage() {
     }
   }, [projectsList, selectedProjectId]);
 
-  const handleRegisterWorker = (values: any) => {
+  const handleRegisterWorker = async (values: any) => {
     setMutateError(null);
-    createWorkerMutation.mutate(values);
+    await createWorkerMutation.mutateAsync(values).catch(() => {});
   };
 
   const handleAttendanceChange = (workerId: string, status: string, overtime?: number) => {

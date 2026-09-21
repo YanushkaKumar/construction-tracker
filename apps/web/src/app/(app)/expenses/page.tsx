@@ -10,6 +10,7 @@ import {
   Check, X, ShieldCheck, Pencil, Trash2
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
+import { invalidateFinancials } from '@/lib/invalidate';
 import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -95,7 +96,7 @@ export default function ExpensesPage() {
       return (await apiClient.patch(`/expenses/${id}`, values)).data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project-expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['project-expenses'] }); invalidateFinancials(queryClient);
       setEditingExpense(null);
       setEditAllocations([]);
       setMutateError(null);
@@ -233,7 +234,7 @@ export default function ExpensesPage() {
   const expenses = ledgerData || [];
   const pendingApprovals = pendingData || [];
 
-  const handleCreateExpense = (values: any) => {
+  const handleCreateExpense = async (values: any) => {
     const targetProject = formProjectId || (selectedProjectId === 'ALL' ? '' : selectedProjectId);
     if (!targetProject) {
       setMutateError('Please select a specific project first to log the expense.');
@@ -248,12 +249,12 @@ export default function ExpensesPage() {
     }
 
     setMutateError(null);
-    createExpenseMutation.mutate({
+    await createExpenseMutation.mutateAsync({
       ...values,
       projectId: targetProject,
       allocations,
       registerAsAsset,
-    });
+    }).catch(() => {});
   };
 
   const handleApprove = (id: string) => {

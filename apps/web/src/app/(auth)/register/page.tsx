@@ -103,7 +103,7 @@ export default function RegisterPage() {
         const { user, company, accessToken, refreshToken } = registerRes.data;
         
         setAuth(user, company, accessToken, refreshToken);
-        router.push('/dashboard');
+        router.replace('/dashboard');
       } else {
         setError('Registration successful! Please log in to continue.');
       }

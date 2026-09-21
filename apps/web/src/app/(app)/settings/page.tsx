@@ -210,10 +210,10 @@ export default function SettingsPage() {
     }
   });
 
-  const onCompanySave = (values: any) => {
+  const onCompanySave = async (values: any) => {
     setSaveError(null);
     setSaveSuccess(false);
-    updateCompanyMutation.mutate(values);
+    await updateCompanyMutation.mutateAsync(values).catch(() => {});
   };
 
   const selectStyle = "h-8.5 rounded-xl border border-border/25 bg-background px-3 py-1 text-xs outline-none focus-visible:border-foreground/30 font-semibold";

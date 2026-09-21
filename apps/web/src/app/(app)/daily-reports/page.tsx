@@ -110,13 +110,13 @@ export default function DailyReportsPage() {
   const projectsList = projectsData?.data || [];
   const dailyLogs = logsData?.data || [];
 
-  const handleCreateLog = (values: any) => {
+  const handleCreateLog = async (values: any) => {
     if (selectedProjectId === 'ALL') {
       setMutateError('Please select a specific project first to log the daily report.');
       return;
     }
     setMutateError(null);
-    createLogMutation.mutate(values);
+    await createLogMutation.mutateAsync(values).catch(() => {});
   };
 
   const selectStyle = "h-8.5 rounded-xl border border-border/25 bg-background px-3 py-1 text-xs outline-none focus-visible:border-foreground/30 font-semibold";

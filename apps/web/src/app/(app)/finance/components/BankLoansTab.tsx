@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Building, Plus, Landmark, Loader2, AlertCircle, Trash2, Calendar, Coins, History, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
+import { invalidateFinancials } from '@/lib/invalidate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -60,7 +61,7 @@ export function BankLoansTab() {
 
   const createLoan = useMutation({
     mutationFn: async (v: any) => (await apiClient.post('/bank-loans', v)).data,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['bank-loans'] }); setDlg(false); form.reset(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['bank-loans'] }); invalidateFinancials(qc); setDlg(false); form.reset(); },
     onError: (e: any) => setErr(e.response?.data?.message || 'Failed to add loan'),
   });
 
@@ -73,7 +74,7 @@ export function BankLoansTab() {
     mutationFn: async ({ loanId, values }: { loanId: string; values: any }) => 
       (await apiClient.post(`/bank-loans/${loanId}/repayments`, values)).data,
     onSuccess: () => { 
-      qc.invalidateQueries({ queryKey: ['bank-loans'] }); 
+      qc.invalidateQueries({ queryKey: ['bank-loans'] }); invalidateFinancials(qc); 
       setRepayDlg(false); 
       repayForm.reset(); 
     },

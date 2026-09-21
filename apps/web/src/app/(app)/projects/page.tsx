@@ -408,7 +408,7 @@ export default function ProjectsPage() {
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit((v) => { setMutateError(null); createProjectMutation.mutate(v); })} className="space-y-4">
+            <form onSubmit={handleSubmit(async (v) => { setMutateError(null); await createProjectMutation.mutateAsync(v).catch(() => {}); })} className="space-y-4">
               {/* Project name */}
               <div className="space-y-1.5">
                 <Label htmlFor="proj-name" className="text-[12px] font-semibold text-foreground/80">
