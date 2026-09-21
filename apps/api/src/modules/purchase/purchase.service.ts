@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { parseAmount } from '../../common/utils/money.util';
 
 @Injectable()
 export class PurchaseService {
@@ -24,13 +25,13 @@ export class PurchaseService {
 
   async create(companyId: string, purchasedById: string, data: any) {
     const { allocations, fundingAllocations, registerAsAsset, ...purchaseData } = data;
-    const totalAmount = Number(purchaseData.totalAmount);
+    const totalAmount = parseAmount(purchaseData.totalAmount, 'Purchase total');
 
     return this.prisma.$transaction(async (tx) => {
       // 1. Process project cost allocations
       if (allocations && allocations.length > 0) {
         const totalAllocated = allocations.reduce(
-          (sum: number, a: any) => sum + Number(a.amount),
+          (sum: number, a: any) => sum + parseAmount(a.amount, 'Project allocation'),
           0,
         );
         if (Math.abs(totalAllocated - totalAmount) > 0.01) {
@@ -43,15 +44,23 @@ export class PurchaseService {
       // 2. Process funding source allocations
       let fundingAllocationsToProcess = fundingAllocations || [];
       if (fundingAllocationsToProcess.length === 0) {
+        // The company cash pool is the main account everything is paid from.
+        // Ordered by balance so the pick is deterministic when more than one
+        // exists, rather than whichever row the database happened to return.
         const companyCash = await tx.fundingSource.findFirst({
-          where: { companyId, type: 'COMPANY_CASH' }
+          where: { companyId, type: 'COMPANY_CASH', status: 'ACTIVE' },
+          orderBy: { currentBalance: 'desc' },
         });
-        if (!companyCash) throw new NotFoundException('Default company cash funding source not found');
+        if (!companyCash) {
+          throw new BadRequestException(
+            'No main company account exists yet. Add a Company Cash funding source under Finance before recording purchases.',
+          );
+        }
         fundingAllocationsToProcess = [{ fundingSourceId: companyCash.id, amount: totalAmount }];
       }
 
       const fundingAllocatedSum = fundingAllocationsToProcess.reduce(
-        (sum: number, a: any) => sum + Number(a.amount),
+        (sum: number, a: any) => sum + parseAmount(a.amount, 'Funding allocation'),
         0,
       );
       if (Math.abs(fundingAllocatedSum - totalAmount) > 0.01) {
@@ -277,15 +286,23 @@ export class PurchaseService {
       const totalAmount = Number(purchaseData.totalAmount || existing.totalAmount);
       let fundingAllocationsToProcess = fundingAllocations || [];
       if (fundingAllocationsToProcess.length === 0) {
+        // The company cash pool is the main account everything is paid from.
+        // Ordered by balance so the pick is deterministic when more than one
+        // exists, rather than whichever row the database happened to return.
         const companyCash = await tx.fundingSource.findFirst({
-          where: { companyId, type: 'COMPANY_CASH' }
+          where: { companyId, type: 'COMPANY_CASH', status: 'ACTIVE' },
+          orderBy: { currentBalance: 'desc' },
         });
-        if (!companyCash) throw new NotFoundException('Default company cash funding source not found');
+        if (!companyCash) {
+          throw new BadRequestException(
+            'No main company account exists yet. Add a Company Cash funding source under Finance before recording purchases.',
+          );
+        }
         fundingAllocationsToProcess = [{ fundingSourceId: companyCash.id, amount: totalAmount }];
       }
 
       const fundingAllocatedSum = fundingAllocationsToProcess.reduce(
-        (sum: number, a: any) => sum + Number(a.amount),
+        (sum: number, a: any) => sum + parseAmount(a.amount, 'Funding allocation'),
         0,
       );
       if (Math.abs(fundingAllocatedSum - totalAmount) > 0.01) {
@@ -327,7 +344,7 @@ export class PurchaseService {
       let projectIdsToRecalculate = [...oldProjectIds];
       if (allocations) {
         const totalAllocated = allocations.reduce(
-          (sum: number, a: any) => sum + Number(a.amount),
+          (sum: number, a: any) => sum + parseAmount(a.amount, 'Project allocation'),
           0,
         );
         if (Math.abs(totalAllocated - totalAmount) > 0.01) {

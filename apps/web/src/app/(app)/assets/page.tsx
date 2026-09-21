@@ -41,6 +41,9 @@ export default function AssetsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [mutateError, setMutateError] = useState<string | null>(null);
   const [allocations, setAllocations] = useState<{ fundingSourceId: string; amount: number }[]>([]);
+  // Vehicles and transport are just assets with a category, but they need to
+  // be findable on their own — this is the transport directory.
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
 
   const { data: assetsData, isLoading } = useQuery<any[]>({
     queryKey: ['assets'],
@@ -94,7 +97,21 @@ export default function AssetsPage() {
   const watchPrice = watch('purchasePrice');
   const watchProjectId = watch('currentProjectId');
 
-  const assets = assetsData ?? [];
+  const allAssets = assetsData ?? [];
+  const assets =
+    categoryFilter === 'ALL'
+      ? allAssets
+      : allAssets.filter((a: any) => a.category === categoryFilter);
+
+  const CATEGORY_FILTERS = [
+    { value: 'ALL', label: 'All' },
+    { value: 'VEHICLE', label: 'Vehicles & Transport' },
+    { value: 'MACHINERY', label: 'Machinery' },
+    { value: 'EQUIPMENT', label: 'Equipment' },
+    { value: 'TOOLS', label: 'Tools' },
+    { value: 'IT_EQUIPMENT', label: 'IT' },
+    { value: 'OTHER', label: 'Other' },
+  ];
   const projects = projectsData?.data ?? [];
 
   return (
@@ -225,13 +242,43 @@ export default function AssetsPage() {
         </Dialog>
       </div>
 
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 select-none">
+        {CATEGORY_FILTERS.map((f) => {
+          const count =
+            f.value === 'ALL'
+              ? allAssets.length
+              : allAssets.filter((a: any) => a.category === f.value).length;
+          const active = categoryFilter === f.value;
+          return (
+            <button
+              key={f.value}
+              type="button"
+              onClick={() => setCategoryFilter(f.value)}
+              className={cn(
+                'whitespace-nowrap px-3 py-1.5 rounded-xl text-[12px] font-semibold border transition-colors',
+                active
+                  ? 'bg-foreground text-background border-foreground'
+                  : 'bg-accent/20 text-muted-foreground/75 border-border/25 hover:text-foreground'
+              )}
+            >
+              {f.label}
+              <span className={cn('ml-1.5 font-mono text-[10px]', active ? 'opacity-70' : 'opacity-50')}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {isLoading ? (
         <SkeletonList items={5} />
       ) : assets.length === 0 ? (
         <div className="p-12 text-center bg-card border border-border/20 rounded-2xl shadow-surface">
           <HardHat className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-foreground">No assets found</h3>
-          <p className="text-sm text-muted-foreground mt-1 mb-4">Add your company's equipment, machinery, and vehicles here.</p>
+          <h3 className="text-lg font-semibold text-foreground">
+            {categoryFilter === 'ALL' ? 'No assets found' : 'Nothing in this category yet'}
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1 mb-4">Add your company&apos;s equipment, machinery, and vehicles here.</p>
           <Button onClick={() => setIsDialogOpen(true)} variant="outline">Add First Asset</Button>
         </div>
       ) : (

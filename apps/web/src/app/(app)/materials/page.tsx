@@ -128,21 +128,15 @@ export default function MaterialsPage() {
 
   // Fetch material requests for project
   const { data: requestsData, isLoading: isRequestsLoading } = useQuery<MaterialRequest[]>({
-    queryKey: ['material-requests', selectedProjectId, projectsData?.data],
+    queryKey: ['material-requests', selectedProjectId],
     queryFn: async () => {
-      const pList = projectsData?.data || [];
       if (selectedProjectId && selectedProjectId !== 'ALL') {
         return (await apiClient.get(`/projects/${selectedProjectId}/material-requests`)).data;
       }
-      const allReqs: MaterialRequest[] = [];
-      for (const p of pList) {
-        try {
-          const res = await apiClient.get(`/projects/${p.id}/material-requests`);
-          const mapped = (res.data || []).map((r: any) => ({ ...r, project: { id: p.id, name: p.name, code: p.code } }));
-          allReqs.push(...mapped);
-        } catch { /* skip */ }
-      }
-      return allReqs;
+      // One company-wide call. This used to loop over every project and fire a
+      // request each, swallowing failures individually — so with several
+      // projects the tab was slow and could silently show a partial list.
+      return (await apiClient.get('/material-requests')).data;
     },
     retry: 1,
   });

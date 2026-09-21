@@ -40,7 +40,9 @@ export class MaterialController {
   @Get('projects/:projectId/material-requests')
   @ApiOperation({ summary: 'List project material requests' })
   @RequirePermissions('materials:view')
-  findRequests(@Param('projectId') projectId: string) { return this.materialService.findRequestsByProject(projectId); }
+  findRequests(@Param('projectId') projectId: string, @CompanyId() companyId: string) {
+    return this.materialService.findRequestsByProject(projectId, companyId);
+  }
 
   @Patch('material-requests/:id/status')
   @ApiOperation({ summary: 'Update request status' })

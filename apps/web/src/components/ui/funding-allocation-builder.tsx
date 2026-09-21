@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Check, ShieldAlert, Coins, Loader2 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
@@ -47,6 +47,32 @@ export function FundingAllocationBuilder({
 
   // Track manual input values locally to avoid react-hook-form re-render latency
   const [localAmounts, setLocalAmounts] = useState<Record<string, string>>({});
+
+  // The company cash pool is the main account — the one the owner tops up and
+  // that day-to-day spending comes out of. Splitting a cost across pools is
+  // the exception, so pre-select it and fill in the amount instead of making
+  // every entry start with a manual allocation step.
+  const autoFilledFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (isLoading || totalAmount <= 0 || allocations.length > 0) return;
+
+    const key = `${projectId ?? 'none'}:${totalAmount}`;
+    if (autoFilledFor.current === key) return;
+
+    const mainAccount = sourceList
+      .filter(src => src.type === 'COMPANY_CASH')
+      .sort((a, b) => Number(b.currentBalance) - Number(a.currentBalance))[0];
+    if (!mainAccount) return;
+
+    // Cap at what the account actually holds, so an underfunded account still
+    // shows as an incomplete allocation rather than silently overdrawing.
+    const fill = Math.min(totalAmount, Number(mainAccount.currentBalance));
+    if (fill <= 0) return;
+
+    autoFilledFor.current = key;
+    onChange([{ fundingSourceId: mainAccount.id, amount: fill }]);
+    setLocalAmounts({ [mainAccount.id]: fill.toString() });
+  }, [isLoading, totalAmount, allocations.length, sourceList, projectId, onChange]);
 
   useEffect(() => {
     // Sync local state when external allocations change
@@ -122,6 +148,7 @@ export function FundingAllocationBuilder({
       <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1 scrollbar-thin">
         {sourceList.map(source => {
           const isChecked = allocations.some(a => a.fundingSourceId === source.id);
+          const isMainAccount = source.type === 'COMPANY_CASH';
           const currentAlloc = allocations.find(a => a.fundingSourceId === source.id);
           const balance = Number(source.currentBalance);
           const isSourceOverAllocated = (currentAlloc?.amount || 0) > balance;
@@ -145,7 +172,14 @@ export function FundingAllocationBuilder({
                   {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
                 </div>
                 <div>
-                  <p className="text-[13px] font-bold text-foreground leading-snug">{source.name}</p>
+                  <p className="text-[13px] font-bold text-foreground leading-snug flex items-center gap-1.5">
+                    {source.name}
+                    {isMainAccount && (
+                      <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                        Main account
+                      </span>
+                    )}
+                  </p>
                   <p className="text-[10px] text-muted-foreground/60 font-semibold font-mono uppercase mt-0.5">
                     {source.type.replace('_', ' ')} • {fmt(balance)} remaining
                   </p>
