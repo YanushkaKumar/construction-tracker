@@ -45,6 +45,7 @@ interface PayrollRecord {
   daysPresent: number;
   halfDays: number;
   totalOvertimeHours: number;
+  totalExtraPay: number;
   totalEarnings: number;
 }
 
@@ -73,8 +74,10 @@ export default function WorkersPage() {
   );
   const [payrollEnd, setPayrollEnd] = useState<string>(new Date().toISOString().split('T')[0]);
 
-  // Attendance state mapping (workerId -> { status, overtime })
-  const [attendanceRecords, setAttendanceRecords] = useState<Record<string, { status: string; overtime: number }>>({});
+  // Attendance state mapping (workerId -> { status, extraPay })
+  // extraPay is a money amount added on top of the day rate — site staff add
+  // overtime as cash, not as hours.
+  const [attendanceRecords, setAttendanceRecords] = useState<Record<string, { status: string; extraPay: number }>>({});
 
   // Fetch existing attendance records
   const { data: existingAttendance } = useQuery<any[]>({
@@ -90,9 +93,9 @@ export default function WorkersPage() {
   // Populate local attendance records state when database query resolves
   React.useEffect(() => {
     if (existingAttendance && existingAttendance.length > 0) {
-      const records: Record<string, { status: string; overtime: number }> = {};
+      const records: Record<string, { status: string; extraPay: number }> = {};
       existingAttendance.forEach((r: any) => {
-        records[r.workerId] = { status: r.status, overtime: r.overtimeHours || 0 };
+        records[r.workerId] = { status: r.status, extraPay: Number(r.extraAmount) || 0 };
       });
       setAttendanceRecords(records);
     } else {
@@ -191,12 +194,12 @@ export default function WorkersPage() {
     await createWorkerMutation.mutateAsync(values).catch(() => {});
   };
 
-  const handleAttendanceChange = (workerId: string, status: string, overtime?: number) => {
+  const handleAttendanceChange = (workerId: string, status: string, extraPay?: number) => {
     setAttendanceRecords((prev) => ({
       ...prev,
       [workerId]: {
         status: status || prev[workerId]?.status || 'PRESENT',
-        overtime: overtime !== undefined ? overtime : (prev[workerId]?.overtime || 0),
+        extraPay: extraPay !== undefined ? extraPay : (prev[workerId]?.extraPay || 0),
       }
     }));
   };
@@ -205,7 +208,7 @@ export default function WorkersPage() {
     const records = workers.map((w) => ({
       workerId: w.id,
       status: attendanceRecords[w.id]?.status || 'ABSENT',
-      overtimeHours: attendanceRecords[w.id]?.overtime || 0,
+      extraAmount: attendanceRecords[w.id]?.extraPay || 0,
       date: attendanceDate,
     }));
     saveAttendanceMutation.mutate(records);
@@ -291,6 +294,8 @@ export default function WorkersPage() {
                       <option value="Bar Bender">Bar Bender</option>
                       <option value="Plumber">Plumber</option>
                       <option value="Electrician">Electrician</option>
+                      <option value="Skilled Labour">Skilled Labour</option>
+                      <option value="Unskilled Labour">Unskilled Labour</option>
                       <option value="Labourer">Labourer</option>
                       <option value="Helper">Helper</option>
                     </select>
@@ -445,7 +450,7 @@ export default function WorkersPage() {
             <Card className="glass-panel border-border/30">
               <CardContent className="p-4 space-y-2.5">
                 {workers.map((w) => {
-                  const record = attendanceRecords[w.id] || { status: 'ABSENT', overtime: 0 };
+                  const record = attendanceRecords[w.id] || { status: 'ABSENT', extraPay: 0 };
                   return (
                     <div 
                       key={w.id} 
@@ -481,15 +486,18 @@ export default function WorkersPage() {
 
                         {record.status !== 'ABSENT' && (
                           <div className="flex items-center gap-2 select-none font-semibold">
-                            <Label htmlFor={`ot-${w.id}`} className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">OT Hours</Label>
+                            <Label htmlFor={`extra-${w.id}`} className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
+                              Extra Pay (LKR)
+                            </Label>
                             <Input
-                              id={`ot-${w.id}`}
+                              id={`extra-${w.id}`}
                               type="number"
                               min="0"
-                              max="8"
-                              value={record.overtime}
-                              onChange={(e) => handleAttendanceChange(w.id, record.status, parseInt(e.target.value) || 0)}
-                              className="w-14 h-8 text-center text-xs bg-background border-border/25 font-mono"
+                              step="1"
+                              placeholder="0"
+                              value={record.extraPay || ''}
+                              onChange={(e) => handleAttendanceChange(w.id, record.status, Number(e.target.value) || 0)}
+                              className="w-24 h-8 text-center text-xs bg-background border-border/25 font-mono"
                             />
                           </div>
                         )}
@@ -563,7 +571,7 @@ export default function WorkersPage() {
                           <th className="pb-2.5">Trade / Role</th>
                           <th className="pb-2.5">Daily rate</th>
                           <th className="pb-2.5">Days Logged</th>
-                          <th className="pb-2.5 text-center">Total OT Hours</th>
+                          <th className="pb-2.5 text-center">Extra Pay</th>
                           <th className="pb-2.5 pr-2 text-right">Net Earnings</th>
                         </tr>
                       </thead>
@@ -578,7 +586,7 @@ export default function WorkersPage() {
                             <td className="py-2.5 text-muted-foreground/80 font-medium font-sans">
                               {pay.daysPresent ?? 0} Present {(pay.halfDays ?? 0) > 0 && `• ${pay.halfDays} Half Days`}
                             </td>
-                            <td className="py-2.5 text-muted-foreground/80 text-center text-financial font-mono">{pay.totalOvertimeHours ?? 0} Hrs</td>
+                            <td className="py-2.5 text-muted-foreground/80 text-center text-financial font-mono">LKR {Number(pay.totalExtraPay ?? 0).toLocaleString()}</td>
                             <td className="py-2.5 pr-2 text-right font-semibold text-foreground text-financial font-mono">LKR {Number(pay.totalEarnings ?? 0).toLocaleString()}</td>
                           </tr>
                         ))}

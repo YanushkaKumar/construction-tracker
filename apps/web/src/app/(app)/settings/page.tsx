@@ -156,6 +156,9 @@ export default function SettingsPage() {
     roleId: '',
     isActive: true,
   });
+  // Optional password reset. There is no self-service reset yet, so the owner
+  // setting a new password here is how a locked-out team member gets back in.
+  const [newPassword, setNewPassword] = useState('');
 
   // Fetch available roles
   const { data: roles } = useQuery<any[]>({
@@ -191,6 +194,7 @@ export default function SettingsPage() {
       setIsEditMemberOpen(false);
       setSelectedMember(null);
       setEditMemberError(null);
+      setNewPassword('');
     },
     onError: (err: any) => {
       setEditMemberError(err.response?.data?.message || 'Failed to update team member');
@@ -393,6 +397,7 @@ export default function SettingsPage() {
                                         isActive: u.isActive,
                                       });
                                       setEditMemberError(null);
+                                      setNewPassword('');
                                       setIsEditMemberOpen(true);
                                     }}
                                   >
@@ -574,12 +579,30 @@ export default function SettingsPage() {
                     />
                     <Label htmlFor="isActive" className="select-none font-bold text-foreground">Account Active</Label>
                   </div>
+                  <div className="space-y-1.5 pt-3 border-t border-border/15">
+                    <Label className="text-xs font-semibold text-foreground/80">Reset password</Label>
+                    <Input
+                      type="password"
+                      autoComplete="new-password"
+                      placeholder="Leave blank to keep the current password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className={inputStyle}
+                    />
+                    <p className="text-[11px] text-muted-foreground/60 font-medium">
+                      At least 10 characters with an uppercase letter, a lowercase letter, a number and a
+                      special character. Signing them out of existing sessions.
+                    </p>
+                  </div>
                   <div className="flex justify-end gap-2.5 pt-4 border-t border-border/15 select-none">
                     <Button variant="outline" className="rounded-xl h-9 text-xs font-semibold" onClick={() => setIsEditMemberOpen(false)}>Cancel</Button>
                     <Button 
                       className="font-semibold h-9 px-4 rounded-xl text-xs shadow-sm"
                       disabled={updateMemberMutation.isPending || !editMemberValues.firstName || !editMemberValues.lastName || !editMemberValues.roleId}
-                      onClick={() => updateMemberMutation.mutate({ id: selectedMember?.id || '', values: editMemberValues })}
+                      onClick={() => updateMemberMutation.mutate({
+                        id: selectedMember?.id || '',
+                        values: newPassword ? { ...editMemberValues, password: newPassword } : editMemberValues,
+                      })}
                     >
                       {updateMemberMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : 'Save Changes'}
                     </Button>

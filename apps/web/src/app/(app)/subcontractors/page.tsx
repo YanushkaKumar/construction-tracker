@@ -61,6 +61,62 @@ const specIcons: Record<string, string> = {
   'Electrical': '💡', 'Piling': '🏗️', 'Waterproofing': '💧', 'Landscaping': '🌿',
 };
 
+/**
+ * Payment history for a single contract.
+ *
+ * The API has always exposed these, but no screen listed them — so a payment
+ * could be recorded and then never seen again, and the only evidence it
+ * existed was the contract's "Paid Out" total moving.
+ */
+function ContractPayments({ contractId }: { contractId: string }) {
+  const { data: payments, isLoading } = useQuery<any[]>({
+    queryKey: ['subcontractor-payments', contractId],
+    queryFn: async () => (await apiClient.get(`/subcontractor-contracts/${contractId}/payments`)).data,
+  });
+
+  if (isLoading) {
+    return <p className="text-[12px] text-muted-foreground/60 font-medium py-2">Loading payments…</p>;
+  }
+
+  const list = payments ?? [];
+  if (list.length === 0) {
+    return (
+      <p className="text-[12px] text-muted-foreground/60 font-medium py-2">
+        No payments recorded against this contract yet.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 font-mono">
+        Payment history ({list.length})
+      </span>
+      {list.map((p: any) => (
+        <div
+          key={p.id}
+          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/20 bg-accent/20 px-3 py-2"
+        >
+          <div className="min-w-0">
+            <span className="text-[12px] font-semibold text-foreground/85">
+              {new Date(p.payDate).toLocaleDateString()}
+            </span>
+            {p.reference && (
+              <span className="ml-2 text-[11px] font-mono text-muted-foreground/60">Ref {p.reference}</span>
+            )}
+            {p.notes && (
+              <p className="text-[11px] text-muted-foreground/60 font-medium truncate">{p.notes}</p>
+            )}
+          </div>
+          <span className="text-[13px] font-bold font-mono text-success whitespace-nowrap">
+            {fmt(Number(p.amount))}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function SubcontractorsPage() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<'registry' | 'contracts'>('registry');
@@ -109,7 +165,12 @@ export default function SubcontractorsPage() {
 
   const createPay = useMutation({
     mutationFn: async (v: any) => (await apiClient.post(`/subcontractor-contracts/${payDlg}/payments`, v)).data,
-    onSuccess: () => { invalidateAll(); setPayDlg(null); payForm.reset(); },
+    onSuccess: (_d, _v) => {
+      invalidateAll();
+      queryClient.invalidateQueries({ queryKey: ['subcontractor-payments'] });
+      setPayDlg(null);
+      payForm.reset();
+    },
     onError: (e: any) => setPayErr(e.response?.data?.message || 'Failed'),
   });
 
@@ -408,6 +469,7 @@ export default function SubcontractorsPage() {
                       {isExpanded && (
                         <div className="px-5 pb-5 pt-3 border-t border-border/15 space-y-4">
                           <ProgressBar value={pct} label="Payment Progress" showLabel height={4} />
+                          <ContractPayments contractId={con.id} />
                           <div className="flex gap-2 justify-end select-none">
                             <Button size="xs" className="font-semibold h-8 px-3.5 rounded-lg text-xs" onClick={(e) => { e.stopPropagation(); setPayDlg(con.id); }}>
                               <Banknote className="w-3.5 h-3.5 mr-1" />

@@ -6,13 +6,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { 
   Building2, MapPin, User, Calendar, ArrowLeft, Phone, Mail, 
   Plus, Loader2, CheckSquare, FileSpreadsheet, Landmark, AlertCircle,
-  Clock, ShieldAlert, TrendingUp
+  Clock, ShieldAlert, TrendingUp, Banknote
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
 import { BOQTab } from './components/BOQTab';
+import { AdvancesTab } from './components/AdvancesTab';
 import { DonutChart, ProgressBar } from '@/components/ui/custom-charts';
 import { cn } from '@/lib/utils';
 
@@ -349,6 +350,7 @@ export default function ProjectDetailsPage() {
           { id: 'boq', label: 'BOQ Estimates', icon: FileSpreadsheet },
           { id: 'tasks', label: `Tasks (${project._count.tasks})`, icon: CheckSquare },
           { id: 'logs', label: `Daily Logs (${project._count.dailyReports})`, icon: FileSpreadsheet },
+          { id: 'advances', label: 'Advances', icon: Banknote },
           { id: 'expenses', label: 'Expenses Ledger', icon: Landmark }
         ].map((tab) => {
           const Icon = tab.icon;
@@ -509,6 +511,10 @@ export default function ProjectDetailsPage() {
               </div>
             )}
           </div>
+        )}
+
+        {activeTab === 'advances' && (
+          <AdvancesTab projectId={id} />
         )}
 
         {activeTab === 'expenses' && (

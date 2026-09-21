@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ const fmt = (n: number) => `LKR ${Math.abs(n).toLocaleString()}`;
 
 export function FundingDashboardTab() {
   const qc = useQueryClient();
+  const router = useRouter();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState<'select' | 'form' | 'review'>('select');
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -62,16 +64,20 @@ export function FundingDashboardTab() {
 
   const handleTypeSelect = (type: string, redirect?: string) => {
     if (redirect) {
-      // Redirect to existing tab for Bank Loans / Advances
       closeWizard();
-      // Find parent and switch tab
-      const tabButtons = document.querySelectorAll('[role="tab"]');
-      tabButtons.forEach(btn => {
+
+      if (redirect === 'advances') {
+        // A customer advance belongs to a specific project, so it is recorded
+        // on the project's own Advances tab. This used to fire an alert from
+        // inside a DOM loop pointing at a tab that did not exist, which left
+        // the button looking broken.
+        router.push('/projects');
+        return;
+      }
+
+      // Bank loans have their own tab in this workspace — switch to it.
+      document.querySelectorAll('[role="tab"]').forEach(btn => {
         if (redirect === 'loans' && btn.textContent?.includes('Bank Loans')) (btn as HTMLElement).click();
-        if (redirect === 'advances') {
-          // No dedicated advances tab; it lives in project pages. Just inform the user.
-          alert('Customer Advances are managed from individual Project pages → Advances tab.');
-        }
       });
       return;
     }

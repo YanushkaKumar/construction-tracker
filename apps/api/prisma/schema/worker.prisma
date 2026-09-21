@@ -42,6 +42,11 @@ model Attendance {
   checkOut      DateTime?        @map("check_out")
   hoursWorked   Decimal?         @map("hours_worked") @db.Decimal(4, 2)
   overtimeHours Decimal?         @map("overtime_hours") @db.Decimal(4, 2)
+  // Ad-hoc extra pay for the day (overtime, allowance, bonus). Site staff
+  // wanted to add money without accounting for hours, and overtimeHours was
+  // recorded but never actually paid. dailyWage below is the full amount paid
+  // out, base plus this.
+  extraAmount   Decimal?         @default(0) @map("extra_amount") @db.Decimal(10, 2)
   dailyWage     Decimal          @map("daily_wage") @db.Decimal(10, 2)
   notes         String?
   markedById    String?          @map("marked_by_id")

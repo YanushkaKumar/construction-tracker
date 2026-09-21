@@ -7,8 +7,10 @@ export class AdvanceService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(projectId: string, companyId: string, receivedById: string, data: any) {
+    // Scope to the caller's company — an unscoped id lookup would let one
+    // tenant record an advance against another tenant's project.
     const project = await this.prisma.project.findFirst({
-      where: { id: projectId },
+      where: { id: projectId, companyId },
       select: { name: true, code: true },
     });
     if (!project) throw new NotFoundException('Project not found');

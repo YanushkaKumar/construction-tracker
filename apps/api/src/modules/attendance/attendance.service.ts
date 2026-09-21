@@ -2,6 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { parseRequiredDateRange } from '../../common/utils/date-range.util';
 import { assertProjectInCompany } from '../../common/utils/tenant.util';
+import { parseAmount } from '../../common/utils/money.util';
 
 @Injectable()
 export class AttendanceService {
@@ -23,7 +24,14 @@ export class AttendanceService {
 
       for (const record of records) {
         const rate = rates.get(record.workerId) || 0;
-        const wage = record.dailyWage !== undefined ? Number(record.dailyWage) : rate;
+        const base = record.dailyWage !== undefined ? Number(record.dailyWage) : rate;
+        // Extra pay is added on top of the day rate and is what actually gets
+        // disbursed, so it has to be part of the amount drawn from funding.
+        const extraAmount =
+          record.extraAmount !== undefined && record.extraAmount !== null && record.extraAmount !== ''
+            ? parseAmount(record.extraAmount, 'Extra pay', { allowZero: true })
+            : 0;
+        const wage = base + extraAmount;
 
         // Check if attendance already exists
         const existing = await tx.attendance.findUnique({
@@ -53,6 +61,7 @@ export class AttendanceService {
             date: new Date(record.date),
             status: record.status,
             dailyWage: wage,
+            extraAmount,
             markedById,
             hoursWorked: record.hoursWorked || 8,
             overtimeHours: record.overtimeHours || 0,
@@ -60,6 +69,7 @@ export class AttendanceService {
           update: {
             status: record.status,
             dailyWage: wage,
+            extraAmount,
             hoursWorked: record.hoursWorked || 8,
             overtimeHours: record.overtimeHours || 0,
           },
@@ -142,6 +152,7 @@ export class AttendanceService {
           daysPresent: 0,
           halfDays: 0,
           totalOvertimeHours: 0,
+          totalExtraPay: 0,
           totalEarnings: 0,
           projects: new Set<string>(),
         });
@@ -150,6 +161,7 @@ export class AttendanceService {
       if (record.status === 'PRESENT') entry.daysPresent += 1;
       else if (record.status === 'HALF_DAY') entry.halfDays += 1;
       entry.totalOvertimeHours += Number(record.overtimeHours ?? 0);
+      entry.totalExtraPay += Number(record.extraAmount ?? 0);
       entry.totalEarnings += Number(record.dailyWage);
       entry.projects.add(record.project.name);
     }
