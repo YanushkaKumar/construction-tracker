@@ -52,7 +52,7 @@ const projectSchema = z.object({
   contractValue:  z.coerce.number().min(0, 'Contract value must be positive or zero').default(0),
   startDate:      z.string().optional(),
   endDate:        z.string().optional(),
-  status:   z.enum(['PENDING', 'PLANNING', 'UPCOMING', 'DONE', 'BLOCKED']).default('PLANNING'),
+  status:   z.enum(['PENDING', 'PLANNING', 'UPCOMING', 'ACTIVE', 'DONE', 'BLOCKED']).default('PLANNING'),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).default('MEDIUM'),
 });
 
@@ -77,6 +77,7 @@ const STATUS_FILTERS = [
   { value: 'PENDING',  label: 'Pending' },
   { value: 'PLANNING', label: 'Planning' },
   { value: 'UPCOMING', label: 'Upcoming' },
+  { value: 'ACTIVE', label: 'Active' },
   { value: 'DONE',     label: 'Done' },
   { value: 'BLOCKED',  label: 'Blocked' },
 ];
@@ -473,6 +474,7 @@ export default function ProjectsPage() {
                     <option value="PENDING">Pending</option>
                     <option value="PLANNING">Planning</option>
                     <option value="UPCOMING">Upcoming</option>
+                    <option value="ACTIVE">Active</option>
                     <option value="DONE">Done</option>
                     <option value="BLOCKED">Blocked</option>
                   </select>

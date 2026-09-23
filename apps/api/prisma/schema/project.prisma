@@ -6,6 +6,7 @@ enum ProjectStatus {
   PENDING
   PLANNING
   UPCOMING
+  ACTIVE
   DONE
   BLOCKED
 }

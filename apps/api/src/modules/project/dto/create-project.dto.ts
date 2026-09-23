@@ -16,6 +16,7 @@ export enum ProjectStatusDto {
   PENDING = 'PENDING',
   PLANNING = 'PLANNING',
   UPCOMING = 'UPCOMING',
+  ACTIVE = 'ACTIVE',
   DONE = 'DONE',
   BLOCKED = 'BLOCKED',
 }

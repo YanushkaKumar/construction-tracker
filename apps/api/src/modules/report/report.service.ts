@@ -8,7 +8,7 @@ export class ReportService {
 
   async budgetVsActual(companyId: string) {
     const projects = await this.prisma.project.findMany({
-      where: { companyId, status: { in: ['UPCOMING', 'DONE'] } },
+      where: { companyId, status: { in: ['ACTIVE', 'UPCOMING', 'DONE'] } },
       select: { id: true, name: true, code: true, budgetEstimate: true, budgetActual: true, progressPercent: true },
     });
 

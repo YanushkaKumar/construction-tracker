@@ -19,7 +19,10 @@ export class DashboardService {
       projectsByStatus,
       expenseByCategory,
     ] = await Promise.all([
-      this.prisma.project.count({ where: { companyId, status: 'UPCOMING' } }),
+      // Work in progress is ACTIVE; UPCOMING is kept in the count because it
+      // was what "active" meant before the ACTIVE status existed, and projects
+      // created then were never re-labelled.
+      this.prisma.project.count({ where: { companyId, status: { in: ['ACTIVE', 'UPCOMING'] } } }),
       this.prisma.project.count({ where: { companyId } }),
       this.prisma.expense.count({ where: { status: 'PENDING', project: { companyId } } }),
       this.prisma.expense.aggregate({ where: { status: 'PENDING', project: { companyId } }, _sum: { amount: true } }),
@@ -31,7 +34,7 @@ export class DashboardService {
 
     // Budget utilization
     const budgetData = await this.prisma.project.aggregate({
-      where: { companyId, status: { in: ['UPCOMING', 'DONE'] } },
+      where: { companyId, status: { in: ['ACTIVE', 'UPCOMING', 'DONE'] } },
       _sum: { budgetEstimate: true, budgetActual: true },
     });
 

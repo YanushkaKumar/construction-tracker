@@ -70,12 +70,13 @@ const catLabel: Record<string, string> = {
 const statusMeta: Record<string, { label: string; dotClass: string }> = {
   PENDING: { label: 'Pending', dotClass: 'status-paused' },
   PLANNING: { label: 'Planning', dotClass: 'status-planning' },
-  UPCOMING: { label: 'Upcoming', dotClass: 'status-active' },
+  UPCOMING: { label: 'Upcoming', dotClass: 'status-planning' },
+  ACTIVE: { label: 'Active', dotClass: 'status-active' },
   DONE: { label: 'Done', dotClass: 'status-complete' },
   BLOCKED: { label: 'Blocked', dotClass: 'status-critical' },
 };
 
-const STATUS_OPTIONS = ['PENDING', 'PLANNING', 'UPCOMING', 'DONE', 'BLOCKED'] as const;
+const STATUS_OPTIONS = ['PENDING', 'PLANNING', 'UPCOMING', 'ACTIVE', 'DONE', 'BLOCKED'] as const;
 
 export default function ProjectDetailsPage() {
   const router = useRouter();
