@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../database/prisma.service';
 import { assertContractInCompany } from '../../common/utils/tenant.util';
 import { parseAmount } from '../../common/utils/money.util';
-import { debitMainAccount } from '../../common/utils/main-account.util';
+import { creditMainAccount, debitMainAccount } from '../../common/utils/main-account.util';
 
 @Injectable()
 export class SubcontractorService {
@@ -71,10 +71,67 @@ export class SubcontractorService {
   }
 
   async delete(id: string, companyId: string) {
-    const existing = await this.prisma.subcontractor.findFirst({ where: { id, companyId } });
-    if (!existing) throw new NotFoundException('Subcontractor not found');
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.subcontractor.findFirst({ where: { id, companyId } });
+      if (!existing) throw new NotFoundException('Subcontractor not found');
 
-    return this.prisma.subcontractor.delete({ where: { id } });
+      // Contracts cascade from the subcontractor and payments cascade from the
+      // contracts, so deleting one silently removes payment rows whose money
+      // has already left the Main Account. Put that money back.
+      const paid = await tx.subcontractorPayment.aggregate({
+        where: { contract: { subcontractorId: id } },
+        _sum: { amount: true },
+      });
+      const total = Number(paid._sum.amount || 0);
+      if (total > 0) {
+        await creditMainAccount(tx, companyId, total);
+      }
+
+      return tx.subcontractor.delete({ where: { id } });
+    });
+  }
+
+  async deleteContract(id: string, companyId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const contract = await tx.subcontractorContract.findFirst({
+        where: { id, subcontractor: { companyId } },
+        select: { id: true },
+      });
+      if (!contract) throw new NotFoundException('Contract not found');
+
+      // Payments cascade with the contract, so refund what was paid.
+      const paid = await tx.subcontractorPayment.aggregate({
+        where: { contractId: id },
+        _sum: { amount: true },
+      });
+      const total = Number(paid._sum.amount || 0);
+      if (total > 0) {
+        await creditMainAccount(tx, companyId, total);
+      }
+
+      return tx.subcontractorContract.delete({ where: { id } });
+    });
+  }
+
+  async deletePayment(paymentId: string, companyId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const payment = await tx.subcontractorPayment.findFirst({
+        where: { id: paymentId, contract: { subcontractor: { companyId } } },
+        select: { id: true, amount: true, contractId: true },
+      });
+      if (!payment) throw new NotFoundException('Payment not found');
+
+      const amount = Number(payment.amount);
+      await tx.subcontractorPayment.delete({ where: { id: paymentId } });
+      await tx.subcontractorContract.update({
+        where: { id: payment.contractId },
+        data: { paidAmount: { decrement: amount } },
+      });
+      // The payment left the Main Account when it was recorded.
+      await creditMainAccount(tx, companyId, amount);
+
+      return { id: paymentId, refunded: amount };
+    });
   }
 
   // ── Contracts ─────────────────────────────

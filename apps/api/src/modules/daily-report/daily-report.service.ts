@@ -42,6 +42,61 @@ export class DailyReportService {
     });
   }
 
+  async update(id: string, companyId: string, data: any) {
+    const existing = await this.prisma.dailyReport.findFirst({
+      where: { id, project: { companyId } },
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundException('Daily report not found');
+
+    const d = data ?? {};
+    const text = (v: unknown) => (typeof v === 'string' ? (v.trim() || null) : undefined);
+    const fields: Record<string, unknown> = {
+      weatherCondition: text(d.weatherCondition),
+      issues: text(d.issues),
+      safetyNotes: text(d.safetyNotes),
+      notes: text(d.notes),
+    };
+
+    if (d.workSummary !== undefined) {
+      const ws = typeof d.workSummary === 'string' ? d.workSummary.trim() : '';
+      if (!ws) throw new BadRequestException('Describe the work done today');
+      fields.workSummary = ws;
+    }
+    if (d.reportDate !== undefined) {
+      fields.reportDate = parseRequiredDate(d.reportDate, 'Report date');
+    }
+    for (const [key, label, max] of [
+      ['workersOnSite', 'Workers on site', undefined],
+      ['progressPercent', 'Progress percent', 100],
+    ] as const) {
+      if (d[key] === undefined) continue;
+      const n = Number(d[key]);
+      if (!Number.isFinite(n) || n < 0 || (max !== undefined && n > max)) {
+        throw new BadRequestException(`${label} must be a number between 0 and ${max ?? 'any'}`);
+      }
+      fields[key] = Math.round(n);
+    }
+    for (const k of Object.keys(fields)) if (fields[k] === undefined) delete fields[k];
+
+    return this.prisma.dailyReport.update({
+      where: { id },
+      data: fields,
+      include: { images: true, reporter: { select: { id: true, firstName: true, lastName: true } } },
+    });
+  }
+
+  async delete(id: string, companyId: string) {
+    const existing = await this.prisma.dailyReport.findFirst({
+      where: { id, project: { companyId } },
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundException('Daily report not found');
+
+    await this.prisma.dailyReport.delete({ where: { id } });
+    return { id, deleted: true };
+  }
+
   async findByProject(projectId: string, companyId: string, page = 1, limit = 20) {
     const where = { projectId, project: { companyId } };
     const [reports, total] = await Promise.all([

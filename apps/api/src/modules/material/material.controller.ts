@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards , Delete } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { MaterialService } from './material.service';
@@ -49,6 +49,41 @@ export class MaterialController {
   @RequirePermissions('materials:manage')
   updateRequestStatus(@Param('id') id: string, @CompanyId() companyId: string, @Body('status') status: string) {
     return this.materialService.updateRequestStatus(id, companyId, status);
+  }
+
+  @Patch('materials/:id')
+  @ApiOperation({ summary: 'Update a material' })
+  @RequirePermissions('materials:manage')
+  updateMaterial(@Param('id') id: string, @CompanyId() companyId: string, @Body() data: any) {
+    return this.materialService.updateMaterial(id, companyId, data);
+  }
+
+  @Delete('materials/:id')
+  @ApiOperation({ summary: 'Delete a material' })
+  @RequirePermissions('materials:manage')
+  deleteMaterial(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.materialService.deleteMaterial(id, companyId);
+  }
+
+  @Delete('material-requests/:id')
+  @ApiOperation({ summary: 'Delete a material request' })
+  @RequirePermissions('materials:manage')
+  deleteRequest(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.materialService.deleteRequest(id, companyId);
+  }
+
+  @Patch('suppliers/:id')
+  @ApiOperation({ summary: 'Update a supplier' })
+  @RequirePermissions('materials:manage')
+  updateSupplier(@Param('id') id: string, @CompanyId() companyId: string, @Body() data: any) {
+    return this.materialService.updateSupplier(id, companyId, data);
+  }
+
+  @Delete('suppliers/:id')
+  @ApiOperation({ summary: 'Delete or deactivate a supplier' })
+  @RequirePermissions('materials:manage')
+  deleteSupplier(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.materialService.deleteSupplier(id, companyId);
   }
 
   @Get('suppliers')

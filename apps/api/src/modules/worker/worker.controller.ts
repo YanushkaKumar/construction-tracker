@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { WorkerService } from './worker.service';
@@ -38,6 +38,13 @@ export class WorkerController {
   @RequirePermissions('workers:view')
   findOne(@Param('id') id: string, @CompanyId() companyId: string) {
     return this.workerService.findById(id, companyId);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a worker, or deactivate one with attendance history' })
+  @RequirePermissions('workers:manage')
+  remove(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.workerService.remove(id, companyId);
   }
 
   @Patch(':id')

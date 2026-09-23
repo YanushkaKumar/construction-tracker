@@ -74,6 +74,20 @@ export class SubcontractorController {
 
   // ── Payments ──────────────────────────────
 
+  @Delete('subcontractor-contracts/:id')
+  @ApiOperation({ summary: 'Delete a contract and refund its payments' })
+  @RequirePermissions('finance:manage')
+  deleteContract(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.subcontractorService.deleteContract(id, companyId);
+  }
+
+  @Delete('subcontractor-payments/:id')
+  @ApiOperation({ summary: 'Delete a subcontractor payment and refund it' })
+  @RequirePermissions('finance:manage')
+  deletePayment(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.subcontractorService.deletePayment(id, companyId);
+  }
+
   @Post('subcontractor-contracts/:contractId/payments')
   @ApiOperation({ summary: 'Record a payment to a subcontractor' })
   @RequirePermissions('finance:manage')

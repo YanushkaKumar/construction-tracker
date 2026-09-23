@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { DailyReportService } from './daily-report.service';
@@ -32,6 +32,20 @@ export class DailyReportController {
   @RequirePermissions('daily_reports:view')
   findByCompany(@CompanyId() companyId: string, @Query('page') page?: number, @Query('limit') limit?: number) {
     return this.dailyReportService.findByCompany(companyId, page, limit);
+  }
+
+  @Patch('daily-reports/:id')
+  @ApiOperation({ summary: 'Update a daily report' })
+  @RequirePermissions('daily_reports:submit')
+  update(@Param('id') id: string, @CompanyId() companyId: string, @Body() data: any) {
+    return this.dailyReportService.update(id, companyId, data);
+  }
+
+  @Delete('daily-reports/:id')
+  @ApiOperation({ summary: 'Delete a daily report' })
+  @RequirePermissions('daily_reports:submit')
+  remove(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.dailyReportService.delete(id, companyId);
   }
 
   @Get('daily-reports/:id')

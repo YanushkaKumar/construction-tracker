@@ -176,14 +176,18 @@ export class AdvanceService {
     if (!advance) throw new NotFoundException('Advance not found');
 
     return this.prisma.$transaction(async (tx) => {
-      // Find and delete the corresponding FundingSource
+      // The advance credited the Main Account when it was recorded, so
+      // removing it takes that money back out. The old guard counted
+      // allocations on the advance's own funding row, but payments are drawn
+      // from the Main Account, so it never matched and the balance kept money
+      // from an advance that no longer existed.
+      const amount = Number(advance.amount);
+      if (amount > 0) {
+        await debitMainAccount(tx, companyId, amount, 'advance removal');
+      }
+
       const source = await tx.fundingSource.findFirst({ where: { projectAdvanceId: id } });
       if (source) {
-        // Prevent deleting if it has active allocations
-        const count = await tx.fundingAllocation.count({ where: { fundingSourceId: source.id } });
-        if (count > 0) {
-          throw new BadRequestException('Cannot delete this project advance as it has been allocated to expenses');
-        }
         await tx.fundingSource.delete({ where: { id: source.id } });
       }
 

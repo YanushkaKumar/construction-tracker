@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { parseAmount } from '../../common/utils/money.util';
-import { creditMainAccount, getMainAccount } from '../../common/utils/main-account.util';
+import { creditMainAccount, debitMainAccount, getMainAccount } from '../../common/utils/main-account.util';
 import { AuditService } from '../audit/audit.service';
 
 // Source category groupings for the enterprise treasury
@@ -184,26 +184,27 @@ export class FundingSourceService {
       if (data.description !== undefined) updateData.description = data.description;
       if (data.metadata !== undefined) updateData.metadata = data.metadata;
       if (data.amount !== undefined) {
-        const amt = parseAmount(data.amount, 'Funding amount', { allowZero: true });
-
-        const difference = amt - Number(source.originalAmount);
-        const newCurrent = Number(source.currentBalance) + difference;
-        const newRemaining = Number(source.remainingAmount) + difference;
-
-        // Shrinking a pool below what has already been drawn from it would
-        // leave a negative balance, which reads as free cash elsewhere.
-        if (newCurrent < 0 || newRemaining < 0) {
-          const spent = Number(source.originalAmount) - Number(source.remainingAmount);
+        if (source.isMain) {
           throw new BadRequestException(
-            `Cannot reduce this funding source to LKR ${amt.toLocaleString()} — ` +
-              `LKR ${spent.toLocaleString()} has already been allocated from it.`,
+            'The Main Account balance is the total of the funding recorded against it. Edit the funding entry itself instead.',
           );
+        }
+
+        const amt = parseAmount(data.amount, 'Funding amount', { allowZero: true });
+        const difference = amt - Number(source.originalAmount);
+
+        // Correcting how much came in moves the company balance by the
+        // difference. The row itself holds no balance — only the Main Account
+        // does — so adjusting its own figures, as this used to, changed
+        // nothing anyone could spend.
+        if (difference > 0) {
+          await creditMainAccount(tx, companyId, difference);
+        } else if (difference < 0) {
+          await debitMainAccount(tx, companyId, -difference, 'funding correction');
         }
 
         updateData.originalAmount = amt;
         updateData.openingBalance = amt;
-        updateData.currentBalance = newCurrent;
-        updateData.remainingAmount = newRemaining;
       }
 
       return tx.fundingSource.update({ where: { id }, data: updateData });
@@ -219,16 +220,27 @@ export class FundingSourceService {
   }
 
   async delete(id: string, companyId: string) {
-    const source = await this.prisma.fundingSource.findFirst({ where: { id, companyId } });
-    if (!source) throw new NotFoundException('Funding source not found');
+    return this.prisma.$transaction(async (tx) => {
+      const source = await tx.fundingSource.findFirst({ where: { id, companyId } });
+      if (!source) throw new NotFoundException('Funding source not found');
 
-    // Prevent deleting sources that have allocations
-    const count = await this.prisma.fundingAllocation.count({ where: { fundingSourceId: id } });
-    if (count > 0) {
-      throw new BadRequestException('Cannot delete a funding source that has active transaction allocations');
-    }
+      if (source.isMain) {
+        throw new BadRequestException(
+          'The Main Account cannot be deleted — every payment is drawn from it. Delete the funding entries instead.',
+        );
+      }
 
-    return this.prisma.fundingSource.delete({ where: { id } });
+      // Removing a funding entry takes that money back off the company
+      // balance. The old guard counted allocations on this row, but payments
+      // are recorded against the Main Account, so it never matched anything
+      // and the balance kept money whose source had been deleted.
+      const amount = Number(source.originalAmount);
+      if (amount > 0) {
+        await debitMainAccount(tx, companyId, amount, 'funding removal');
+      }
+
+      return tx.fundingSource.delete({ where: { id } });
+    });
   }
 
   getSourceCategories() {

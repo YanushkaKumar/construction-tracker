@@ -30,6 +30,34 @@ export class WorkerService {
     });
   }
 
+  /**
+   * Attendance cascades from the worker, and every attendance row's wage has
+   * already been taken out of the Main Account. A hard delete would destroy
+   * those records and leave the money unaccounted for, so a worker with
+   * attendance is deactivated instead — they drop off the active roster and
+   * their history stays intact.
+   */
+  async remove(id: string, companyId: string) {
+    const worker = await this.prisma.worker.findFirst({ where: { id, companyId } });
+    if (!worker) throw new NotFoundException('Worker not found');
+
+    const attendance = await this.prisma.attendance.count({ where: { workerId: id } });
+    if (attendance > 0) {
+      const updated = await this.prisma.worker.update({
+        where: { id },
+        data: { isActive: false },
+      });
+      return {
+        ...updated,
+        deactivated: true,
+        message: `This worker has ${attendance} attendance record(s), so they have been deactivated rather than deleted. Their wage history stays with the accounts.`,
+      };
+    }
+
+    await this.prisma.worker.delete({ where: { id } });
+    return { id, deleted: true };
+  }
+
   private toWorkerFields(data: any, requireNames: boolean) {
     const d = data ?? {};
     const text = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined);

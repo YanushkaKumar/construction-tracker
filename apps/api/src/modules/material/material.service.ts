@@ -40,6 +40,90 @@ export class MaterialService {
     });
   }
 
+  async updateMaterial(id: string, companyId: string, data: any) {
+    const existing = await this.prisma.material.findFirst({ where: { id, companyId } });
+    if (!existing) throw new NotFoundException('Material not found');
+
+    const d = data ?? {};
+    const fields: Record<string, unknown> = {
+      name: text(d.name),
+      unit: text(d.unit),
+      category: text(d.category),
+      description: text(d.description),
+    };
+    for (const [key, val] of [['unitPrice', d.unitPrice], ['minimumStock', d.minimumStock], ['currentStock', d.currentStock]] as const) {
+      if (val !== undefined) fields[key] = parseAmount(val, key, { allowZero: true });
+    }
+    for (const k of Object.keys(fields)) if (fields[k] === undefined) delete fields[k];
+
+    return this.prisma.material.update({ where: { id }, data: fields });
+  }
+
+  async deleteMaterial(id: string, companyId: string) {
+    const existing = await this.prisma.material.findFirst({ where: { id, companyId } });
+    if (!existing) throw new NotFoundException('Material not found');
+
+    // Requests reference the material, so removing it would take their history
+    // with it. Say so rather than deleting the record of what was ordered.
+    const requests = await this.prisma.materialRequest.count({ where: { materialId: id } });
+    if (requests > 0) {
+      throw new BadRequestException(
+        `This material is used by ${requests} material request(s). Delete those first if you really want it gone.`,
+      );
+    }
+    await this.prisma.material.delete({ where: { id } });
+    return { id, deleted: true };
+  }
+
+  async updateSupplier(id: string, companyId: string, data: any) {
+    const existing = await this.prisma.supplier.findFirst({ where: { id, companyId } });
+    if (!existing) throw new NotFoundException('Supplier not found');
+
+    const d = data ?? {};
+    const fields: Record<string, unknown> = {
+      name: text(d.name),
+      contactPerson: text(d.contactPerson),
+      phone: text(d.phone),
+      email: text(d.email),
+      address: text(d.address),
+    };
+    if (Array.isArray(d.materialTypes)) fields.materialTypes = d.materialTypes;
+    if (Number.isInteger(d.rating)) fields.rating = d.rating;
+    if (typeof d.isActive === 'boolean') fields.isActive = d.isActive;
+    for (const k of Object.keys(fields)) if (fields[k] === undefined) delete fields[k];
+
+    return this.prisma.supplier.update({ where: { id }, data: fields });
+  }
+
+  async deleteSupplier(id: string, companyId: string) {
+    const existing = await this.prisma.supplier.findFirst({ where: { id, companyId } });
+    if (!existing) throw new NotFoundException('Supplier not found');
+
+    const linked = await this.prisma.materialRequest.count({ where: { supplierId: id } });
+    if (linked > 0) {
+      // Deactivate instead: the supplier appears on past requests, and
+      // removing them would blank out who supplied what.
+      const updated = await this.prisma.supplier.update({ where: { id }, data: { isActive: false } });
+      return {
+        ...updated,
+        deactivated: true,
+        message: `This supplier is on ${linked} material request(s), so they have been deactivated rather than deleted.`,
+      };
+    }
+    await this.prisma.supplier.delete({ where: { id } });
+    return { id, deleted: true };
+  }
+
+  async deleteRequest(id: string, companyId: string) {
+    const existing = await this.prisma.materialRequest.findFirst({
+      where: { id, project: { companyId } },
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundException('Material request not found');
+    await this.prisma.materialRequest.delete({ where: { id } });
+    return { id, deleted: true };
+  }
+
   async createRequest(projectId: string, companyId: string, requestedById: string, data: any) {
     await assertProjectInCompany(this.prisma, projectId, companyId);
     const d = data ?? {};

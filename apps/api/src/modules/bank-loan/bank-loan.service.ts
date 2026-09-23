@@ -165,18 +165,35 @@ export class BankLoanService {
 
   async delete(id: string, companyId: string) {
     return this.prisma.$transaction(async (tx) => {
+      const loan = await tx.bankLoan.findFirst({
+        where: { id, companyId },
+        select: { id: true, loanAmount: true },
+      });
+      if (!loan) throw new NotFoundException('Bank loan not found');
+
+      // Deleting a loan undoes both sides of it: the drawdown that credited
+      // the Main Account, and every repayment that was taken out of it. The
+      // repayment rows go with the loan, so their money has to come back.
+      const repaid = await tx.bankLoanRepayment.aggregate({
+        where: { bankLoanId: id },
+        _sum: { amount: true },
+      });
+      const repaidTotal = Number(repaid._sum.amount || 0);
+      if (repaidTotal > 0) {
+        await creditMainAccount(tx, companyId, repaidTotal);
+      }
+
+      const drawn = Number(loan.loanAmount);
+      if (drawn > 0) {
+        await debitMainAccount(tx, companyId, drawn, 'loan removal');
+      }
+
       const source = await tx.fundingSource.findFirst({ where: { bankLoanId: id } });
       if (source) {
-        const count = await tx.fundingAllocation.count({ where: { fundingSourceId: source.id } });
-        if (count > 0) {
-          throw new BadRequestException('Cannot delete this bank loan as its funds have already been allocated to expenses');
-        }
         await tx.fundingSource.delete({ where: { id: source.id } });
       }
 
-      return tx.bankLoan.delete({
-        where: { id, companyId },
-      });
+      return tx.bankLoan.delete({ where: { id } });
     });
   }
 
