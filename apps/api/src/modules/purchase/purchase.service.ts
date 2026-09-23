@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../database/prisma.service';
 import { parseAmount } from '../../common/utils/money.util';
 import { creditMainAccount, debitMainAccount } from '../../common/utils/main-account.util';
+import { SPENT_EXPENSE_STATUSES } from '../../common/constants/expense-status';
 
 @Injectable()
 export class PurchaseService {
@@ -13,7 +14,7 @@ export class PurchaseService {
       _sum: { amount: true }
     });
     const expensesSum = await this.prisma.expense.aggregate({
-      where: { projectId, status: { in: ['APPROVED', 'PAID'] } },
+      where: { projectId, status: SPENT_EXPENSE_STATUSES },
       _sum: { amount: true }
     });
     const totalSpent = Number(allocationsSum._sum.amount || 0) + Number(expensesSum._sum.amount || 0);
@@ -115,7 +116,7 @@ export class PurchaseService {
             _sum: { amount: true }
           });
           const expensesSum = await tx.expense.aggregate({
-            where: { projectId: a.projectId, status: { in: ['APPROVED', 'PAID'] } },
+            where: { projectId: a.projectId, status: SPENT_EXPENSE_STATUSES },
             _sum: { amount: true }
           });
           const totalSpent = Number(allocationsSum._sum.amount || 0) + Number(expensesSum._sum.amount || 0);
@@ -290,7 +291,7 @@ export class PurchaseService {
           _sum: { amount: true }
         });
         const expensesProjSum = await tx.expense.aggregate({
-          where: { projectId: pId, status: { in: ['APPROVED', 'PAID'] } },
+          where: { projectId: pId, status: SPENT_EXPENSE_STATUSES },
           _sum: { amount: true }
         });
         const totalSpent = Number(allocationsProjSum._sum.amount || 0) + Number(expensesProjSum._sum.amount || 0);
@@ -328,7 +329,7 @@ export class PurchaseService {
           _sum: { amount: true }
         });
         const expensesProjSum = await tx.expense.aggregate({
-          where: { projectId: pId, status: { in: ['APPROVED', 'PAID'] } },
+          where: { projectId: pId, status: SPENT_EXPENSE_STATUSES },
           _sum: { amount: true }
         });
         const totalSpent = Number(allocationsProjSum._sum.amount || 0) + Number(expensesProjSum._sum.amount || 0);

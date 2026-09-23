@@ -57,7 +57,7 @@ export const SOURCE_CATEGORIES: Record<string, { label: string; icon: React.Elem
     label: 'Client Payments',
     icon: CircleDollarSign,
     types: [
-      { type: 'PROJECT_ADVANCE', label: 'Customer Advance', icon: 'dollar-sign', description: 'Recorded on the project — opens Projects', redirect: 'advances' },
+      { type: 'PROJECT_ADVANCE', label: 'Customer Advance', icon: 'dollar-sign', description: 'Advance received from a client for a project', fields: ['projectId', 'amount', 'date', 'reference', 'notes'] },
       { type: 'CLIENT_PROGRESS_PAYMENT', label: 'Client Progress Payment', icon: 'check-circle', description: 'Milestone-based progress payment', fields: ['projectId', 'milestone', 'invoiceNumber', 'certificateNo', 'retentionPercent', 'amount', 'date', 'notes'] },
     ],
   },

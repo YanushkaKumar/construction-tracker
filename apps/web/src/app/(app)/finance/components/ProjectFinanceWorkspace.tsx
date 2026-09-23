@@ -10,6 +10,15 @@ import { SkeletonChart } from '@/components/ui/skeleton';
 
 const fmt = (n: number) => `LKR ${Math.abs(n).toLocaleString()}`;
 
+/**
+ * Balances can legitimately go negative. `fmt` strips the sign with Math.abs
+ * because most call sites render their own "-" prefix, which meant an
+ * overdrawn balance of -130,000 was displayed as a healthy "LKR 130,000".
+ */
+const fmtSigned = (n: number) =>
+  `${n < 0 ? '-' : ''}LKR ${Math.abs(n).toLocaleString()}`;
+
+
 export function ProjectFinanceWorkspace({ 
   projectId, 
   onBack,
@@ -60,11 +69,21 @@ export function ProjectFinanceWorkspace({
         </div>
         
         {/* Quick Actions */}
+        {/* Both of these were rendered with no onClick at all — they looked
+            like the primary actions on the page and did nothing when pressed. */}
         <div className="flex gap-2">
-          <button className="px-4 py-2 bg-success text-success-foreground font-bold text-[12px] rounded-lg shadow-sm hover:opacity-90">
+          <button
+            type="button"
+            onClick={() => onNavigate?.('funding')}
+            className="px-4 py-2 bg-success text-success-foreground font-bold text-[12px] rounded-lg shadow-sm hover:opacity-90"
+          >
             Receive Funds
           </button>
-          <button className="px-4 py-2 bg-primary text-primary-foreground font-bold text-[12px] rounded-lg shadow-sm hover:opacity-90">
+          <button
+            type="button"
+            onClick={() => onNavigate?.('procurement')}
+            className="px-4 py-2 bg-primary text-primary-foreground font-bold text-[12px] rounded-lg shadow-sm hover:opacity-90"
+          >
             Create Purchase Request
           </button>
         </div>
@@ -93,7 +112,7 @@ export function ProjectFinanceWorkspace({
         <Card className="bg-primary/10 border-primary/20">
           <CardContent className="p-5">
             <p className="text-[11px] font-bold text-primary uppercase tracking-wider mb-1">Available Balance</p>
-            <p className="text-[20px] font-mono font-bold text-primary">{fmt(balance)}</p>
+            <p className="text-[20px] font-mono font-bold text-primary">{fmtSigned(balance)}</p>
           </CardContent>
         </Card>
       </div>

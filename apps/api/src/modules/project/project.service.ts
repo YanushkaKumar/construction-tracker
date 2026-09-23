@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { PaginationDto } from '../../common/dto/pagination.dto';
+import { SPENT_EXPENSE_STATUSES } from '../../common/constants/expense-status';
 
 @Injectable()
 export class ProjectService {
@@ -88,7 +89,7 @@ export class ProjectService {
     const totalPurchaseSpent = Number(purchaseAllocationAggregate._sum.amount || 0);
 
     const expenseAggregate = await this.prisma.expense.aggregate({
-      where: { projectId: id, status: { in: ['APPROVED', 'PAID'] } },
+      where: { projectId: id, status: SPENT_EXPENSE_STATUSES },
       _sum: { amount: true }
     });
     const totalExpenseSpent = Number(expenseAggregate._sum.amount || 0);

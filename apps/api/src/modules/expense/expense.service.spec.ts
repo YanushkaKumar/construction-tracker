@@ -280,14 +280,17 @@ describe('ExpenseService — money paths', () => {
   });
 
   describe('updateProjectActualBudget', () => {
-    it('sums purchase allocations and approved/paid expenses', async () => {
+    it('counts every expense that has not been rejected', async () => {
       prisma.purchaseAllocation.aggregate.mockResolvedValue({ _sum: { amount: 150_000 } });
       prisma.expense.aggregate.mockResolvedValue({ _sum: { amount: 250_000 } });
 
       await service.updateProjectActualBudget('p1');
 
+      // Creating an expense takes the cash out of the Main Account straight
+      // away, so a project's spend has to include expenses still awaiting
+      // approval. Only a rejected expense — which is refunded — is excluded.
       expect(prisma.expense.aggregate).toHaveBeenCalledWith({
-        where: { projectId: 'p1', status: { in: ['APPROVED', 'PAID'] } },
+        where: { projectId: 'p1', status: { not: 'REJECTED' } },
         _sum: { amount: true },
       });
       expect(prisma.project.update).toHaveBeenCalledWith({

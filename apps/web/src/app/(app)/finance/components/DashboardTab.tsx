@@ -6,6 +6,15 @@ import { CircleDollarSign, TrendingUp, TrendingDown, FileText, ChevronRight, Ale
 
 const fmt = (n: number) => `LKR ${Math.abs(n).toLocaleString()}`;
 
+/**
+ * Balances can legitimately go negative. `fmt` strips the sign with Math.abs
+ * because most call sites render their own "-" prefix, which meant an
+ * overdrawn balance of -130,000 was displayed as a healthy "LKR 130,000".
+ */
+const fmtSigned = (n: number) =>
+  `${n < 0 ? '-' : ''}LKR ${Math.abs(n).toLocaleString()}`;
+
+
 export function DashboardTab({ 
   data, 
   onDrillDown 
@@ -30,7 +39,7 @@ export function DashboardTab({
             </div>
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70 mb-1">Available Cash</p>
-              <h3 className="text-2xl font-bold text-foreground font-mono">{fmt(companyTotals.balance)}</h3>
+              <h3 className="text-2xl font-bold text-foreground font-mono">{fmtSigned(companyTotals.balance)}</h3>
               <p className="text-[11px] text-muted-foreground mt-1.5 font-medium flex items-center">
                 <span className="w-1.5 h-1.5 rounded-full bg-success mr-1.5"></span>
                 Across all company accounts

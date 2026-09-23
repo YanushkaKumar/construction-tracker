@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
   Building2, Wallet, Banknote, FileText, 
-  BarChart2, HardHat, RefreshCw, Loader2
+  BarChart2, HardHat, RefreshCw, Loader2, Landmark
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
@@ -18,9 +18,10 @@ import { ProcurementTab } from './components/ProcurementTab';
 import { DrillDownModal } from './components/DrillDownModal';
 import { AssetsTab } from './components/AssetsTab';
 import { ProjectFinanceWorkspace } from './components/ProjectFinanceWorkspace';
+import { BankLoansTab } from './components/BankLoansTab';
 
 export default function FinancePage() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'funding' | 'procurement' | 'assets' | 'reports'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'funding' | 'loans' | 'procurement' | 'assets' | 'reports'>('dashboard');
   
   const [drillDownState, setDrillDownState] = useState<{ open: boolean; type: string | null; payload: any }>({
     open: false,
@@ -48,6 +49,7 @@ export default function FinancePage() {
     { id: 'dashboard', label: 'Dashboard', icon: BarChart2 },
     { id: 'projects', label: 'Projects', icon: Building2 },
     { id: 'funding', label: 'Funding', icon: Wallet },
+    { id: 'loans', label: 'Bank Loans', icon: Landmark },
     { id: 'procurement', label: 'Procurement', icon: FileText },
     { id: 'assets', label: 'Assets', icon: HardHat },
     { id: 'reports', label: 'Reports', icon: Banknote },
@@ -124,7 +126,8 @@ export default function FinancePage() {
           <>
             {activeTab === 'dashboard' && <DashboardTab data={overview} onDrillDown={handleDrillDown} />}
             {activeTab === 'projects' && <ProjectsTab data={overview} onDrillDown={handleDrillDown} />}
-            {activeTab === 'funding' && <FundingDashboardTab />}
+            {activeTab === 'funding' && <FundingDashboardTab onNavigate={(tab) => setActiveTab(tab as any)} />}
+            {activeTab === 'loans' && <BankLoansTab />}
             {activeTab === 'procurement' && <ProcurementTab />}
             {activeTab === 'assets' && <AssetsTab />}
             {activeTab === 'reports' && (

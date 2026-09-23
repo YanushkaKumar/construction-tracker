@@ -7,6 +7,15 @@ import { ProgressBar } from '@/components/ui/custom-charts';
 
 const fmt = (n: number) => `LKR ${Math.abs(n).toLocaleString()}`;
 
+/**
+ * Balances can legitimately go negative. `fmt` strips the sign with Math.abs
+ * because most call sites render their own "-" prefix, which meant an
+ * overdrawn balance of -130,000 was displayed as a healthy "LKR 130,000".
+ */
+const fmtSigned = (n: number) =>
+  `${n < 0 ? '-' : ''}LKR ${Math.abs(n).toLocaleString()}`;
+
+
 export function ProjectsTab({ 
   data, 
   onDrillDown 
@@ -71,7 +80,7 @@ export function ProjectsTab({
                 </div>
                 <div className="bg-accent/30 p-3 rounded-xl border border-border/10">
                   <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1 flex items-center gap-1"><Activity className="w-3 h-3" /> Balance</p>
-                  <p className="font-mono text-[13px] font-bold text-primary">{fmt(p.balance)}</p>
+                  <p className="font-mono text-[13px] font-bold text-primary">{fmtSigned(p.balance)}</p>
                 </div>
               </div>
 

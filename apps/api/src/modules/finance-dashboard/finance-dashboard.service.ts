@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { SPENT_EXPENSE_STATUSES } from '../../common/constants/expense-status';
 
 @Injectable()
 export class FinanceDashboardService {
@@ -30,9 +31,22 @@ export class FinanceDashboardService {
       }
     });
 
-    const totalAdvanceResult = await this.prisma.projectAdvance.aggregate({
-      where: { companyId, status: { in: ['RECEIVED', 'PARTIAL_RETURN'] } },
-      _sum: { amount: true },
+    // "Total Received" is labelled "Advances, loans, & capital" but only ever
+    // summed project advances, so a company funded by a loan and a client
+    // payment reported zero income. Every inflow is recorded as a funding
+    // source — advances and loans included, each linked back to its own row —
+    // so summing those covers all three without counting anything twice.
+    const totalReceivedResult = await this.prisma.fundingSource.aggregate({
+      where: { companyId, isMain: false },
+      _sum: { originalAmount: true },
+    });
+
+    // Cash on hand is what the Main Account holds, not income minus outgoings
+    // recomputed from a different set of tables. Deriving it the old way made
+    // the headline figure disagree with the Funding page.
+    const mainAccount = await this.prisma.fundingSource.findFirst({
+      where: { companyId, isMain: true },
+      select: { currentBalance: true },
     });
 
     const totalSpentResult = await this.prisma.purchaseAllocation.aggregate({
@@ -41,7 +55,7 @@ export class FinanceDashboardService {
     });
 
     const totalExpensesResult = await this.prisma.expense.aggregate({
-      where: { project: { companyId }, status: { in: ['APPROVED', 'PAID'] } },
+      where: { project: { companyId }, status: SPENT_EXPENSE_STATUSES },
       _sum: { amount: true },
     });
 
@@ -58,7 +72,7 @@ export class FinanceDashboardService {
       _count: true,
     });
 
-    const totalAdvance = Number(totalAdvanceResult._sum.amount || 0);
+    const totalAdvance = Number(totalReceivedResult._sum.originalAmount || 0);
     const totalSpent = Number(totalSpentResult._sum.amount || 0);
     const totalExpenses = Number(totalExpensesResult._sum.amount || 0);
     const totalRepayments = Number(totalRepaymentsResult._sum.amount || 0);
@@ -160,7 +174,7 @@ export class FinanceDashboardService {
         totalBudget,
         totalAdvance,
         totalSpent: consolidatedSpent,
-        balance: totalAdvance - consolidatedSpent,
+        balance: Number(mainAccount?.currentBalance ?? 0),
         billsSummary,
       },
       projectBreakdown: projectBreakdown.sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance)),
@@ -235,7 +249,7 @@ export class FinanceDashboardService {
 
     // Add field expenses to category breakdown
     const projectExpenses = await this.prisma.expense.findMany({
-      where: { projectId, status: { in: ['APPROVED', 'PAID'] } },
+      where: { projectId, status: SPENT_EXPENSE_STATUSES },
       select: { category: true, amount: true }
     });
     for (const exp of projectExpenses) {
@@ -301,7 +315,7 @@ export class FinanceDashboardService {
         },
       }),
       this.prisma.expense.findMany({
-        where: { projectId, status: { in: ['APPROVED', 'PAID'] } },
+        where: { projectId, status: SPENT_EXPENSE_STATUSES },
         include: {
           submittedBy: { select: { id: true, firstName: true, lastName: true } },
         },

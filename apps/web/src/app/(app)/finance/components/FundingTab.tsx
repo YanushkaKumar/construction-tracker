@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,9 +21,8 @@ import {
 
 const fmt = (n: number) => `LKR ${Math.abs(n).toLocaleString()}`;
 
-export function FundingDashboardTab() {
+export function FundingDashboardTab({ onNavigate }: { onNavigate?: (tab: string) => void } = {}) {
   const qc = useQueryClient();
-  const router = useRouter();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState<'select' | 'form' | 'review'>('select');
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -37,6 +35,17 @@ export function FundingDashboardTab() {
     queryKey: ['funding-dashboard'],
     queryFn: async () => (await apiClient.get('/funding-sources/dashboard')).data,
     retry: 1,
+  });
+
+  // Advances and progress payments are recorded against a project, so the
+  // form needs the real list to choose from — the field used to be a free
+  // text box expecting the caller to know a database id.
+  const { data: projects } = useQuery<any[]>({
+    queryKey: ['projects'],
+    queryFn: async () => {
+      const res = await apiClient.get('/projects');
+      return res.data?.data ?? res.data ?? [];
+    },
   });
 
   const createFund = useMutation({
@@ -54,6 +63,20 @@ export function FundingDashboardTab() {
     }
   });
 
+  const createAdvance = useMutation({
+    mutationFn: async ({ projectId, ...values }: any) =>
+      (await apiClient.post(`/projects/${projectId}/advances`, values)).data,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['funding-dashboard'] });
+      qc.invalidateQueries({ queryKey: ['finance-overview'] });
+      invalidateFinancials(qc);
+      closeWizard();
+    },
+    onError: (err: any) => {
+      setMutateError(err.response?.data?.message || 'Failed to record the advance');
+    },
+  });
+
   const closeWizard = () => {
     setWizardOpen(false);
     setWizardStep('select');
@@ -63,24 +86,20 @@ export function FundingDashboardTab() {
   };
 
   const handleTypeSelect = (type: string, redirect?: string) => {
-    if (redirect) {
+    // A bank loan is more than an inflow — it carries a repayment schedule —
+    // so it is recorded on its own tab. That tab was never rendered, and the
+    // switch was attempted by scanning the DOM for a button with role="tab"
+    // and the right label. Nothing matched, so the wizard just closed and the
+    // option looked dead. The tab exists now and the parent switches to it.
+    if (redirect === 'loans') {
       closeWizard();
-
-      if (redirect === 'advances') {
-        // A customer advance belongs to a specific project, so it is recorded
-        // on the project's own Advances tab. This used to fire an alert from
-        // inside a DOM loop pointing at a tab that did not exist, which left
-        // the button looking broken.
-        router.push('/projects');
-        return;
-      }
-
-      // Bank loans have their own tab in this workspace — switch to it.
-      document.querySelectorAll('[role="tab"]').forEach(btn => {
-        if (redirect === 'loans' && btn.textContent?.includes('Bank Loans')) (btn as HTMLElement).click();
-      });
+      onNavigate?.('loans');
       return;
     }
+
+    // A customer advance belongs to a project, so it needs one picked before
+    // it can be recorded. It used to dump the user on the projects list with
+    // nothing to carry them back here.
     setSelectedType(type);
     setFormValues({ date: new Date().toISOString().split('T')[0] });
     setWizardStep('form');
@@ -107,6 +126,20 @@ export function FundingDashboardTab() {
     const nonMetaFields = ['amount', 'date', 'reference', 'approvedBy', 'notes', 'paymentMethod'];
     for (const [key, val] of Object.entries(formValues)) {
       if (!nonMetaFields.includes(key) && val) metadataFields[key] = val;
+    }
+
+    // A customer advance is a project record, not a standalone funding row:
+    // it credits the same Main Account, but it has to hang off the project so
+    // the project's advances history shows it.
+    if (selectedType === 'PROJECT_ADVANCE') {
+      createAdvance.mutate({
+        projectId: formValues.projectId,
+        amount,
+        advanceDate: formValues.date || new Date().toISOString().split('T')[0],
+        referenceNo: formValues.reference || null,
+        notes: formValues.notes || null,
+      });
+      return;
     }
 
     createFund.mutate({
@@ -265,7 +298,19 @@ export function FundingDashboardTab() {
                               {FIELD_LABELS[field] || field}
                               {field === 'amount' && <span className="text-danger ml-0.5">*</span>}
                             </Label>
-                            {field === 'notes' ? (
+                            {field === 'projectId' ? (
+                              <select
+                                value={formValues[field] || ''}
+                                onChange={e => setFormValues(v => ({ ...v, [field]: e.target.value }))}
+                                className={inputCls}
+                                required
+                              >
+                                <option value="">Select a project…</option>
+                                {(projects ?? []).map((p: any) => (
+                                  <option key={p.id} value={p.id}>{p.code} — {p.name}</option>
+                                ))}
+                              </select>
+                            ) : field === 'notes' ? (
                               <textarea
                                 value={formValues[field] || ''}
                                 onChange={e => setFormValues(v => ({ ...v, [field]: e.target.value }))}
@@ -292,7 +337,11 @@ export function FundingDashboardTab() {
                         <Button
                           className="bg-foreground text-background hover:bg-foreground/90 rounded-xl h-9 text-xs font-bold"
                           onClick={handleFormSubmit}
-                          disabled={!formValues.amount || Number(formValues.amount) <= 0}
+                          disabled={
+                            !formValues.amount ||
+                            Number(formValues.amount) <= 0 ||
+                            (fields.includes('projectId') && !formValues.projectId)
+                          }
                         >
                           Review & Confirm →
                         </Button>
@@ -341,9 +390,9 @@ export function FundingDashboardTab() {
                         <Button
                           className="bg-foreground text-background hover:bg-foreground/90 rounded-xl h-9 text-xs font-bold gap-1.5"
                           onClick={handleConfirmSubmit}
-                          disabled={createFund.isPending}
+                          disabled={createFund.isPending || createAdvance.isPending}
                         >
-                          {createFund.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                          {createFund.isPending || createAdvance.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                           Commit to Treasury
                         </Button>
                       </div>
