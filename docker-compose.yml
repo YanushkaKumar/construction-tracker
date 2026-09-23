@@ -153,7 +153,12 @@ services:
     volumes:
       - miniodata:/data
     ports:
-      - "9000:9000"
+      # Bound to loopback like every other internal service. The API reaches
+      # MinIO over the compose network, so publishing 9000 on all interfaces
+      # bought nothing and left the object store — still on its default
+      # minioadmin credentials — reachable from outside the host the moment a
+      # security-group rule changed.
+      - "127.0.0.1:9000:9000"
       - "127.0.0.1:9001:9001"
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]

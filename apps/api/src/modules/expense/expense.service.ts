@@ -165,6 +165,9 @@ export class ExpenseService {
       include: { allocations: true }
     });
     if (!expense) throw new NotFoundException('Expense not found');
+    if (expense.status === 'REJECTED') {
+      throw new BadRequestException('This expense has already been rejected');
+    }
 
     return this.prisma.$transaction(async (tx) => {
       const result = await tx.expense.update({
@@ -178,6 +181,12 @@ export class ExpenseService {
       for (const alloc of expense.allocations) {
         await creditMainAccount(tx, companyId, Number(alloc.amount));
       }
+
+      // Drop the allocation rows once refunded. They are what a refund is
+      // computed from, so leaving them behind let the same expense be
+      // refunded again — rejecting twice, or rejecting and then deleting,
+      // credited the balance twice for one payment.
+      await tx.fundingAllocation.deleteMany({ where: { expenseId: id } });
 
       await this.updateProjectActualBudget(result.projectId);
       return result;
