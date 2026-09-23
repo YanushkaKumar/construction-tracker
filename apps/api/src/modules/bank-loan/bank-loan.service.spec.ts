@@ -17,7 +17,13 @@ describe('BankLoanService — repayment money paths', () => {
         delete: jest.fn(),
         findFirst: jest.fn(),
       },
-      fundingSource: { findFirst: jest.fn(), update: jest.fn() },
+      fundingSource: {
+        findFirst: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
+        create: jest.fn(),
+        update: jest.fn(),
+        updateMany: jest.fn(),
+      },
     };
 
     const moduleRef = await Test.createTestingModule({
@@ -26,6 +32,21 @@ describe('BankLoanService — repayment money paths', () => {
 
     service = moduleRef.get(BankLoanService);
   });
+
+  /** Makes getMainAccount() resolve to the company's one spendable account. */
+  const givenMainAccount = (balance: number) => {
+    const account = {
+      id: 'main',
+      name: 'Main Account',
+      isMain: true,
+      openingBalance: balance,
+      currentBalance: balance,
+      originalAmount: balance,
+      remainingAmount: balance,
+    };
+    prisma.fundingSource.findFirst.mockResolvedValue(account);
+    prisma.fundingSource.update.mockResolvedValue(account);
+  };
 
   describe('createRepayment', () => {
     const loan = { id: 'loan1', companyId: 'c1', loanAmount: 1_000_000 };
@@ -41,14 +62,10 @@ describe('BankLoanService — repayment money paths', () => {
       expect(prisma.bankLoanRepayment.create).not.toHaveBeenCalled();
     });
 
-    it('rejects when company cash cannot cover the repayment', async () => {
+    it('rejects when the Main Account cannot cover the repayment', async () => {
       prisma.bankLoan.findFirst.mockResolvedValue(loan);
       prisma.bankLoanRepayment.aggregate.mockResolvedValue({ _sum: { amount: 0 } });
-      prisma.fundingSource.findFirst.mockResolvedValue({
-        id: 'cash',
-        currentBalance: 50_000,
-        remainingAmount: 50_000,
-      });
+      givenMainAccount(50_000);
 
       await expect(
         service.createRepayment('loan1', 'c1', { amount: 100_000, paymentDate: '2026-07-01' }),
@@ -57,21 +74,20 @@ describe('BankLoanService — repayment money paths', () => {
       expect(prisma.bankLoanRepayment.create).not.toHaveBeenCalled();
     });
 
-    it('deducts the repayment from company cash and records it', async () => {
+    it('deducts the repayment from the Main Account and records it', async () => {
       prisma.bankLoan.findFirst.mockResolvedValue(loan);
       prisma.bankLoanRepayment.aggregate.mockResolvedValue({ _sum: { amount: 0 } });
-      prisma.fundingSource.findFirst.mockResolvedValue({
-        id: 'cash',
-        currentBalance: 500_000,
-        remainingAmount: 500_000,
-      });
+      givenMainAccount(500_000);
       prisma.bankLoanRepayment.create.mockResolvedValue({ id: 'r1', amount: 100_000 });
 
       await service.createRepayment('loan1', 'c1', { amount: 100_000, paymentDate: '2026-07-01' });
 
       expect(prisma.fundingSource.update).toHaveBeenCalledWith({
-        where: { id: 'cash' },
-        data: { currentBalance: 400_000, remainingAmount: 400_000 },
+        where: { id: 'main' },
+        data: {
+          currentBalance: { decrement: 100_000 },
+          remainingAmount: { decrement: 100_000 },
+        },
       });
       expect(prisma.bankLoanRepayment.create).toHaveBeenCalled();
       // Not fully repaid — status must stay untouched
@@ -81,11 +97,7 @@ describe('BankLoanService — repayment money paths', () => {
     it('marks the loan PAID_OFF when the final repayment completes it', async () => {
       prisma.bankLoan.findFirst.mockResolvedValue(loan);
       prisma.bankLoanRepayment.aggregate.mockResolvedValue({ _sum: { amount: 900_000 } });
-      prisma.fundingSource.findFirst.mockResolvedValue({
-        id: 'cash',
-        currentBalance: 500_000,
-        remainingAmount: 500_000,
-      });
+      givenMainAccount(500_000);
       prisma.bankLoanRepayment.create.mockResolvedValue({ id: 'r2', amount: 100_000 });
 
       await service.createRepayment('loan1', 'c1', { amount: 100_000, paymentDate: '2026-07-01' });
@@ -105,14 +117,10 @@ describe('BankLoanService — repayment money paths', () => {
   });
 
   describe('deleteRepayment', () => {
-    it('restores company cash and reactivates a paid-off loan', async () => {
+    it('restores the Main Account and reactivates a paid-off loan', async () => {
       prisma.bankLoanRepayment.findFirst.mockResolvedValue({ id: 'r1', bankLoanId: 'loan1' });
       prisma.bankLoanRepayment.delete.mockResolvedValue({ id: 'r1', bankLoanId: 'loan1', amount: 100_000 });
-      prisma.fundingSource.findFirst.mockResolvedValue({
-        id: 'cash',
-        currentBalance: 400_000,
-        remainingAmount: 400_000,
-      });
+      givenMainAccount(400_000);
       prisma.bankLoan.findUnique.mockResolvedValue({
         id: 'loan1',
         loanAmount: 1_000_000,
@@ -123,8 +131,12 @@ describe('BankLoanService — repayment money paths', () => {
       await service.deleteRepayment('r1', 'c1');
 
       expect(prisma.fundingSource.update).toHaveBeenCalledWith({
-        where: { id: 'cash' },
-        data: { currentBalance: 500_000, remainingAmount: 500_000 },
+        where: { id: 'main' },
+        data: {
+          currentBalance: { increment: 100_000 },
+          remainingAmount: { increment: 100_000 },
+          originalAmount: { increment: 100_000 },
+        },
       });
       expect(prisma.bankLoan.update).toHaveBeenCalledWith({
         where: { id: 'loan1' },

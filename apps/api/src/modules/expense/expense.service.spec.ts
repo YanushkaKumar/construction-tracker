@@ -22,8 +22,11 @@ describe('ExpenseService — money paths', () => {
       fundingSource: {
         count: jest.fn(),
         findFirst: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
         findUnique: jest.fn(),
+        create: jest.fn(),
         update: jest.fn(),
+        updateMany: jest.fn(),
         createMany: jest.fn(),
       },
       fundingAllocation: { create: jest.fn(), deleteMany: jest.fn() },
@@ -37,6 +40,23 @@ describe('ExpenseService — money paths', () => {
     service = moduleRef.get(ExpenseService);
   });
 
+  /** The single account every payment is drawn from. */
+  const mainAccount = (balance: number) => ({
+    id: 'main',
+    name: 'Main Account',
+    isMain: true,
+    openingBalance: balance,
+    currentBalance: balance,
+    originalAmount: balance,
+    remainingAmount: balance,
+  });
+
+  /** Makes getMainAccount() resolve to an existing main account. */
+  const givenMainAccount = (balance: number) => {
+    prisma.fundingSource.findFirst.mockResolvedValue(mainAccount(balance));
+    prisma.fundingSource.update.mockResolvedValue(mainAccount(balance));
+  };
+
   describe('create', () => {
     const baseData = {
       title: 'Cement purchase',
@@ -45,100 +65,79 @@ describe('ExpenseService — money paths', () => {
       expenseDate: '2026-07-01',
     };
 
-    it('rejects when allocations do not sum to the expense amount', async () => {
-      prisma.project.findFirst.mockResolvedValue({ companyId: 'c1' });
+    it('refuses when the Main Account cannot cover the expense', async () => {
+      prisma.project.findFirst.mockResolvedValue({ id: 'p1' });
+      givenMainAccount(50_000);
 
       await expect(
-        service.create('p1', 'c1', 'u1', {
-          ...baseData,
-          allocations: [
-            { fundingSourceId: 'fs1', amount: 60_000 },
-            { fundingSourceId: 'fs2', amount: 30_000 }, // sums to 90k, not 100k
-          ],
-        }),
-      ).rejects.toThrow(BadRequestException);
-
-      expect(prisma.expense.create).not.toHaveBeenCalled();
-      expect(prisma.fundingSource.update).not.toHaveBeenCalled();
-    });
-
-    it('rejects when a funding source has insufficient balance', async () => {
-      prisma.project.findFirst.mockResolvedValue({ companyId: 'c1' });
-      prisma.fundingSource.findFirst.mockResolvedValue({
-        id: 'fs1',
-        name: 'Cash Pool',
-        currentBalance: 50_000,
-        remainingAmount: 50_000,
-      });
-
-      await expect(
-        service.create('p1', 'c1', 'u1', {
-          ...baseData,
-          allocations: [{ fundingSourceId: 'fs1', amount: 100_000 }],
-        }),
+        service.create('p1', 'c1', 'u1', baseData),
       ).rejects.toThrow(BadRequestException);
 
       expect(prisma.expense.create).not.toHaveBeenCalled();
     });
 
-    it('scopes the funding source lookup to the expense company', async () => {
-      prisma.project.findFirst.mockResolvedValue({ companyId: 'c1' });
-      // A funding source belonging to another company must not resolve.
-      prisma.fundingSource.findFirst.mockResolvedValue(null);
+    it('debits the Main Account and records one allocation against it', async () => {
+      prisma.project.findFirst.mockResolvedValue({ id: 'p1' });
+      givenMainAccount(500_000);
+      prisma.expense.create.mockResolvedValue({ id: 'e1', title: 'Cement purchase', category: 'MATERIAL', description: null });
 
-      await expect(
-        service.create('p1', 'c1', 'u1', {
-          ...baseData,
-          allocations: [{ fundingSourceId: 'other-company-fs', amount: 100_000 }],
-        }),
-      ).rejects.toThrow(NotFoundException);
+      await service.create('p1', 'c1', 'u1', baseData);
 
-      expect(prisma.fundingSource.findFirst).toHaveBeenCalledWith({
-        where: { id: 'other-company-fs', companyId: 'c1' },
+      expect(prisma.fundingSource.update).toHaveBeenCalledWith({
+        where: { id: 'main' },
+        data: {
+          currentBalance: { decrement: 100_000 },
+          remainingAmount: { decrement: 100_000 },
+        },
       });
-      expect(prisma.fundingSource.update).not.toHaveBeenCalled();
-      expect(prisma.expense.create).not.toHaveBeenCalled();
+      expect(prisma.fundingAllocation.create).toHaveBeenCalledWith({
+        data: { fundingSourceId: 'main', amount: 100_000, expenseId: 'e1' },
+      });
     });
 
-    it('deducts the allocated amount from the funding source on success', async () => {
-      prisma.project.findFirst.mockResolvedValue({ companyId: 'c1' });
-      prisma.fundingSource.findFirst.mockResolvedValue({
-        id: 'fs1',
-        name: 'Cash Pool',
-        currentBalance: 500_000,
-        remainingAmount: 500_000,
-      });
+    it('ignores funding allocations sent by the client', async () => {
+      // Older clients still post an allocation list. There is one account to
+      // pay from now, so the list must not be able to redirect the money or
+      // change the amount taken.
+      prisma.project.findFirst.mockResolvedValue({ id: 'p1' });
+      givenMainAccount(500_000);
       prisma.expense.create.mockResolvedValue({ id: 'e1', title: 'Cement purchase', category: 'MATERIAL', description: null });
 
       await service.create('p1', 'c1', 'u1', {
         ...baseData,
-        allocations: [{ fundingSourceId: 'fs1', amount: 100_000 }],
+        allocations: [
+          { fundingSourceId: 'someone-elses-source', amount: 1 },
+        ],
       });
 
-      expect(prisma.fundingSource.update).toHaveBeenCalledWith({
-        where: { id: 'fs1' },
-        data: { currentBalance: 400_000, remainingAmount: 400_000 },
-      });
       expect(prisma.fundingAllocation.create).toHaveBeenCalledWith({
-        data: { fundingSourceId: 'fs1', amount: 100_000, expenseId: 'e1' },
+        data: { fundingSourceId: 'main', amount: 100_000, expenseId: 'e1' },
       });
     });
 
-    it('falls back to the company cash pool when no allocations are given', async () => {
-      prisma.project.findFirst.mockResolvedValue({ companyId: 'c1' });
-      prisma.fundingSource.count.mockResolvedValue(1);
-      prisma.fundingSource.findFirst.mockResolvedValue({
-        id: 'cash',
-        name: 'Company Cash',
-        currentBalance: 1_000_000,
-        remainingAmount: 1_000_000,
-      });
+    it('adopts a Main Account for a company that has none yet', async () => {
+      prisma.project.findFirst.mockResolvedValue({ id: 'p1' });
+      prisma.fundingSource.findFirst.mockResolvedValue(null);
+      prisma.fundingSource.findMany.mockResolvedValue([
+        { currentBalance: 400_000 },
+        { currentBalance: 200_000 },
+      ]);
+      prisma.fundingSource.create.mockResolvedValue(mainAccount(600_000));
+      prisma.fundingSource.update.mockResolvedValue(mainAccount(600_000));
       prisma.expense.create.mockResolvedValue({ id: 'e1', title: 'Cement purchase', category: 'MATERIAL', description: null });
 
-      await service.create('p1', 'c1', 'u1', { ...baseData, allocations: [] });
+      await service.create('p1', 'c1', 'u1', baseData);
 
-      expect(prisma.fundingAllocation.create).toHaveBeenCalledWith({
-        data: { fundingSourceId: 'cash', amount: 100_000, expenseId: 'e1' },
+      // The old pools are folded in at their combined balance, so no money
+      // appears or disappears in the move.
+      expect(prisma.fundingSource.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ isMain: true, currentBalance: 600_000 }),
+        }),
+      );
+      expect(prisma.fundingSource.updateMany).toHaveBeenCalledWith({
+        where: { companyId: 'c1', id: { not: 'main' } },
+        data: { currentBalance: 0, remainingAmount: 0 },
       });
     });
 
@@ -147,18 +146,6 @@ describe('ExpenseService — money paths', () => {
       await expect(service.create('missing', 'c1', 'u1', baseData)).rejects.toThrow(NotFoundException);
     });
 
-    it('asks for a real funding source instead of fabricating an empty one', async () => {
-      // No allocations given and the company has no cash pool. This used to
-      // silently create a zero-balance "Primary Company Cash Pool" and then
-      // fail on its balance; it should just say what's missing.
-      prisma.project.findFirst.mockResolvedValue({ id: 'p1' });
-      prisma.fundingSource.findFirst.mockResolvedValue(null);
-
-      await expect(
-        service.create('p1', 'c1', 'u1', { ...baseData, allocations: [] }),
-      ).rejects.toThrow(BadRequestException);
-      expect(prisma.fundingSource.createMany).not.toHaveBeenCalled();
-    });
   });
 
   describe('approve', () => {
@@ -197,7 +184,7 @@ describe('ExpenseService — money paths', () => {
   });
 
   describe('reject', () => {
-    it('restores funding source balances for every allocation', async () => {
+    it('refunds every allocation to the Main Account and clears them', async () => {
       prisma.expense.findFirst.mockResolvedValue({
         id: 'e1',
         status: 'PENDING',
@@ -207,18 +194,48 @@ describe('ExpenseService — money paths', () => {
           { fundingSourceId: 'fs2', amount: 40_000 },
         ],
       });
+      givenMainAccount(0);
       prisma.expense.update.mockResolvedValue({ id: 'e1', status: 'REJECTED', projectId: 'p1' });
 
       await service.reject('e1', 'c1', 'approver', 'duplicate voucher');
 
+      // Refunds land in the one account, not in whichever pool the old
+      // allocation rows happen to name.
       expect(prisma.fundingSource.update).toHaveBeenCalledWith({
-        where: { id: 'fs1' },
-        data: { currentBalance: { increment: 60_000 }, remainingAmount: { increment: 60_000 } },
+        where: { id: 'main' },
+        data: {
+          currentBalance: { increment: 60_000 },
+          remainingAmount: { increment: 60_000 },
+          originalAmount: { increment: 60_000 },
+        },
       });
       expect(prisma.fundingSource.update).toHaveBeenCalledWith({
-        where: { id: 'fs2' },
-        data: { currentBalance: { increment: 40_000 }, remainingAmount: { increment: 40_000 } },
+        where: { id: 'main' },
+        data: {
+          currentBalance: { increment: 40_000 },
+          remainingAmount: { increment: 40_000 },
+          originalAmount: { increment: 40_000 },
+        },
       });
+      // Clearing the rows is what stops the same payment being refunded twice.
+      expect(prisma.fundingAllocation.deleteMany).toHaveBeenCalledWith({
+        where: { expenseId: 'e1' },
+      });
+    });
+
+    it('refuses to reject an expense that is already rejected', async () => {
+      prisma.expense.findFirst.mockResolvedValue({
+        id: 'e1',
+        status: 'REJECTED',
+        projectId: 'p1',
+        allocations: [{ fundingSourceId: 'main', amount: 60_000 }],
+      });
+
+      await expect(
+        service.reject('e1', 'c1', 'approver', 'again'),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(prisma.fundingSource.update).not.toHaveBeenCalled();
     });
 
     it('throws when the expense does not exist', async () => {
@@ -233,19 +250,24 @@ describe('ExpenseService — money paths', () => {
   });
 
   describe('delete', () => {
-    it('restores balances before deleting', async () => {
+    it('refunds to the Main Account before deleting', async () => {
       prisma.expense.findFirst.mockResolvedValue({
         id: 'e1',
         projectId: 'p1',
         allocations: [{ fundingSourceId: 'fs1', amount: 25_000 }],
       });
+      givenMainAccount(0);
       prisma.expense.delete.mockResolvedValue({ id: 'e1', projectId: 'p1' });
 
       await service.delete('e1', 'c1');
 
       expect(prisma.fundingSource.update).toHaveBeenCalledWith({
-        where: { id: 'fs1' },
-        data: { currentBalance: { increment: 25_000 }, remainingAmount: { increment: 25_000 } },
+        where: { id: 'main' },
+        data: {
+          currentBalance: { increment: 25_000 },
+          remainingAmount: { increment: 25_000 },
+          originalAmount: { increment: 25_000 },
+        },
       });
       expect(prisma.expense.delete).toHaveBeenCalledWith({ where: { id: 'e1' } });
     });

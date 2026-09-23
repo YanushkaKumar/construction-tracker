@@ -201,22 +201,10 @@ export class BankLoanService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      // Find the first Company Cash funding source to deduct repayment from
-      const companyCash = await tx.fundingSource.findFirst({
-        where: { companyId, type: 'COMPANY_CASH' }
-      });
-      if (companyCash) {
-        if (Number(companyCash.currentBalance) < repaymentAmount) {
-          throw new BadRequestException('Insufficient Company Cash to perform loan repayment');
-        }
-        await tx.fundingSource.update({
-          where: { id: companyCash.id },
-          data: {
-            currentBalance: Number(companyCash.currentBalance) - repaymentAmount,
-            remainingAmount: Number(companyCash.remainingAmount) - repaymentAmount,
-          }
-        });
-      }
+      // Repaying a loan is money leaving the company, so it comes off the one
+      // balance. This used to pick "the first COMPANY_CASH source" and, when
+      // there wasn't one, record the repayment and deduct nothing at all.
+      await debitMainAccount(tx, companyId, repaymentAmount, 'loan repayment');
 
       const repayment = await tx.bankLoanRepayment.create({
         data: {
@@ -254,19 +242,8 @@ export class BankLoanService {
         where: { id: repaymentId }
       });
 
-      // Restore repayment amount to Company Cash
-      const companyCash = await tx.fundingSource.findFirst({
-        where: { companyId, type: 'COMPANY_CASH' }
-      });
-      if (companyCash) {
-        await tx.fundingSource.update({
-          where: { id: companyCash.id },
-          data: {
-            currentBalance: Number(companyCash.currentBalance) + Number(deletedRepayment.amount),
-            remainingAmount: Number(companyCash.remainingAmount) + Number(deletedRepayment.amount),
-          }
-        });
-      }
+      // Undoing a repayment puts the money back on the company balance.
+      await creditMainAccount(tx, companyId, Number(deletedRepayment.amount));
 
       const loan = await tx.bankLoan.findUnique({
         where: { id: deletedRepayment.bankLoanId },
