@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
-import { parseRequiredDateRange } from '../../common/utils/date-range.util';
+import { parseRequiredDateRange, parseRequiredDate } from '../../common/utils/date-range.util';
 import { assertProjectInCompany } from '../../common/utils/tenant.util';
 import { parseAmount } from '../../common/utils/money.util';
 import { creditMainAccount, debitMainAccount } from '../../common/utils/main-account.util';
@@ -24,6 +24,9 @@ export class AttendanceService {
       const results = [];
 
       for (const record of records) {
+        // A missing or unparseable date reached Prisma as an Invalid Date and
+        // came back as a bare 500 naming nothing.
+        const recordDate = parseRequiredDate(record.date, 'Attendance date');
         const rate = rates.get(record.workerId) || 0;
         const base = record.dailyWage !== undefined ? Number(record.dailyWage) : rate;
         // Extra pay is added on top of the day rate and is what actually gets
@@ -36,7 +39,7 @@ export class AttendanceService {
 
         // Check if attendance already exists
         const existing = await tx.attendance.findUnique({
-          where: { workerId_projectId_date: { workerId: record.workerId, projectId, date: new Date(record.date) } },
+          where: { workerId_projectId_date: { workerId: record.workerId, projectId, date: recordDate } },
           include: { fundingAllocations: true }
         });
 
@@ -49,11 +52,11 @@ export class AttendanceService {
         }
 
         const attendance = await tx.attendance.upsert({
-          where: { workerId_projectId_date: { workerId: record.workerId, projectId, date: new Date(record.date) } },
+          where: { workerId_projectId_date: { workerId: record.workerId, projectId, date: recordDate } },
           create: {
             workerId: record.workerId,
             projectId,
-            date: new Date(record.date),
+            date: recordDate,
             status: record.status,
             dailyWage: wage,
             extraAmount,

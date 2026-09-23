@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { assertProjectInCompany } from '../../common/utils/tenant.util';
+import { parseRequiredDate } from '../../common/utils/date-range.util';
 
 @Injectable()
 export class DailyReportService {
@@ -8,8 +9,35 @@ export class DailyReportService {
 
   async create(projectId: string, companyId: string, reporterId: string, data: any) {
     await assertProjectInCompany(this.prisma, projectId, companyId);
+    const d = data ?? {};
+    const text = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null);
+    const workSummary = text(d.workSummary);
+    if (!workSummary) throw new BadRequestException('Describe the work done today');
+
+    const wholeNumber = (v: unknown, label: string, max?: number) => {
+      if (v === undefined || v === null || v === '') return null;
+      const n = Number(v);
+      if (!Number.isFinite(n) || n < 0 || (max !== undefined && n > max)) {
+        throw new BadRequestException(`${label} must be a number between 0 and ${max ?? 'any'}`);
+      }
+      return Math.round(n);
+    };
+
+    // Only the fields the daily log form owns are written. Spreading the
+    // request body let a caller set any column on the report.
     return this.prisma.dailyReport.create({
-      data: { ...data, projectId, reporterId, reportDate: new Date(data.reportDate) },
+      data: {
+        projectId,
+        reporterId,
+        reportDate: parseRequiredDate(d.reportDate, 'Report date'),
+        workSummary,
+        weatherCondition: text(d.weatherCondition),
+        issues: text(d.issues),
+        safetyNotes: text(d.safetyNotes),
+        notes: text(d.notes),
+        workersOnSite: wholeNumber(d.workersOnSite, 'Workers on site') ?? 0,
+        progressPercent: wholeNumber(d.progressPercent, 'Progress percent', 100),
+      },
       include: { images: true, reporter: { select: { id: true, firstName: true, lastName: true } } },
     });
   }

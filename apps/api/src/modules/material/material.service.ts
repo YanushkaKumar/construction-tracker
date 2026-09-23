@@ -1,6 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { assertProjectInCompany } from '../../common/utils/tenant.util';
+import { parseAmount } from '../../common/utils/money.util';
+import { parseRequiredDate } from '../../common/utils/date-range.util';
+
+/** Trimmed string, or undefined when the caller left it blank. */
+const text = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
 
 @Injectable()
 export class MaterialService {
@@ -10,14 +15,57 @@ export class MaterialService {
     return this.prisma.material.findMany({ where: { companyId }, orderBy: { name: 'asc' } });
   }
 
+  /**
+   * Only the fields the material form owns are written. Spreading the request
+   * body made every column client-settable, including currentStock.
+   */
   async create(companyId: string, data: any) {
-    return this.prisma.material.create({ data: { ...data, companyId } });
+    const d = data ?? {};
+    const name = text(d.name);
+    const unit = text(d.unit);
+    if (!name) throw new BadRequestException('Material name is required');
+    if (!unit) throw new BadRequestException('Unit is required');
+
+    return this.prisma.material.create({
+      data: {
+        companyId,
+        name,
+        unit,
+        category: text(d.category),
+        description: text(d.description),
+        unitPrice: parseAmount(d.unitPrice ?? 0, 'Unit price', { allowZero: true }),
+        minimumStock: parseAmount(d.minimumStock ?? 0, 'Minimum stock', { allowZero: true }),
+        currentStock: parseAmount(d.currentStock ?? 0, 'Current stock', { allowZero: true }),
+      },
+    });
   }
 
   async createRequest(projectId: string, companyId: string, requestedById: string, data: any) {
     await assertProjectInCompany(this.prisma, projectId, companyId);
+    const d = data ?? {};
+    const materialId = text(d.materialId);
+    if (!materialId) throw new BadRequestException('Choose a material for this request');
+
+    const quantity = parseAmount(d.quantity, 'Quantity');
+    const unitPrice =
+      d.unitPrice === undefined || d.unitPrice === null || d.unitPrice === ''
+        ? undefined
+        : parseAmount(d.unitPrice, 'Unit price', { allowZero: true });
+
     return this.prisma.materialRequest.create({
-      data: { ...data, projectId, requestedById },
+      data: {
+        projectId,
+        requestedById,
+        materialId,
+        supplierId: text(d.supplierId) ?? null,
+        quantity,
+        unitPrice,
+        // Derived rather than trusted: a client could otherwise send a total
+        // that does not match the quantity and price beside it.
+        totalPrice: unitPrice === undefined ? undefined : Math.round(quantity * unitPrice * 100) / 100,
+        deliveryDate: d.deliveryDate ? parseRequiredDate(d.deliveryDate, 'Delivery date') : null,
+        notes: text(d.notes) ?? null,
+      },
       include: { material: true, supplier: true },
     });
   }
@@ -66,6 +114,21 @@ export class MaterialService {
   }
 
   async createSupplier(companyId: string, data: any) {
-    return this.prisma.supplier.create({ data: { ...data, companyId } });
+    const d = data ?? {};
+    const name = text(d.name);
+    if (!name) throw new BadRequestException('Supplier name is required');
+
+    return this.prisma.supplier.create({
+      data: {
+        companyId,
+        name,
+        contactPerson: text(d.contactPerson) ?? null,
+        phone: text(d.phone) ?? null,
+        email: text(d.email) ?? null,
+        address: text(d.address) ?? null,
+        materialTypes: Array.isArray(d.materialTypes) ? d.materialTypes : [],
+        rating: Number.isInteger(d.rating) ? d.rating : null,
+      },
+    });
   }
 }
