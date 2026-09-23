@@ -10,6 +10,7 @@ import {
   Contact, SlidersHorizontal, CheckCircle2, CalendarDays, Coins
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
+import { ConfirmDelete } from '@/components/ui/confirm-delete';
 import { invalidateWorkforce } from '@/lib/invalidate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -146,6 +147,14 @@ export default function WorkersPage() {
   });
 
   // Save attendance mutation
+  const removeWorker = useMutation({
+    mutationFn: async (id: string) => (await apiClient.delete(`/workers/${id}`)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workers'] });
+      invalidateWorkforce(queryClient);
+    },
+  });
+
   const saveAttendanceMutation = useMutation({
     mutationFn: async (records: any[]) => {
       if (!selectedProjectId) throw new Error('Please select a project first');
@@ -456,9 +465,17 @@ export default function WorkersPage() {
                       key={w.id} 
                       className="p-3 bg-card/65 border border-border/15 hover:border-border/30 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 transition-all duration-200"
                     >
-                      <div className="text-left font-bold">
-                        <div className="text-[15px] text-foreground">{w.firstName} {w.lastName}</div>
-                        <span className="text-[11px] text-muted-foreground/60 font-bold uppercase tracking-wider font-mono">{w.skillType} • LKR {w.dailyRate.toLocaleString()}/day</span>
+                      <div className="text-left font-bold flex items-center gap-2">
+                        <div>
+                          <div className="text-[15px] text-foreground">{w.firstName} {w.lastName}</div>
+                          <span className="text-[11px] text-muted-foreground/60 font-bold uppercase tracking-wider font-mono">{w.skillType} • LKR {w.dailyRate.toLocaleString()}/day</span>
+                        </div>
+                        <ConfirmDelete
+                          label={`${w.firstName} ${w.lastName}`}
+                          description="Removes this worker from the roster."
+                          warning="A worker with attendance recorded is deactivated instead of deleted, so their wage history stays with the accounts."
+                          onConfirm={() => removeWorker.mutateAsync(w.id)}
+                        />
                       </div>
 
                       <div className="flex flex-wrap items-center gap-3.5 w-full sm:w-auto font-semibold">

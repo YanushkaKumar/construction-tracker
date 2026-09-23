@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { SkeletonList } from '@/components/ui/skeleton';
 import { MainAccountPanel } from '@/components/ui/main-account-panel';
+import { ConfirmDelete } from '@/components/ui/confirm-delete';
 import { cn } from '@/lib/utils';
 
 const assetSchema = z.object({
@@ -57,6 +58,14 @@ export default function AssetsPage() {
     queryKey: ['projects', 'ALL'],
     queryFn: async () => (await apiClient.get('/projects')).data,
     retry: 1,
+  });
+
+  const deleteAsset = useMutation({
+    mutationFn: async (id: string) => (await apiClient.delete(`/assets/${id}`)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      invalidateFinancials(queryClient);
+    },
   });
 
   const createAssetMutation = useMutation({
@@ -316,6 +325,12 @@ export default function AssetsPage() {
               <div className="w-24 text-right">
                 <span className="text-[13px] font-semibold text-foreground/90 font-mono">{fmt(a.purchasePrice)}</span>
               </div>
+              <ConfirmDelete
+                label={a.name}
+                description="The asset is removed and what it cost returns to the Main Account."
+                warning={a.purchasePrice > 0 ? `This will add ${fmt(a.purchasePrice)} back to the Main Account.` : undefined}
+                onConfirm={() => deleteAsset.mutateAsync(a.id)}
+              />
             </div>
           ))}
         </div>

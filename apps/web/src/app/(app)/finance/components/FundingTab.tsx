@@ -8,12 +8,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Plus, CheckCircle2, AlertTriangle, AlertCircle, Loader2, Download, Coins, ChevronRight } from 'lucide-react';
+import { Plus, CheckCircle2, AlertTriangle, AlertCircle, Loader2, Download, Coins, ChevronRight, Pencil } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { invalidateFinancials } from '@/lib/invalidate';
 import { ProgressBar, DonutChart } from '@/components/ui/custom-charts';
 import { SkeletonStatGrid, SkeletonChart } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { ConfirmDelete } from '@/components/ui/confirm-delete';
 import { 
   SOURCE_CATEGORIES, FIELD_LABELS, NUMERIC_FIELDS, DATE_FIELDS, 
   inputCls, UpcomingRepaymentsCard 
@@ -26,6 +27,9 @@ export function FundingDashboardTab({ onNavigate }: { onNavigate?: (tab: string)
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState<'select' | 'form' | 'review'>('select');
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editValues, setEditValues] = useState<{ name: string; amount: string }>({ name: '', amount: '' });
+  const [editError, setEditError] = useState<string | null>(null);
   const [formValues, setFormValues] = useState<Record<string, any>>({});
   const [mutateError, setMutateError] = useState<string | null>(null);
   const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
@@ -61,6 +65,29 @@ export function FundingDashboardTab({ onNavigate }: { onNavigate?: (tab: string)
     onError: (err: any) => {
       setMutateError(err.response?.data?.message || 'Failed to create funding source');
     }
+  });
+
+  // Correcting or removing a funding entry moves the Main Account by the
+  // same amount, so the balance always matches what was actually received.
+  const editFund = useMutation({
+    mutationFn: async ({ id, amount, name }: { id: string; amount: number; name: string }) =>
+      (await apiClient.patch(`/funding-sources/${id}`, { amount, name })).data,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['funding-dashboard'] });
+      qc.invalidateQueries({ queryKey: ['finance-overview'] });
+      invalidateFinancials(qc);
+      setEditing(null);
+    },
+    onError: (err: any) => setEditError(err.response?.data?.message || 'Could not update this funding entry'),
+  });
+
+  const removeFund = useMutation({
+    mutationFn: async (id: string) => (await apiClient.delete(`/funding-sources/${id}`)).data,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['funding-dashboard'] });
+      qc.invalidateQueries({ queryKey: ['finance-overview'] });
+      invalidateFinancials(qc);
+    },
   });
 
   const createAdvance = useMutation({
@@ -473,6 +500,30 @@ export function FundingDashboardTab({ onNavigate }: { onNavigate?: (tab: string)
                               </span>
                             </div>
 
+                            {!source.isMain && (
+                              <div className="flex items-center gap-1 -mt-1" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  aria-label={`Edit ${source.name}`}
+                                  title="Edit"
+                                  onClick={() => {
+                                    setEditError(null);
+                                    setEditing(source);
+                                    setEditValues({ name: source.name, amount: String(source.originalAmount) });
+                                  }}
+                                  className="p-1.5 rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-accent/40 transition-colors"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                <ConfirmDelete
+                                  label={source.name}
+                                  description="The funding entry is removed and its money comes back off the Main Account."
+                                  warning={`This will reduce the Main Account by ${fmt(source.originalAmount)}.`}
+                                  onConfirm={() => removeFund.mutateAsync(source.id)}
+                                />
+                              </div>
+                            )}
+
                             <div className="space-y-1 select-none">
                               <div className="flex justify-between text-[11px] font-semibold text-muted-foreground/75 font-mono">
                                 {source.isMain ? (
@@ -583,6 +634,70 @@ export function FundingDashboardTab({ onNavigate }: { onNavigate?: (tab: string)
           <UpcomingRepaymentsCard />
         </div>
       </div>
+
+      {/* Correcting a funding entry — the amount change moves the Main Account */}
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) setEditing(null); }}>
+        <DialogContent className="sm:max-w-[440px]">
+          <DialogHeader>
+            <DialogTitle>Edit funding entry</DialogTitle>
+            <DialogDescription>
+              Changing the amount adjusts the Main Account by the difference.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editError && (
+            <Alert variant="destructive">
+              <AlertDescription>{editError}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-3.5">
+            <div className="space-y-1.5">
+              <Label className="text-[12px] font-semibold text-foreground/80">Name</Label>
+              <Input
+                className={inputCls}
+                value={editValues.name}
+                onChange={(e) => setEditValues((v) => ({ ...v, name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[12px] font-semibold text-foreground/80">Amount received (LKR)</Label>
+              <Input
+                className={inputCls}
+                type="number"
+                step="0.01"
+                min="0"
+                value={editValues.amount}
+                onChange={(e) => setEditValues((v) => ({ ...v, amount: e.target.value }))}
+              />
+              {editing && (
+                <p className="text-[11px] text-muted-foreground/70 font-medium">
+                  Currently {fmt(Number(editing.originalAmount))}.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-border/15">
+            <Button type="button" variant="outline" className="rounded-xl h-9 text-xs font-bold" onClick={() => setEditing(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="rounded-xl h-9 text-xs font-bold"
+              disabled={editFund.isPending || !editValues.name.trim() || editValues.amount === ''}
+              onClick={() => editing && editFund.mutate({
+                id: editing.id,
+                name: editValues.name.trim(),
+                amount: Number(editValues.amount),
+              })}
+            >
+              {editFund.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+              {editFund.isPending ? 'Saving…' : 'Save changes'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

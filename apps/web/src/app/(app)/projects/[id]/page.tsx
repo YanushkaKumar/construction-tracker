@@ -14,6 +14,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
 import { AdvancesTab } from './components/AdvancesTab';
 import { EditProjectDialog } from './components/EditProjectDialog';
+import { ConfirmDelete } from '@/components/ui/confirm-delete';
+import { invalidateFinancials } from '@/lib/invalidate';
 import { DonutChart, ProgressBar } from '@/components/ui/custom-charts';
 import { cn } from '@/lib/utils';
 
@@ -195,7 +197,20 @@ export default function ProjectDetailsPage() {
             </div>
             <h1 className="text-3xl md:text-4xl lg:text-[40px] font-semibold tracking-tight text-foreground/90">{project.name}</h1>
           </div>
-          <EditProjectDialog project={project} />
+          <div className="flex items-center gap-2">
+            <EditProjectDialog project={project} />
+            <ConfirmDelete
+              variant="button"
+              label={project.name}
+              description="The project and everything recorded against it — expenses, tasks, daily logs, attendance — are removed."
+              warning="Money already spent on this project stays deducted from the Main Account. Delete the individual expenses and purchases first if you want that money back."
+              onConfirm={async () => {
+                await apiClient.delete(`/projects/${project.id}`);
+                invalidateFinancials(queryClient);
+                router.replace('/projects');
+              }}
+            />
+          </div>
         </div>
       </div>
 

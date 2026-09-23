@@ -16,6 +16,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ConfirmDelete } from '@/components/ui/confirm-delete';
 
 interface Advance {
   id: string;
@@ -81,6 +82,14 @@ export function AdvancesTab({ projectId }: { projectId: string }) {
 
   const list = advances ?? [];
   const total = list.reduce((sum, a) => sum + Number(a.amount), 0);
+
+  const removeAdvance = useMutation({
+    mutationFn: async (id: string) => (await apiClient.delete(`/advances/${id}`)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['advances', projectId] });
+      invalidateFinancials(queryClient);
+    },
+  });
 
   const inputCls =
     'h-10 rounded-xl border-border/40 bg-background/40 text-sm font-semibold';
@@ -210,9 +219,17 @@ export function AdvancesTab({ projectId }: { projectId: string }) {
                     )}
                   </div>
                 </div>
-                <span className="text-[15px] font-bold font-mono text-success whitespace-nowrap">
-                  + {money(Number(a.amount))}
-                </span>
+                <div className="flex items-center gap-1 whitespace-nowrap">
+                  <span className="text-[15px] font-bold font-mono text-success">
+                    + {money(Number(a.amount))}
+                  </span>
+                  <ConfirmDelete
+                    label={a.description || 'this advance'}
+                    description="The advance is removed and its money comes back off the Main Account."
+                    warning={`This will reduce the Main Account by ${money(Number(a.amount))}.`}
+                    onConfirm={() => removeAdvance.mutateAsync(a.id)}
+                  />
+                </div>
               </CardContent>
             </Card>
           ))}

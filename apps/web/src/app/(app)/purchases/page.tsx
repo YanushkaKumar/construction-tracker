@@ -5,9 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import {
-  Plus, AlertCircle, ShoppingCart, Calendar, Building2, MapPin, Search, Receipt
-} from 'lucide-react';
+import { Plus, AlertCircle, ShoppingCart, Calendar, Building2, MapPin, Search, Receipt, Pencil, Loader2 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { invalidateFinancials } from '@/lib/invalidate';
 import { Button } from '@/components/ui/button';
@@ -18,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { SkeletonList } from '@/components/ui/skeleton';
 import { MainAccountPanel } from '@/components/ui/main-account-panel';
+import { ConfirmDelete } from '@/components/ui/confirm-delete';
 import { cn } from '@/lib/utils';
 
 const purchaseSchema = z.object({
@@ -55,6 +54,30 @@ export default function PurchasesPage() {
     queryKey: ['projects', 'ALL'],
     queryFn: async () => (await apiClient.get('/projects')).data,
     retry: 1,
+  });
+
+  // Editing or deleting a purchase moves the Main Account by the difference,
+  // so the balance follows the correction.
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editValues, setEditValues] = useState<{ title: string; totalAmount: string; vendor: string }>({ title: '', totalAmount: '', vendor: '' });
+  const [editError, setEditError] = useState<string | null>(null);
+
+  const editPurchase = useMutation({
+    mutationFn: async ({ id, ...body }: any) => (await apiClient.patch(`/purchases/${id}`, body)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchases'] });
+      invalidateFinancials(queryClient);
+      setEditing(null);
+    },
+    onError: (err: any) => setEditError(err.response?.data?.message || 'Could not update this purchase'),
+  });
+
+  const deletePurchase = useMutation({
+    mutationFn: async (id: string) => (await apiClient.delete(`/purchases/${id}`)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchases'] });
+      invalidateFinancials(queryClient);
+    },
   });
 
   const createPurchaseMutation = useMutation({
@@ -263,10 +286,82 @@ export default function PurchasesPage() {
               <div className="w-24 text-right">
                 <span className="text-[13px] font-semibold text-foreground/90 font-mono">{fmt(p.totalAmount)}</span>
               </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  aria-label={`Edit ${p.title}`}
+                  title="Edit"
+                  onClick={() => {
+                    setEditError(null);
+                    setEditing(p);
+                    setEditValues({ title: p.title, totalAmount: String(p.totalAmount), vendor: p.vendor ?? '' });
+                  }}
+                  className="p-1.5 rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-accent/40 transition-colors"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <ConfirmDelete
+                  label={p.title}
+                  description="The purchase is removed and its money returns to the Main Account."
+                  warning={`This will add ${fmt(p.totalAmount)} back to the Main Account.`}
+                  onConfirm={() => deletePurchase.mutateAsync(p.id)}
+                />
+              </div>
             </div>
           ))}
         </div>
       )}
+
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) setEditing(null); }}>
+        <DialogContent className="sm:max-w-[440px]">
+          <DialogHeader>
+            <DialogTitle>Edit purchase</DialogTitle>
+            <DialogDescription>
+              Changing the amount moves the Main Account by the difference.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editError && (
+            <Alert variant="destructive">
+              <AlertDescription>{editError}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-3.5">
+            <div className="space-y-1.5">
+              <Label className="text-[12px] font-semibold text-foreground/80">Title</Label>
+              <Input className={inputCls} value={editValues.title} onChange={(e) => setEditValues(v => ({ ...v, title: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[12px] font-semibold text-foreground/80">Total amount (LKR)</Label>
+              <Input className={inputCls} type="number" step="0.01" min="0" value={editValues.totalAmount} onChange={(e) => setEditValues(v => ({ ...v, totalAmount: e.target.value }))} />
+              {editing && <p className="text-[11px] text-muted-foreground/70 font-medium">Currently {fmt(Number(editing.totalAmount))}.</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[12px] font-semibold text-foreground/80">Vendor</Label>
+              <Input className={inputCls} value={editValues.vendor} onChange={(e) => setEditValues(v => ({ ...v, vendor: e.target.value }))} />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-border/15">
+            <Button type="button" variant="outline" className="rounded-xl h-9 text-xs font-bold" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button
+              type="button"
+              className="rounded-xl h-9 text-xs font-bold"
+              disabled={editPurchase.isPending || !editValues.title.trim() || editValues.totalAmount === ''}
+              onClick={() => editing && editPurchase.mutate({
+                id: editing.id,
+                title: editValues.title.trim(),
+                totalAmount: Number(editValues.totalAmount),
+                vendor: editValues.vendor.trim() || null,
+              })}
+            >
+              {editPurchase.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+              {editPurchase.isPending ? 'Saving…' : 'Save changes'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
