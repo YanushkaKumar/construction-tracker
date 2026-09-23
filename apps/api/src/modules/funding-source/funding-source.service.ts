@@ -258,9 +258,14 @@ export class FundingSourceService {
         id: s.id,
         type: s.type,
         name: s.name,
+        isMain: s.isMain,
         originalAmount,
         currentBalance,
-        consumed,
+        // Only the Main Account holds a balance, so "consumed" is only
+        // meaningful there. Every other row is a record of money coming in;
+        // reporting its full amount as consumed made each one read as
+        // "Depleted / 100% utilised" the moment it was created.
+        consumed: s.isMain ? consumed : 0,
         status: s.status,
         sourceCategory: s.sourceCategory || getSourceCategory(s.type),
         description: s.description,
@@ -277,10 +282,16 @@ export class FundingSourceService {
       };
     });
 
+    // Cash on hand lives in one place now. The three figures beside it report
+    // how much came in from each kind of source, which is what they were
+    // really being read as; summing balances would report zero for all of
+    // them, because only the Main Account carries one.
     const currentCash = mapped.reduce((acc, curr) => acc + curr.currentBalance, 0);
-    const availableAdvances = mapped.filter(s => s.type === 'PROJECT_ADVANCE' || s.type === 'CLIENT_PROGRESS_PAYMENT').reduce((acc, curr) => acc + curr.currentBalance, 0);
-    const loans = mapped.filter(s => ['BANK_LOAN', 'EMERGENCY_LOAN', 'EQUIPMENT_LOAN', 'VEHICLE_LOAN'].includes(s.type)).reduce((acc, curr) => acc + curr.currentBalance, 0);
-    const companyFunds = mapped.filter(s => ['COMPANY_CASH', 'OWNER_CAPITAL', 'DIRECTOR_INVESTMENT', 'SHAREHOLDER_CONTRIBUTION', 'INVESTOR_FUNDING'].includes(s.type)).reduce((acc, curr) => acc + curr.currentBalance, 0);
+    const receivedFrom = (types: string[]) =>
+      mapped.filter(s => !s.isMain && types.includes(s.type)).reduce((acc, curr) => acc + curr.originalAmount, 0);
+    const availableAdvances = receivedFrom(['PROJECT_ADVANCE', 'CLIENT_PROGRESS_PAYMENT']);
+    const loans = receivedFrom(['BANK_LOAN', 'EMERGENCY_LOAN', 'EQUIPMENT_LOAN', 'VEHICLE_LOAN']);
+    const companyFunds = receivedFrom(['COMPANY_CASH', 'OWNER_CAPITAL', 'DIRECTOR_INVESTMENT', 'SHAREHOLDER_CONTRIBUTION', 'INVESTOR_FUNDING']);
 
     // Timeline calculations: aggregate allocations by month
     const allocations = await this.prisma.fundingAllocation.findMany({

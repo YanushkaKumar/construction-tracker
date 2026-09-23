@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { parseAmount } from '../../common/utils/money.util';
+import { creditMainAccount, debitMainAccount } from '../../common/utils/main-account.util';
 import { BankLoanStatus } from '@prisma/client';
 
 @Injectable()
@@ -21,19 +22,21 @@ export class BankLoanService {
         },
       });
 
-      const amt = Number(data.loanAmount);
+      const amt = parseAmount(data.loanAmount, 'Loan amount');
       await tx.fundingSource.create({
         data: {
           companyId,
           type: 'BANK_LOAN',
           name: `${data.bankName} - Loan Facility`,
           openingBalance: amt,
-          currentBalance: amt,
+          // Provenance only — the drawdown lands in the Main Account.
+          currentBalance: 0,
           originalAmount: amt,
-          remainingAmount: amt,
+          remainingAmount: 0,
           bankLoanId: loan.id,
         },
       });
+      await creditMainAccount(tx, companyId, amt);
 
       return loan;
     });
@@ -142,17 +145,17 @@ export class BankLoanService {
       if (data.loanAmount !== undefined) {
         const source = await tx.fundingSource.findFirst({ where: { bankLoanId: id } });
         if (source) {
-          const amt = Number(data.loanAmount);
+          const amt = parseAmount(data.loanAmount, 'Loan amount');
           const difference = amt - Number(source.originalAmount);
           await tx.fundingSource.update({
             where: { id: source.id },
-            data: {
-              originalAmount: amt,
-              openingBalance: amt,
-              currentBalance: Number(source.currentBalance) + difference,
-              remainingAmount: Number(source.remainingAmount) + difference,
-            },
+            data: { originalAmount: amt, openingBalance: amt },
           });
+          if (difference > 0) {
+            await creditMainAccount(tx, companyId, difference);
+          } else if (difference < 0) {
+            await debitMainAccount(tx, companyId, -difference, 'loan correction');
+          }
         }
       }
 

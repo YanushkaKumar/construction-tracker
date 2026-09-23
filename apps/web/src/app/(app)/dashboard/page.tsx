@@ -271,9 +271,9 @@ export default function DashboardPage() {
             <div className="space-y-5 animate-in fade-in duration-300">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
-                  label="Treasury Balance"
+                  label="Main Account"
                   value={fmt(fd.currentCash)}
-                  insight="Total liquid cash"
+                  insight="Cash available to spend"
                   icon={Wallet}
                   href="/finance"
                 />
@@ -538,8 +538,8 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard label="Pending Expenses" value={kpis?.pendingExpenses ?? 0} insight="Awaiting voucher approval" attention={(kpis?.pendingExpenses ?? 0) > 0} icon={AlertCircle} />
                 <StatCard label="Pending Amount" value={fmt(kpis?.pendingExpenseAmount ?? 0)} insight="Approval cash sum" icon={CircleDollarSign} />
-                <StatCard label="Active Debt Balance" value={fmt(fd.loans)} insight="Outstanding bank debt exposure" icon={Landmark} />
-                <StatCard label="Surplus Cash" value={fmt(fd.companyFunds)} insight="Free liquid capital" icon={Wallet} />
+                <StatCard label="Loans Drawn" value={fmt(fd.loans)} insight="Total borrowed to date" icon={Landmark} />
+                <StatCard label="Capital Put In" value={fmt(fd.companyFunds)} insight="Company's own money contributed" icon={Wallet} />
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">

@@ -149,24 +149,24 @@ export function FundingDashboardTab() {
       {/* ── CFO KPI Row ─────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-4 bg-card border border-border/25 rounded-2xl shadow-surface text-left">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 font-mono">Total Available Cash</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 font-mono">Available Cash</span>
           <p className="text-xl font-bold mt-1.5 tabular-nums text-foreground/90">{fmt(db.currentCash)}</p>
-          <p className="text-[10px] text-muted-foreground/50 mt-1 font-medium">All sources combined</p>
+          <p className="text-[10px] text-muted-foreground/50 mt-1 font-medium">Main Account balance</p>
         </div>
         <div className="p-4 bg-card border border-border/25 rounded-2xl shadow-surface text-left">
           <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 font-mono">Loan Facilities</span>
           <p className="text-xl font-bold mt-1.5 tabular-nums text-foreground/90">{fmt(db.loans)}</p>
-          <p className="text-[10px] text-muted-foreground/50 mt-1 font-medium">Bank & facility balances</p>
+          <p className="text-[10px] text-muted-foreground/50 mt-1 font-medium">Total drawn from loans</p>
         </div>
         <div className="p-4 bg-card border border-border/25 rounded-2xl shadow-surface text-left">
           <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 font-mono">Client Advances</span>
           <p className="text-xl font-bold mt-1.5 tabular-nums text-foreground/90">{fmt(db.availableAdvances)}</p>
-          <p className="text-[10px] text-muted-foreground/50 mt-1 font-medium">Project advance pools</p>
+          <p className="text-[10px] text-muted-foreground/50 mt-1 font-medium">Total received from clients</p>
         </div>
         <div className="p-4 bg-card border border-border/25 rounded-2xl shadow-surface text-left">
           <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 font-mono">Company Equity</span>
           <p className="text-xl font-bold mt-1.5 tabular-nums text-foreground/90">{fmt(db.companyFunds)}</p>
-          <p className="text-[10px] text-muted-foreground/50 mt-1 font-medium">Capital & investments</p>
+          <p className="text-[10px] text-muted-foreground/50 mt-1 font-medium">Capital put in by the company</p>
         </div>
       </div>
 
@@ -383,7 +383,10 @@ export function FundingDashboardTab() {
                 {isExpanded && (
                   <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-border/15 pt-3">
                     {categorySources.map((source: any) => {
-                      const utilPercent = source.originalAmount > 0
+                      // Only the Main Account has a balance to spend down. Every
+                      // other row records money that came in and was moved
+                      // there, so a "% used" bar on it means nothing.
+                      const utilPercent = source.isMain && source.originalAmount > 0
                         ? Math.min(Math.round(((source.originalAmount - source.currentBalance) / source.originalAmount) * 100), 100)
                         : 0;
                       const isSelected = selectedWallet?.id === source.id;
@@ -405,21 +408,32 @@ export function FundingDashboardTab() {
                               </div>
                               <span className={cn(
                                 'chip font-mono text-[9px]',
-                                source.originalAmount === 0 && source.currentBalance === 0 ? 'bg-accent/30 border-border/20 text-muted-foreground' :
-                                source.currentBalance <= 0 ? 'bg-danger-subtle border-danger/25 text-danger' :
-                                utilPercent > 80 ? 'bg-warning-subtle border-warning/25 text-warning' :
-                                'bg-success-subtle border-success/25 text-success'
+                                source.isMain
+                                  ? (source.currentBalance <= 0
+                                      ? 'bg-danger-subtle border-danger/25 text-danger'
+                                      : utilPercent > 80
+                                      ? 'bg-warning-subtle border-warning/25 text-warning'
+                                      : 'bg-success-subtle border-success/25 text-success')
+                                  : 'bg-accent/30 border-border/20 text-muted-foreground'
                               )}>
-                                {source.originalAmount === 0 && source.currentBalance === 0 ? 'Unfunded' : source.currentBalance <= 0 ? 'Depleted' : 'Active'}
+                                {source.isMain
+                                  ? (source.currentBalance <= 0 ? 'Empty' : 'Main Account')
+                                  : 'Received'}
                               </span>
                             </div>
 
                             <div className="space-y-1 select-none">
                               <div className="flex justify-between text-[11px] font-semibold text-muted-foreground/75 font-mono">
-                                <span>Balance: {fmt(source.currentBalance)}</span>
-                                <span>{utilPercent}% Used</span>
+                                {source.isMain ? (
+                                  <>
+                                    <span>Balance: {fmt(source.currentBalance)}</span>
+                                    <span>{utilPercent}% Used</span>
+                                  </>
+                                ) : (
+                                  <span>Received: {fmt(source.originalAmount)}</span>
+                                )}
                               </div>
-                              <ProgressBar value={utilPercent} max={100} height={4} />
+                              {source.isMain && <ProgressBar value={utilPercent} max={100} height={4} />}
                             </div>
                           </CardContent>
                         </Card>

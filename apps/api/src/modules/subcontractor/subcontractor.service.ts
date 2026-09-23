@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { assertContractInCompany } from '../../common/utils/tenant.util';
+import { parseAmount } from '../../common/utils/money.util';
+import { debitMainAccount } from '../../common/utils/main-account.util';
 
 @Injectable()
 export class SubcontractorService {
@@ -129,10 +131,7 @@ export class SubcontractorService {
   async createPayment(contractId: string, companyId: string, data: any) {
     await assertContractInCompany(this.prisma, contractId, companyId);
 
-    const amount = Number(data.amount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      throw new BadRequestException('Payment amount must be a positive number');
-    }
+    const amount = parseAmount(data.amount, 'Payment amount');
 
     const payDate = new Date(data.payDate);
     if (Number.isNaN(payDate.getTime())) {
@@ -172,6 +171,11 @@ export class SubcontractorService {
         where: { id: contractId },
         data: { paidAmount: { increment: amount } },
       });
+
+      // Paying a subcontractor is money leaving the company, but this used to
+      // record the payment against the contract and never touch the balance —
+      // so the Main Account still showed cash that had already gone out.
+      await debitMainAccount(tx, companyId, amount, 'subcontractor payment');
 
       return payment;
     });

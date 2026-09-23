@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { parseAmount } from '../../common/utils/money.util';
+import { creditMainAccount, debitMainAccount } from '../../common/utils/main-account.util';
 
 @Injectable()
 export class AdvanceService {
@@ -43,13 +44,17 @@ export class AdvanceService {
           type: 'PROJECT_ADVANCE',
           name: `${project.code} - Client Advance (${data.referenceNo || 'Milestone'})`,
           openingBalance: amt,
-          currentBalance: amt,
+          // Provenance only: the spendable money lands in the Main Account.
+          // Leaving a balance here would strand it, because payments are only
+          // ever drawn from that one account.
+          currentBalance: 0,
           originalAmount: amt,
-          remainingAmount: amt,
+          remainingAmount: 0,
           projectId,
           projectAdvanceId: advance.id,
         },
       });
+      await creditMainAccount(tx, companyId, amt);
 
       return advance;
     });
@@ -142,13 +147,14 @@ export class AdvanceService {
           const difference = amt - Number(source.originalAmount);
           await tx.fundingSource.update({
             where: { id: source.id },
-            data: {
-              originalAmount: amt,
-              openingBalance: amt,
-              currentBalance: Number(source.currentBalance) + difference,
-              remainingAmount: Number(source.remainingAmount) + difference,
-            },
+            data: { originalAmount: amt, openingBalance: amt },
           });
+          // The change in the advance moves the company balance, not this row.
+          if (difference > 0) {
+            await creditMainAccount(tx, companyId, difference);
+          } else if (difference < 0) {
+            await debitMainAccount(tx, companyId, -difference, 'advance correction');
+          }
         }
       }
 
