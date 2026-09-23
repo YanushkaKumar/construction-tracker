@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 #
-# Nightly logical backup of the production database.
+# Hourly logical backup of the production database.
 #
-# The database lives on Supabase's free tier, which does not include automated
-# backups — so without this there is no copy of the company's financial records
-# anywhere. Runs from cron on the EC2 host; see the install note at the bottom.
+# The database lives on Supabase's free tier, which includes no automated
+# backups and no point-in-time recovery (a Pro add-on) — so without this there
+# is no copy of the company's financial records anywhere, and nothing to roll
+# back to when something is deleted by mistake.
+#
+# This used to run nightly, which left a 24-hour window: a day's data entry
+# could be destroyed with the most recent copy predating all of it. That is
+# exactly what happened on 2026-09-23. Hourly keeps the worst case to an hour.
+# A dump is ~20KB, so a fortnight of them costs a few megabytes.
+#
+# Runs from cron on the EC2 host; see the install note at the bottom.
 #
 # pg_dump must be at least the server's major version (currently PostgreSQL 17),
 # otherwise it refuses to run against it, so the image tag is pinned to match.
@@ -82,7 +90,15 @@ log "on disk: $(find "$BACKUP_DIR" -name 'buildtrack-*.sql.gz' | wc -l) backup(s
 
 # Install (run once on the host):
 #   chmod +x ~/buildtrack/infra/scripts/backup-db.sh
-#   (crontab -l 2>/dev/null; echo "15 2 * * * /home/ubuntu/buildtrack/infra/scripts/backup-db.sh >> /home/ubuntu/buildtrack/backups/backup.log 2>&1") | crontab -
+#   (crontab -l 2>/dev/null | grep -v backup-db.sh; echo "5 * * * * /home/ubuntu/buildtrack/infra/scripts/backup-db.sh >> /home/ubuntu/buildtrack/backups/backup.log 2>&1") | crontab -
 #
 # Restore:
-#   gzip -cd backups/buildtrack-<stamp>.sql.gz | docker run --rm -i postgres:17-alpine psql "$DATABASE_URL"
+#   The dump carries both schema and data, so it must go into an empty schema.
+#   Restoring over existing tables fails: the CREATE TABLEs collide, and the
+#   data then lands against foreign keys that already exist, in alphabetical
+#   rather than dependency order.
+#
+#   URL=$(grep '^DATABASE_URL=' .env | cut -d= -f2- | sed -E 's/[?&](connection_limit|pool_timeout|schema)=[^&]*//g')
+#   docker run --rm -i postgres:17-alpine psql "$URL" \
+#     -c 'DROP SCHEMA public CASCADE;' -c 'CREATE SCHEMA public;'
+#   gzip -cd backups/buildtrack-<stamp>.sql.gz | docker run --rm -i postgres:17-alpine psql "$URL"
