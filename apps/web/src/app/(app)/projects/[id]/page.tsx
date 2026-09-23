@@ -12,7 +12,6 @@ import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
-import { BOQTab } from './components/BOQTab';
 import { AdvancesTab } from './components/AdvancesTab';
 import { DonutChart, ProgressBar } from '@/components/ui/custom-charts';
 import { cn } from '@/lib/utils';
@@ -347,7 +346,6 @@ export default function ProjectDetailsPage() {
       <div className="flex items-center bg-accent/25 p-1 rounded-xl border border-border/25 overflow-x-auto gap-1 select-none">
         {[
           { id: 'overview', label: 'Overview', icon: Building2 },
-          { id: 'boq', label: 'BOQ Estimates', icon: FileSpreadsheet },
           { id: 'tasks', label: `Tasks (${project._count.tasks})`, icon: CheckSquare },
           { id: 'logs', label: `Daily Logs (${project._count.dailyReports})`, icon: FileSpreadsheet },
           { id: 'advances', label: 'Advances', icon: Banknote },
@@ -427,10 +425,6 @@ export default function ProjectDetailsPage() {
               </Card>
             </div>
           </div>
-        )}
-
-        {activeTab === 'boq' && (
-          <BOQTab projectId={project.id} />
         )}
 
         {activeTab === 'tasks' && (

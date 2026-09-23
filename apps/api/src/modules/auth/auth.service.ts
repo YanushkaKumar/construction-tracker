@@ -55,12 +55,10 @@ export enum Permission {
   REPORTS_LABOUR = 'reports:labour',
   NOTIFICATIONS_MANAGE = 'notifications:manage',
   // Finance module (advances, purchases, assets, bank loans, funding sources,
-  // subcontractor contracts & payments) and BOQ, which previously had no
-  // permissions of their own and so went entirely unguarded.
+  // subcontractor contracts & payments), which previously had no permissions
+  // of their own and so went entirely unguarded.
   FINANCE_VIEW = 'finance:view',
   FINANCE_MANAGE = 'finance:manage',
-  BOQ_VIEW = 'boq:view',
-  BOQ_MANAGE = 'boq:manage',
 }
 
 export const ROLE_PERMISSIONS: Record<SystemRole, Permission[]> = {
@@ -94,8 +92,6 @@ export const ROLE_PERMISSIONS: Record<SystemRole, Permission[]> = {
     Permission.NOTIFICATIONS_MANAGE,
     Permission.FINANCE_VIEW,
     Permission.FINANCE_MANAGE,
-    Permission.BOQ_VIEW,
-    Permission.BOQ_MANAGE,
   ],
   [SystemRole.PROJECT_MANAGER]: [
     Permission.COMPANY_VIEW,
@@ -121,7 +117,6 @@ export const ROLE_PERMISSIONS: Record<SystemRole, Permission[]> = {
     Permission.REPORTS_PROGRESS,
     Permission.REPORTS_LABOUR,
     Permission.FINANCE_VIEW,
-    Permission.BOQ_VIEW,
   ],
   [SystemRole.SITE_ENGINEER]: [
     Permission.COMPANY_VIEW,
@@ -141,7 +136,6 @@ export const ROLE_PERMISSIONS: Record<SystemRole, Permission[]> = {
     Permission.WORKERS_VIEW,
     Permission.ATTENDANCE_MARK,
     Permission.ATTENDANCE_VIEW,
-    Permission.BOQ_VIEW,
   ],
   [SystemRole.QUANTITY_SURVEYOR]: [
     Permission.COMPANY_VIEW,
@@ -156,8 +150,6 @@ export const ROLE_PERMISSIONS: Record<SystemRole, Permission[]> = {
     Permission.REPORTS_FINANCIAL,
     Permission.REPORTS_PROGRESS,
     Permission.FINANCE_VIEW,
-    Permission.BOQ_VIEW,
-    Permission.BOQ_MANAGE,
   ],
   [SystemRole.ACCOUNTANT]: [
     Permission.COMPANY_VIEW,

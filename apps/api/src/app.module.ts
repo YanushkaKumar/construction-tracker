@@ -34,7 +34,6 @@ import { PurchaseModule } from './modules/purchase/purchase.module';
 import { AssetModule } from './modules/asset/asset.module';
 import { FinanceDashboardModule } from './modules/finance-dashboard/finance-dashboard.module';
 import { BankLoanModule } from './modules/bank-loan/bank-loan.module';
-import { BOQModule } from './modules/boq/boq.module';
 import { SubcontractorModule } from './modules/subcontractor/subcontractor.module';
 import { FundingSourceModule } from './modules/funding-source/funding-source.module';
 
@@ -109,7 +108,6 @@ import { notificationConfig } from './config/notification.config';
     AssetModule,
     FinanceDashboardModule,
     BankLoanModule,
-    BOQModule,
     SubcontractorModule,
     FundingSourceModule,
   ],
