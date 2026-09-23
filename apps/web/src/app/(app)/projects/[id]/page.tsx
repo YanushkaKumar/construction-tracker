@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
 import { AdvancesTab } from './components/AdvancesTab';
+import { EditProjectDialog } from './components/EditProjectDialog';
 import { DonutChart, ProgressBar } from '@/components/ui/custom-charts';
 import { cn } from '@/lib/utils';
 
@@ -194,6 +195,7 @@ export default function ProjectDetailsPage() {
             </div>
             <h1 className="text-3xl md:text-4xl lg:text-[40px] font-semibold tracking-tight text-foreground/90">{project.name}</h1>
           </div>
+          <EditProjectDialog project={project} />
         </div>
       </div>
 
