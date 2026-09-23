@@ -31,3 +31,22 @@ export function parseRequiredDateRange(
 
   return { start, end };
 }
+
+/**
+ * Parses a date that a request is required to supply.
+ *
+ * `new Date(undefined)` yields an Invalid Date, which Prisma rejects deep
+ * inside the query with a validation error — the caller sees a bare 500 and
+ * no hint that a date was missing. Recording a client advance without one did
+ * exactly that.
+ */
+export function parseRequiredDate(value: unknown, label = 'Date'): Date {
+  if (value === null || value === undefined || value === '') {
+    throw new BadRequestException(`${label} is required`);
+  }
+  const parsed = new Date(value as string);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new BadRequestException(`${label} must be a valid date`);
+  }
+  return parsed;
+}

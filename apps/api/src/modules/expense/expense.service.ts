@@ -1,6 +1,7 @@
 import { Injectable, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { parseAmount } from '../../common/utils/money.util';
+import { parseRequiredDate } from '../../common/utils/date-range.util';
 import { creditMainAccount, debitMainAccount } from '../../common/utils/main-account.util';
 import { SPENT_EXPENSE_STATUSES } from '../../common/constants/expense-status';
 
@@ -55,7 +56,7 @@ export class ExpenseService {
           currency: data.currency || 'LKR',
           receiptUrl: data.receiptUrl || null,
           status: data.status || 'PENDING',
-          expenseDate: new Date(data.expenseDate),
+          expenseDate: parseRequiredDate(data.expenseDate, 'Expense date'),
           approvedById: data.approvedById || null,
           approvedAt: data.approvedAt ? new Date(data.approvedAt) : null,
         },
@@ -228,7 +229,7 @@ export class ExpenseService {
       if (data.description !== undefined) updateData.description = data.description;
       if (data.amount !== undefined) updateData.amount = data.amount;
       if (data.category !== undefined) updateData.category = data.category;
-      if (data.expenseDate !== undefined) updateData.expenseDate = new Date(data.expenseDate);
+      if (data.expenseDate !== undefined) updateData.expenseDate = parseRequiredDate(data.expenseDate, 'Expense date');
       if (data.status !== undefined) updateData.status = data.status;
       if (data.receiptUrl !== undefined) updateData.receiptUrl = data.receiptUrl;
 

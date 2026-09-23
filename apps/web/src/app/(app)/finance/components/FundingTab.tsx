@@ -135,7 +135,8 @@ export function FundingDashboardTab({ onNavigate }: { onNavigate?: (tab: string)
       createAdvance.mutate({
         projectId: formValues.projectId,
         amount,
-        advanceDate: formValues.date || new Date().toISOString().split('T')[0],
+        receivedDate: formValues.date || new Date().toISOString().split('T')[0],
+        description: formValues.purpose || 'Customer advance',
         referenceNo: formValues.reference || null,
         notes: formValues.notes || null,
       });
@@ -340,7 +341,8 @@ export function FundingDashboardTab({ onNavigate }: { onNavigate?: (tab: string)
                           disabled={
                             !formValues.amount ||
                             Number(formValues.amount) <= 0 ||
-                            (fields.includes('projectId') && !formValues.projectId)
+                            (fields.includes('projectId') && !formValues.projectId) ||
+                            (fields.includes('purpose') && !formValues.purpose)
                           }
                         >
                           Review & Confirm →

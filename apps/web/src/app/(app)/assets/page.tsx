@@ -24,7 +24,9 @@ const assetSchema = z.object({
   name: z.string().min(3, 'Asset name is required'),
   purchasePrice: z.coerce.number().min(0, 'Price must be positive or 0'),
   category: z.enum(['MACHINERY', 'VEHICLE', 'EQUIPMENT', 'TOOLS', 'IT_EQUIPMENT', 'OTHER']).default('EQUIPMENT'),
-  condition: z.enum(['NEW', 'GOOD', 'FAIR', 'POOR', 'MAINTENANCE', 'RETIRED']).default('NEW'),
+  // AssetCondition has no MAINTENANCE member, so saving an asset in that
+  // condition failed with a 500.
+  condition: z.enum(['NEW', 'GOOD', 'FAIR', 'POOR', 'RETIRED']).default('NEW'),
   currentProjectId: z.string().optional(),
   serialNumber: z.string().optional(),
   notes: z.string().optional(),
@@ -197,7 +199,6 @@ export default function AssetsPage() {
                     <option value="GOOD">Good</option>
                     <option value="FAIR">Fair</option>
                     <option value="POOR">Poor</option>
-                    <option value="MAINTENANCE">In Maintenance</option>
                     <option value="RETIRED">Retired</option>
                   </select>
                 </div>

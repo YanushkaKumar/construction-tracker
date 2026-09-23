@@ -306,6 +306,31 @@ export class PurchaseService {
     });
   }
 
+  /**
+   * Marks a bill as settled.
+   *
+   * The cash left the Main Account when the purchase was recorded, so this
+   * moves no money — it only records that the supplier has been paid. There
+   * was no way to do it at all before: `status` and `paidAmount` were not
+   * among the updatable fields, so the "Pay Bill" action on the procurement
+   * board had nothing behind it.
+   */
+  async markPaid(id: string, companyId: string) {
+    const purchase = await this.prisma.purchase.findFirst({
+      where: { id, companyId },
+      select: { id: true, totalAmount: true, status: true },
+    });
+    if (!purchase) throw new NotFoundException('Purchase not found');
+    if (purchase.status === 'PAID') {
+      throw new BadRequestException('This bill is already marked as paid');
+    }
+
+    return this.prisma.purchase.update({
+      where: { id },
+      data: { status: 'PAID', paidAmount: purchase.totalAmount },
+    });
+  }
+
   async delete(id: string, companyId: string) {
     const existing = await this.prisma.purchase.findFirst({
       where: { id, companyId },

@@ -23,7 +23,10 @@ import { cn } from '@/lib/utils';
 const purchaseSchema = z.object({
   title: z.string().min(3, 'Title is required'),
   totalAmount: z.coerce.number().min(1, 'Amount must be positive'),
-  category: z.enum(['MATERIAL', 'EQUIPMENT', 'SUBCONTRACT', 'SERVICE', 'OTHER']).default('MATERIAL'),
+  // These must match the PurchaseCategory enum the database stores. They did
+  // not: 'MATERIAL' (the default), 'EQUIPMENT' and 'SUBCONTRACT' do not exist
+  // there, so recording a purchase in any of them failed with a bare 500.
+  category: z.enum(['PROJECT_MATERIAL', 'SHARED_TOOL', 'DAILY_EXPENSE', 'SERVICE', 'TRANSPORT', 'OTHER']).default('PROJECT_MATERIAL'),
   purchaseDate: z.string(),
   vendor: z.string().optional(),
   projectId: z.string().min(1, 'Project is required'),
@@ -95,7 +98,7 @@ export default function PurchasesPage() {
     defaultValues: {
       title: '',
       totalAmount: 0,
-      category: 'MATERIAL' as const,
+      category: 'PROJECT_MATERIAL' as const,
       purchaseDate: new Date().toISOString().split('T')[0],
       vendor: '',
       projectId: '',
@@ -175,10 +178,11 @@ export default function PurchasesPage() {
                 <div className="space-y-1.5">
                   <Label className="text-[12px] font-semibold text-foreground/80">Category</Label>
                   <select className={inputCls} {...register('category')}>
-                    <option value="MATERIAL">Materials</option>
-                    <option value="EQUIPMENT">Equipment</option>
-                    <option value="SUBCONTRACT">Subcontractor</option>
+                    <option value="PROJECT_MATERIAL">Project Materials</option>
+                    <option value="SHARED_TOOL">Shared Tools</option>
+                    <option value="DAILY_EXPENSE">Daily Expense</option>
                     <option value="SERVICE">Service</option>
+                    <option value="TRANSPORT">Transport</option>
                     <option value="OTHER">Other</option>
                   </select>
                 </div>

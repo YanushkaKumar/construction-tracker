@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Building2, CircleDollarSign, TrendingDown, Users, ChevronRight, FileText, ArrowRight, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -19,6 +20,15 @@ export function DrillDownModal({
   type: string | null; 
   payload: any; 
 }) {
+  const router = useRouter();
+
+  // The four "Workspace Shortcuts" were rendered with a chevron and no
+  // handler, so they looked like links and did nothing when pressed.
+  const goTo = (href: string) => {
+    onOpenChange(false);
+    router.push(href);
+  };
+
   const { data: drillDownData, isLoading } = useQuery({
     queryKey: ['finance-expense-drilldown'],
     queryFn: async () => (await apiClient.get('/finance/expenses/drill-down')).data,
@@ -101,7 +111,7 @@ export function DrillDownModal({
             <div className="space-y-3">
               <h4 className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground/50 border-b border-border/10 pb-2">Workspace Shortcuts</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <button className="flex items-center justify-between p-4 bg-card hover:bg-accent/40 border border-border/20 rounded-xl transition-colors">
+                <button type="button" onClick={() => goTo('/projects')} className="flex items-center justify-between p-4 bg-card hover:bg-accent/40 border border-border/20 rounded-xl transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-success-subtle rounded-lg"><CircleDollarSign className="w-4 h-4 text-success" /></div>
                     <div className="text-left">
@@ -111,7 +121,7 @@ export function DrillDownModal({
                   </div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
                 </button>
-                <button className="flex items-center justify-between p-4 bg-card hover:bg-accent/40 border border-border/20 rounded-xl transition-colors">
+                <button type="button" onClick={() => goTo('/expenses')} className="flex items-center justify-between p-4 bg-card hover:bg-accent/40 border border-border/20 rounded-xl transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-danger-subtle rounded-lg"><TrendingDown className="w-4 h-4 text-danger" /></div>
                     <div className="text-left">
@@ -121,7 +131,7 @@ export function DrillDownModal({
                   </div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
                 </button>
-                <button className="flex items-center justify-between p-4 bg-card hover:bg-accent/40 border border-border/20 rounded-xl transition-colors">
+                <button type="button" onClick={() => goTo('/purchases')} className="flex items-center justify-between p-4 bg-card hover:bg-accent/40 border border-border/20 rounded-xl transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-warning-subtle rounded-lg"><FileText className="w-4 h-4 text-warning" /></div>
                     <div className="text-left">
@@ -131,7 +141,7 @@ export function DrillDownModal({
                   </div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
                 </button>
-                <button className="flex items-center justify-between p-4 bg-card hover:bg-accent/40 border border-border/20 rounded-xl transition-colors">
+                <button type="button" onClick={() => goTo('/workers')} className="flex items-center justify-between p-4 bg-card hover:bg-accent/40 border border-border/20 rounded-xl transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-primary/10 rounded-lg"><Users className="w-4 h-4 text-primary" /></div>
                     <div className="text-left">

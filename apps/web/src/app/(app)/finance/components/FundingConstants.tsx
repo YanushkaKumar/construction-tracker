@@ -57,7 +57,7 @@ export const SOURCE_CATEGORIES: Record<string, { label: string; icon: React.Elem
     label: 'Client Payments',
     icon: CircleDollarSign,
     types: [
-      { type: 'PROJECT_ADVANCE', label: 'Customer Advance', icon: 'dollar-sign', description: 'Advance received from a client for a project', fields: ['projectId', 'amount', 'date', 'reference', 'notes'] },
+      { type: 'PROJECT_ADVANCE', label: 'Customer Advance', icon: 'dollar-sign', description: 'Advance received from a client for a project', fields: ['projectId', 'purpose', 'amount', 'date', 'reference', 'notes'] },
       { type: 'CLIENT_PROGRESS_PAYMENT', label: 'Client Progress Payment', icon: 'check-circle', description: 'Milestone-based progress payment', fields: ['projectId', 'milestone', 'invoiceNumber', 'certificateNo', 'retentionPercent', 'amount', 'date', 'notes'] },
     ],
   },
@@ -87,7 +87,7 @@ export const FIELD_LABELS: Record<string, string> = {
   lenderName: 'Lender Name', interestRate: 'Interest Rate (%)', duration: 'Duration (months)',
   repaymentDate: 'Repayment Date', equipmentDescription: 'Equipment Description',
   vehicleDescription: 'Vehicle Description', supplierName: 'Supplier Name', creditLimit: 'Credit Limit',
-  projectId: 'Project', milestone: 'Milestone', invoiceNumber: 'Invoice No', certificateNo: 'Certificate No',
+  projectId: 'Project', purpose: 'What the advance is for', milestone: 'Milestone', invoiceNumber: 'Invoice No', certificateNo: 'Certificate No',
   retentionPercent: 'Retention %', fromAccount: 'From Account', toAccount: 'To Account', reason: 'Reason',
   bankName: 'Bank Name', fdNumber: 'FD Number', interestEarned: 'Interest Earned',
   reservePurpose: 'Reserve Purpose', approvalLevel: 'Approval Level',

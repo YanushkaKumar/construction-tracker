@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { parseAmount } from '../../common/utils/money.util';
+import { parseRequiredDate } from '../../common/utils/date-range.util';
 import { creditMainAccount, debitMainAccount } from '../../common/utils/main-account.util';
 
 @Injectable()
@@ -23,9 +24,15 @@ export class AdvanceService {
           companyId,
           receivedById,
           amount: data.amount,
-          description: data.description,
+          // Required in the schema; without a guard a missing one surfaced as
+          // a bare 500 from deep inside Prisma.
+          description: (() => {
+            const d = typeof data.description === 'string' ? data.description.trim() : '';
+            if (!d) throw new BadRequestException('Describe what this advance is for');
+            return d;
+          })(),
           referenceNo: data.referenceNo || null,
-          receivedDate: new Date(data.receivedDate),
+          receivedDate: parseRequiredDate(data.receivedDate, 'Received date'),
           status: data.status || 'RECEIVED',
           notes: data.notes || null,
           bankLoanId: data.bankLoanId || null,

@@ -58,6 +58,13 @@ export class PurchaseController {
     return this.purchaseService.findById(id, companyId);
   }
 
+  @Post('purchases/:id/pay')
+  @ApiOperation({ summary: 'Mark a bill as paid' })
+  @RequirePermissions('finance:manage')
+  markPaid(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.purchaseService.markPaid(id, companyId);
+  }
+
   @Patch('purchases/:id')
   @ApiOperation({ summary: 'Update a purchase' })
   @RequirePermissions('finance:manage')

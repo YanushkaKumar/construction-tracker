@@ -1,15 +1,30 @@
 'use client';
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, ArrowRight, Receipt, FileCheck, Truck, CheckCircle2 } from 'lucide-react';
+import { invalidateFinancials } from '@/lib/invalidate';
 import { SkeletonStatGrid } from '@/components/ui/skeleton';
 
 const fmt = (n: number) => `LKR ${Math.abs(n).toLocaleString()}`;
 
 export function ProcurementTab() {
+  const qc = useQueryClient();
+
+  // "Pay Bill" was rendered with no handler, and there was no endpoint behind
+  // it either — status and paidAmount were not updatable. The cash already
+  // left the Main Account when the purchase was recorded, so settling a bill
+  // moves no money; it just records that the supplier has been paid.
+  const payBill = useMutation({
+    mutationFn: async (id: string) => (await apiClient.post(`/purchases/${id}/pay`)).data,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['finance-bills'] });
+      invalidateFinancials(qc);
+    },
+  });
+
   const { data: billsData, isLoading } = useQuery<any>({
     queryKey: ['finance-bills'],
     queryFn: async () => (await apiClient.get('/finance/bills')).data,
@@ -88,7 +103,20 @@ export function ProcurementTab() {
                         <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">Amount</p>
                         <p className="text-[14px] font-bold font-mono">{fmt(b.totalAmount)}</p>
                       </div>
-                      <button className="text-[11px] font-bold bg-foreground text-background px-3 py-1.5 rounded-md hover:opacity-90">Pay Bill</button>
+                      {b.status === 'PAID' ? (
+                        <span className="text-[11px] font-bold text-success inline-flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Paid
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => payBill.mutate(b.id)}
+                          disabled={payBill.isPending}
+                          className="text-[11px] font-bold bg-foreground text-background px-3 py-1.5 rounded-md hover:opacity-90 disabled:opacity-50"
+                        >
+                          {payBill.isPending ? 'Paying…' : 'Pay Bill'}
+                        </button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
