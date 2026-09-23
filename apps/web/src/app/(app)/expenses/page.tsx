@@ -18,7 +18,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { FundingAllocationBuilder } from '@/components/ui/funding-allocation-builder';
+import { MainAccountPanel } from '@/components/ui/main-account-panel';
 
 interface Expense {
   id: string;
@@ -387,12 +387,7 @@ export default function ExpensesPage() {
                 )}
 
                 {(formProjectId || selectedProjectId !== 'ALL') && (
-                  <FundingAllocationBuilder
-                    totalAmount={Number(watchAmount)}
-                    allocations={allocations}
-                    onChange={setAllocations}
-                    projectId={formProjectId || selectedProjectId}
-                  />
+                  <MainAccountPanel totalAmount={Number(watchAmount)} />
                 )}
 
                 <div className="flex justify-end gap-2.5 pt-4 border-t border-border/15 select-none">
@@ -745,12 +740,7 @@ export default function ExpensesPage() {
               </div>
 
               {editingExpense && (
-                <FundingAllocationBuilder
-                  totalAmount={Number(editAmount)}
-                  allocations={editAllocations}
-                  onChange={setEditAllocations}
-                  projectId={editingExpense.projectId}
-                />
+                <MainAccountPanel totalAmount={Number(editAmount)} />
               )}
 
               <div className="flex justify-end gap-2.5 pt-4 border-t border-border/15">

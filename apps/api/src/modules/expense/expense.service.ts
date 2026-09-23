@@ -1,6 +1,7 @@
 import { Injectable, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { parseAmount } from '../../common/utils/money.util';
+import { creditMainAccount, debitMainAccount } from '../../common/utils/main-account.util';
 
 @Injectable()
 export class ExpenseService {
@@ -25,7 +26,6 @@ export class ExpenseService {
 
   async create(projectId: string, companyId: string, submittedById: string, data: any) {
     const amount = parseAmount(data.amount, 'Expense amount');
-    const rawAllocations = data.allocations || [];
 
     return this.prisma.$transaction(async (tx) => {
       // Scope by the caller's companyId (from their token) — looking the
@@ -37,53 +37,11 @@ export class ExpenseService {
       });
       if (!project) throw new NotFoundException('Project not found');
 
-      // Fall back to the company cash pool when the caller didn't pick one.
-      // Previously this auto-created an empty pool, which only moved the
-      // failure one step later ("Insufficient balance" against a pool the
-      // user never set up) — so ask for a real funding source instead.
-      let allocationsToProcess = rawAllocations;
-      if (allocationsToProcess.length === 0) {
-        const companyCash = await tx.fundingSource.findFirst({
-          where: { companyId, type: 'COMPANY_CASH', status: 'ACTIVE' },
-          orderBy: { currentBalance: 'desc' },
-        });
-        if (!companyCash) {
-          throw new BadRequestException(
-            'No company cash funding source exists yet. Add a funding source under Finance before recording expenses.',
-          );
-        }
-        allocationsToProcess = [{ fundingSourceId: companyCash.id, amount }];
-      }
-
-      // Validate allocations sum to total amount. Each line is parsed on its
-      // own as well: a sum check alone would accept a +X / -X pair that nets
-      // out while still crediting one of the pools.
-      allocationsToProcess = allocationsToProcess.map((a: any) => ({
-        ...a,
-        amount: parseAmount(a.amount, 'Allocation amount'),
-      }));
-      const allocationsSum = allocationsToProcess.reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
-      if (Math.abs(allocationsSum - amount) > 0.01) {
-        throw new BadRequestException(`Allocated funds (LKR ${allocationsSum.toLocaleString()}) must match total expense (LKR ${amount.toLocaleString()})`);
-      }
-
-      // Check balance and deduct for each allocation
-      for (const alloc of allocationsToProcess) {
-        const source = await tx.fundingSource.findFirst({ where: { id: alloc.fundingSourceId, companyId } });
-        if (!source) throw new NotFoundException(`Funding source ${alloc.fundingSourceId} not found`);
-        if (Number(source.currentBalance) < Number(alloc.amount)) {
-          throw new BadRequestException(`Insufficient balance in funding source "${source.name}". Required: LKR ${Number(alloc.amount).toLocaleString()}, Available: LKR ${Number(source.currentBalance).toLocaleString()}`);
-        }
-
-        // Deduct
-        await tx.fundingSource.update({
-          where: { id: source.id },
-          data: {
-            currentBalance: Number(source.currentBalance) - Number(alloc.amount),
-            remainingAmount: Number(source.remainingAmount) - Number(alloc.amount),
-          }
-        });
-      }
+      // Every payment comes out of the one company balance. Expenses used to
+      // carry a list of funding allocations chosen in the UI, which let the
+      // same money look available in several pools at once; the request may
+      // still send that list, but it no longer decides anything.
+      const mainAccount = await debitMainAccount(tx, companyId, amount, 'expense');
 
       const expense = await tx.expense.create({
         data: {
@@ -118,16 +76,15 @@ export class ExpenseService {
         });
       }
 
-      // Save allocation rows
-      for (const alloc of allocationsToProcess) {
-        await tx.fundingAllocation.create({
-          data: {
-            fundingSourceId: alloc.fundingSourceId,
-            amount: alloc.amount,
-            expenseId: expense.id,
-          }
-        });
-      }
+      // One allocation row against the main account keeps the ledger and the
+      // existing finance reports intact.
+      await tx.fundingAllocation.create({
+        data: {
+          fundingSourceId: mainAccount.id,
+          amount,
+          expenseId: expense.id,
+        }
+      });
 
       // Recalculate project actual budget
       const allocationsProjSum = await tx.purchaseAllocation.aggregate({
@@ -215,15 +172,11 @@ export class ExpenseService {
         data: { status: 'REJECTED', approvedById, rejectionReason: reason },
       });
 
-      // Restore balances
+      // Refunds go back to the one company balance, not to whichever pool the
+      // allocation row happens to name — older rows still point at pools that
+      // no longer hold money.
       for (const alloc of expense.allocations) {
-        await tx.fundingSource.update({
-          where: { id: alloc.fundingSourceId },
-          data: {
-            currentBalance: { increment: Number(alloc.amount) },
-            remainingAmount: { increment: Number(alloc.amount) },
-          }
-        });
+        await creditMainAccount(tx, companyId, Number(alloc.amount));
       }
 
       await this.updateProjectActualBudget(result.projectId);
@@ -241,66 +194,23 @@ export class ExpenseService {
     const oldProjectId = expense.projectId;
 
     return this.prisma.$transaction(async (tx) => {
-      // 1. Restore old allocations
+      // Put the old amount back, then take the new one: both sides move the
+      // single company balance, so an edit nets out to the difference.
       for (const alloc of expense.allocations) {
-        await tx.fundingSource.update({
-          where: { id: alloc.fundingSourceId },
-          data: {
-            currentBalance: { increment: Number(alloc.amount) },
-            remainingAmount: { increment: Number(alloc.amount) },
-          }
-        });
+        await creditMainAccount(tx, companyId, Number(alloc.amount));
       }
-      // Delete old allocations
       await tx.fundingAllocation.deleteMany({ where: { expenseId: id } });
 
-      // 2. Validate and process new allocations
       const amount = data.amount !== undefined ? parseAmount(data.amount, 'Expense amount') : Number(expense.amount);
-      const rawAllocations = data.allocations || [];
+      const mainAccount = await debitMainAccount(tx, companyId, amount, 'expense');
 
-      let allocationsToProcess = rawAllocations;
-      if (allocationsToProcess.length === 0) {
-        const companyCash = await tx.fundingSource.findFirst({
-          where: { companyId, type: 'COMPANY_CASH' }
-        });
-        if (!companyCash) throw new NotFoundException('Default company cash funding source not found');
-        allocationsToProcess = [{ fundingSourceId: companyCash.id, amount }];
-      }
-
-      // Validate sum matches new/old amount
-      const allocationsSum = allocationsToProcess.reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
-      if (Math.abs(allocationsSum - amount) > 0.01) {
-        throw new BadRequestException(`Allocated funds (LKR ${allocationsSum.toLocaleString()}) must match total expense (LKR ${amount.toLocaleString()})`);
-      }
-
-      // Check balance and deduct new allocations
-      for (const alloc of allocationsToProcess) {
-        const source = await tx.fundingSource.findFirst({ where: { id: alloc.fundingSourceId, companyId } });
-        if (!source) throw new NotFoundException(`Funding source ${alloc.fundingSourceId} not found`);
-        if (Number(source.currentBalance) < Number(alloc.amount)) {
-          throw new BadRequestException(`Insufficient balance in funding source "${source.name}". Required: LKR ${Number(alloc.amount).toLocaleString()}, Available: LKR ${Number(source.currentBalance).toLocaleString()}`);
+      await tx.fundingAllocation.create({
+        data: {
+          fundingSourceId: mainAccount.id,
+          amount,
+          expenseId: id,
         }
-
-        // Deduct
-        await tx.fundingSource.update({
-          where: { id: source.id },
-          data: {
-            currentBalance: Number(source.currentBalance) - Number(alloc.amount),
-            remainingAmount: Number(source.remainingAmount) - Number(alloc.amount),
-          }
-        });
-      }
-
-      // 3. Save new allocations
-      for (const alloc of allocationsToProcess) {
-        await tx.fundingAllocation.create({
-          data: {
-            fundingSourceId: alloc.fundingSourceId,
-            amount: alloc.amount,
-            expenseId: id,
-          }
-        });
-      }
+      });
 
       // 4. Update the expense record itself
       const updateData: any = {};
@@ -365,13 +275,7 @@ export class ExpenseService {
     return this.prisma.$transaction(async (tx) => {
       // Restore funding source balances
       for (const alloc of expense.allocations) {
-        await tx.fundingSource.update({
-          where: { id: alloc.fundingSourceId },
-          data: {
-            currentBalance: { increment: Number(alloc.amount) },
-            remainingAmount: { increment: Number(alloc.amount) },
-          }
-        });
+        await creditMainAccount(tx, companyId, Number(alloc.amount));
       }
 
       const deleted = await tx.expense.delete({ where: { id } });

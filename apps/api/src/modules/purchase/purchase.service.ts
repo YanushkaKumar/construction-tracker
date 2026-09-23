@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { parseAmount } from '../../common/utils/money.util';
+import { creditMainAccount, debitMainAccount } from '../../common/utils/main-account.util';
 
 @Injectable()
 export class PurchaseService {
@@ -41,52 +42,10 @@ export class PurchaseService {
         }
       }
 
-      // 2. Process funding source allocations
-      let fundingAllocationsToProcess = fundingAllocations || [];
-      if (fundingAllocationsToProcess.length === 0) {
-        // The company cash pool is the main account everything is paid from.
-        // Ordered by balance so the pick is deterministic when more than one
-        // exists, rather than whichever row the database happened to return.
-        const companyCash = await tx.fundingSource.findFirst({
-          where: { companyId, type: 'COMPANY_CASH', status: 'ACTIVE' },
-          orderBy: { currentBalance: 'desc' },
-        });
-        if (!companyCash) {
-          throw new BadRequestException(
-            'No main company account exists yet. Add a Company Cash funding source under Finance before recording purchases.',
-          );
-        }
-        fundingAllocationsToProcess = [{ fundingSourceId: companyCash.id, amount: totalAmount }];
-      }
-
-      const fundingAllocatedSum = fundingAllocationsToProcess.reduce(
-        (sum: number, a: any) => sum + parseAmount(a.amount, 'Funding allocation'),
-        0,
-      );
-      if (Math.abs(fundingAllocatedSum - totalAmount) > 0.01) {
-        throw new BadRequestException(
-          `Funding source allocation total (LKR ${fundingAllocatedSum.toLocaleString()}) does not match purchase total (LKR ${totalAmount.toLocaleString()})`,
-        );
-      }
-
-      // Validate balances and deduct
-      for (const fa of fundingAllocationsToProcess) {
-        const source = await tx.fundingSource.findFirst({ where: { id: fa.fundingSourceId, companyId } });
-        if (!source) throw new NotFoundException(`Funding source ${fa.fundingSourceId} not found`);
-        if (Number(source.currentBalance) < Number(fa.amount)) {
-          throw new BadRequestException(
-            `Insufficient balance in funding source "${source.name}". Required: LKR ${Number(fa.amount).toLocaleString()}, Available: LKR ${Number(source.currentBalance).toLocaleString()}`,
-          );
-        }
-
-        await tx.fundingSource.update({
-          where: { id: source.id },
-          data: {
-            currentBalance: Number(source.currentBalance) - Number(fa.amount),
-            remainingAmount: Number(source.remainingAmount) - Number(fa.amount),
-          },
-        });
-      }
+      // 2. Take the money off the one company balance. The request may still
+      // carry a list of funding allocations from the old picker; it no longer
+      // decides anything, because there is only one account to pay from.
+      const mainAccount = await debitMainAccount(tx, companyId, totalAmount, 'purchase');
 
       // Create purchase record
       const purchase = await tx.purchase.create({
@@ -139,16 +98,14 @@ export class PurchaseService {
         });
       }
 
-      // Write funding allocations
-      for (const fa of fundingAllocationsToProcess) {
-        await tx.fundingAllocation.create({
-          data: {
-            fundingSourceId: fa.fundingSourceId,
-            amount: fa.amount,
-            purchaseId: purchase.id,
-          },
-        });
-      }
+      // One allocation row against the main account keeps the ledger intact.
+      await tx.fundingAllocation.create({
+        data: {
+          fundingSourceId: mainAccount.id,
+          amount: totalAmount,
+          purchaseId: purchase.id,
+        },
+      });
 
       // Recalculate budgets
       if (allocations && allocations.length > 0) {
@@ -270,75 +227,23 @@ export class PurchaseService {
     if (purchaseData.bankLoanId !== undefined) updateData.bankLoanId = purchaseData.bankLoanId;
 
     return this.prisma.$transaction(async (tx) => {
-      // 1. Restore old funding source balances
+      // Put the old total back and take the new one; both move the single
+      // company balance, so an edit nets out to the difference.
       for (const fa of existing.fundingAllocations) {
-        await tx.fundingSource.update({
-          where: { id: fa.fundingSourceId },
-          data: {
-            currentBalance: { increment: Number(fa.amount) },
-            remainingAmount: { increment: Number(fa.amount) },
-          },
-        });
+        await creditMainAccount(tx, companyId, Number(fa.amount));
       }
       await tx.fundingAllocation.deleteMany({ where: { purchaseId: id } });
 
-      // 2. Validate and deduct new funding allocations
       const totalAmount = Number(purchaseData.totalAmount || existing.totalAmount);
-      let fundingAllocationsToProcess = fundingAllocations || [];
-      if (fundingAllocationsToProcess.length === 0) {
-        // The company cash pool is the main account everything is paid from.
-        // Ordered by balance so the pick is deterministic when more than one
-        // exists, rather than whichever row the database happened to return.
-        const companyCash = await tx.fundingSource.findFirst({
-          where: { companyId, type: 'COMPANY_CASH', status: 'ACTIVE' },
-          orderBy: { currentBalance: 'desc' },
-        });
-        if (!companyCash) {
-          throw new BadRequestException(
-            'No main company account exists yet. Add a Company Cash funding source under Finance before recording purchases.',
-          );
-        }
-        fundingAllocationsToProcess = [{ fundingSourceId: companyCash.id, amount: totalAmount }];
-      }
+      const mainAccount = await debitMainAccount(tx, companyId, totalAmount, 'purchase');
 
-      const fundingAllocatedSum = fundingAllocationsToProcess.reduce(
-        (sum: number, a: any) => sum + parseAmount(a.amount, 'Funding allocation'),
-        0,
-      );
-      if (Math.abs(fundingAllocatedSum - totalAmount) > 0.01) {
-        throw new BadRequestException(
-          `Funding source allocation total (LKR ${fundingAllocatedSum.toLocaleString()}) does not match purchase total (LKR ${totalAmount.toLocaleString()})`,
-        );
-      }
-
-      for (const fa of fundingAllocationsToProcess) {
-        const source = await tx.fundingSource.findFirst({ where: { id: fa.fundingSourceId, companyId } });
-        if (!source) throw new NotFoundException(`Funding source ${fa.fundingSourceId} not found`);
-        if (Number(source.currentBalance) < Number(fa.amount)) {
-          throw new BadRequestException(
-            `Insufficient balance in funding source "${source.name}". Required: LKR ${Number(fa.amount).toLocaleString()}, Available: LKR ${Number(source.currentBalance).toLocaleString()}`,
-          );
-        }
-
-        await tx.fundingSource.update({
-          where: { id: source.id },
-          data: {
-            currentBalance: Number(source.currentBalance) - Number(fa.amount),
-            remainingAmount: Number(source.remainingAmount) - Number(fa.amount),
-          },
-        });
-      }
-
-      // 3. Write new funding allocations
-      for (const fa of fundingAllocationsToProcess) {
-        await tx.fundingAllocation.create({
-          data: {
-            fundingSourceId: fa.fundingSourceId,
-            amount: fa.amount,
-            purchaseId: id,
-          },
-        });
-      }
+      await tx.fundingAllocation.create({
+        data: {
+          fundingSourceId: mainAccount.id,
+          amount: totalAmount,
+          purchaseId: id,
+        },
+      });
 
       // 4. Update purchase project cost allocations if provided
       let projectIdsToRecalculate = [...oldProjectIds];
@@ -410,15 +315,9 @@ export class PurchaseService {
     const projectIds = existing.allocations.map(a => a.projectId);
 
     return this.prisma.$transaction(async (tx) => {
-      // Restore funding source balances
+      // Refund to the one company balance.
       for (const fa of existing.fundingAllocations) {
-        await tx.fundingSource.update({
-          where: { id: fa.fundingSourceId },
-          data: {
-            currentBalance: { increment: Number(fa.amount) },
-            remainingAmount: { increment: Number(fa.amount) },
-          },
-        });
+        await creditMainAccount(tx, companyId, Number(fa.amount));
       }
 
       const deleted = await tx.purchase.delete({ where: { id } });

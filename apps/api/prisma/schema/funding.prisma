@@ -50,6 +50,11 @@ model FundingSource {
   originalAmount   Decimal             @map("original_amount") @db.Decimal(15, 2)
   remainingAmount  Decimal             @map("remaining_amount") @db.Decimal(15, 2)
   status           FundingSourceStatus @default(ACTIVE)
+  // Exactly one row per company carries the company's spendable balance. Every
+  // other funding row records where money came from (a loan, a client payment,
+  // owner capital) and holds no balance of its own, so there is one number to
+  // reason about instead of a pile of pools that had to be picked between.
+  isMain           Boolean             @default(false) @map("is_main")
   projectId        String?             @map("project_id")
   projectAdvanceId String?             @unique @map("project_advance_id")
   bankLoanId       String?             @unique @map("bank_loan_id")
@@ -74,6 +79,7 @@ model FundingSource {
   expenses       Expense[]
 
   @@index([companyId])
+  @@index([companyId, isMain])
   @@index([projectId])
   @@index([sourceCategory])
   @@map("funding_sources")

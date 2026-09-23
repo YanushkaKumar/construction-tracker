@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { creditMainAccount, debitMainAccount } from '../../common/utils/main-account.util';
 
 @Injectable()
 export class AssetService {
@@ -7,42 +8,13 @@ export class AssetService {
 
   async create(companyId: string, data: any) {
     const purchasePrice = Number(data.purchasePrice || 0);
-    const rawAllocations = data.fundingAllocations || [];
 
     return this.prisma.$transaction(async (tx) => {
-      // If allocations are provided, process them
-      let allocationsToProcess = rawAllocations;
-      if (purchasePrice > 0 && allocationsToProcess.length === 0) {
-        const companyCash = await tx.fundingSource.findFirst({
-          where: { companyId, type: 'COMPANY_CASH' }
-        });
-        if (!companyCash) throw new NotFoundException('Default company cash funding source not found');
-        allocationsToProcess = [{ fundingSourceId: companyCash.id, amount: purchasePrice }];
-      }
-
-      // Validate allocations sum
-      if (allocationsToProcess.length > 0) {
-        const allocationsSum = allocationsToProcess.reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
-        if (Math.abs(allocationsSum - purchasePrice) > 0.01) {
-          throw new BadRequestException(`Allocated funds (LKR ${allocationsSum.toLocaleString()}) must match asset purchase price (LKR ${purchasePrice.toLocaleString()})`);
-        }
-
-        // Deduct balances
-        for (const alloc of allocationsToProcess) {
-          const source = await tx.fundingSource.findFirst({ where: { id: alloc.fundingSourceId, companyId } });
-          if (!source) throw new NotFoundException(`Funding source ${alloc.fundingSourceId} not found`);
-          if (Number(source.currentBalance) < Number(alloc.amount)) {
-            throw new BadRequestException(`Insufficient balance in funding source "${source.name}". Required: LKR ${Number(alloc.amount).toLocaleString()}, Available: LKR ${Number(source.currentBalance).toLocaleString()}`);
-          }
-
-          await tx.fundingSource.update({
-            where: { id: source.id },
-            data: {
-              currentBalance: Number(source.currentBalance) - Number(alloc.amount),
-              remainingAmount: Number(source.remainingAmount) - Number(alloc.amount),
-            }
-          });
-        }
+      // Assets are bought with company money like anything else: one balance,
+      // debited here.
+      let mainAccount: any = null;
+      if (purchasePrice > 0) {
+        mainAccount = await debitMainAccount(tx, companyId, purchasePrice, 'asset purchase');
       }
 
       const asset = await tx.asset.create({
@@ -63,12 +35,11 @@ export class AssetService {
         },
       });
 
-      // Save allocations
-      for (const alloc of allocationsToProcess) {
+      if (mainAccount) {
         await tx.fundingAllocation.create({
           data: {
-            fundingSourceId: alloc.fundingSourceId,
-            amount: alloc.amount,
+            fundingSourceId: mainAccount.id,
+            amount: purchasePrice,
             assetId: asset.id,
           }
         });
@@ -203,60 +174,19 @@ export class AssetService {
     if (!asset) throw new NotFoundException('Asset not found');
 
     return this.prisma.$transaction(async (tx) => {
-      // 1. Restore old funding allocations
+      // Refund the old price and take the new one off the company balance.
       for (const fa of asset.fundingAllocations) {
-        await tx.fundingSource.update({
-          where: { id: fa.fundingSourceId },
-          data: {
-            currentBalance: { increment: Number(fa.amount) },
-            remainingAmount: { increment: Number(fa.amount) },
-          },
-        });
+        await creditMainAccount(tx, companyId, Number(fa.amount));
       }
       await tx.fundingAllocation.deleteMany({ where: { assetId: id } });
 
-      // 2. Validate and deduct new allocations
       const purchasePrice = data.purchasePrice !== undefined ? Number(data.purchasePrice) : Number(asset.purchasePrice);
-      const rawAllocations = data.fundingAllocations || [];
-
-      let allocationsToProcess = rawAllocations;
-      if (purchasePrice > 0 && allocationsToProcess.length === 0) {
-        const companyCash = await tx.fundingSource.findFirst({
-          where: { companyId, type: 'COMPANY_CASH' }
-        });
-        if (!companyCash) throw new NotFoundException('Default company cash funding source not found');
-        allocationsToProcess = [{ fundingSourceId: companyCash.id, amount: purchasePrice }];
-      }
-
-      if (allocationsToProcess.length > 0) {
-        const allocationsSum = allocationsToProcess.reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
-        if (Math.abs(allocationsSum - purchasePrice) > 0.01) {
-          throw new BadRequestException(`Allocated funds (LKR ${allocationsSum.toLocaleString()}) must match asset purchase price (LKR ${purchasePrice.toLocaleString()})`);
-        }
-
-        for (const alloc of allocationsToProcess) {
-          const source = await tx.fundingSource.findFirst({ where: { id: alloc.fundingSourceId, companyId } });
-          if (!source) throw new NotFoundException(`Funding source ${alloc.fundingSourceId} not found`);
-          if (Number(source.currentBalance) < Number(alloc.amount)) {
-            throw new BadRequestException(`Insufficient balance in funding source "${source.name}". Required: LKR ${Number(alloc.amount).toLocaleString()}, Available: LKR ${Number(source.currentBalance).toLocaleString()}`);
-          }
-
-          await tx.fundingSource.update({
-            where: { id: source.id },
-            data: {
-              currentBalance: Number(source.currentBalance) - Number(alloc.amount),
-              remainingAmount: Number(source.remainingAmount) - Number(alloc.amount),
-            }
-          });
-        }
-      }
-
-      // 3. Save new allocations
-      for (const alloc of allocationsToProcess) {
+      if (purchasePrice > 0) {
+        const mainAccount = await debitMainAccount(tx, companyId, purchasePrice, 'asset purchase');
         await tx.fundingAllocation.create({
           data: {
-            fundingSourceId: alloc.fundingSourceId,
-            amount: alloc.amount,
+            fundingSourceId: mainAccount.id,
+            amount: purchasePrice,
             assetId: id,
           }
         });
@@ -290,13 +220,7 @@ export class AssetService {
     return this.prisma.$transaction(async (tx) => {
       // Restore funding source balances
       for (const fa of asset.fundingAllocations) {
-        await tx.fundingSource.update({
-          where: { id: fa.fundingSourceId },
-          data: {
-            currentBalance: { increment: Number(fa.amount) },
-            remainingAmount: { increment: Number(fa.amount) },
-          },
-        });
+        await creditMainAccount(tx, companyId, Number(fa.amount));
       }
 
       return tx.asset.delete({ where: { id } });

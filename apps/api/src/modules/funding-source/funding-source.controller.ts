@@ -26,6 +26,13 @@ export class FundingSourceController {
     return this.service.findAll(companyId, projectId);
   }
 
+  @Get('main')
+  @ApiOperation({ summary: 'Get the single account every payment is drawn from' })
+  @RequirePermissions('finance:view')
+  getMain(@CompanyId() companyId: string) {
+    return this.service.getMain(companyId);
+  }
+
   @Get('categories')
   @ApiOperation({ summary: 'Get available fund source categories and types' })
   @RequirePermissions('finance:view')

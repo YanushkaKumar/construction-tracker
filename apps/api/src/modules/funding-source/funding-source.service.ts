@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { parseAmount } from '../../common/utils/money.util';
+import { creditMainAccount, getMainAccount } from '../../common/utils/main-account.util';
 import { AuditService } from '../audit/audit.service';
 
 // Source category groupings for the enterprise treasury
@@ -71,15 +72,19 @@ export class FundingSourceService {
     const amount = parseAmount(data.amount, 'Funding amount', { allowZero: true });
     const sourceCategory = data.sourceCategory || getSourceCategory(data.type || 'COMPANY_CASH');
 
-    const source = await this.prisma.fundingSource.create({
+    // Funding is an inflow to the single company balance, not a pool of its
+    // own: the row records where the money came from, and the Main Account
+    // carries what is actually spendable.
+    const source = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.fundingSource.create({
       data: {
         companyId,
         type: data.type || 'COMPANY_CASH',
-        name: data.name || 'Company Cash Pool',
+        name: data.name || 'Funding',
         openingBalance: amount,
-        currentBalance: amount,
+        currentBalance: 0,
         originalAmount: amount,
-        remainingAmount: amount,
+        remainingAmount: 0,
         projectId: data.projectId || null,
         status: 'ACTIVE',
         // Enterprise fields
@@ -91,6 +96,13 @@ export class FundingSourceService {
         sourceCategory,
         metadata: data.metadata || {},
       },
+      });
+
+      if (amount > 0) {
+        await creditMainAccount(tx, companyId, amount);
+      }
+
+      return created;
     });
 
     // Audit log the fund source creation
@@ -113,6 +125,23 @@ export class FundingSourceService {
     }
 
     return source;
+  }
+
+  /**
+   * The single account every payment is drawn from. Callers that used to make
+   * the user choose a funding source now show this balance instead.
+   */
+  async getMain(companyId: string) {
+    const main = await this.prisma.$transaction((tx) =>
+      getMainAccount(tx as any, companyId),
+    );
+    return {
+      ...main,
+      openingBalance: Number(main.openingBalance),
+      currentBalance: Number(main.currentBalance),
+      originalAmount: Number(main.originalAmount),
+      remainingAmount: Number(main.remainingAmount),
+    };
   }
 
   async findAll(companyId: string, projectId?: string) {

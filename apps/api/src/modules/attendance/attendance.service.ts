@@ -3,6 +3,7 @@ import { PrismaService } from '../database/prisma.service';
 import { parseRequiredDateRange } from '../../common/utils/date-range.util';
 import { assertProjectInCompany } from '../../common/utils/tenant.util';
 import { parseAmount } from '../../common/utils/money.util';
+import { creditMainAccount, debitMainAccount } from '../../common/utils/main-account.util';
 
 @Injectable()
 export class AttendanceService {
@@ -40,15 +41,9 @@ export class AttendanceService {
         });
 
         if (existing) {
-          // Restore old allocations
+          // Re-marking a day refunds what was already paid for it.
           for (const fa of existing.fundingAllocations) {
-            await tx.fundingSource.update({
-              where: { id: fa.fundingSourceId },
-              data: {
-                currentBalance: { increment: Number(fa.amount) },
-                remainingAmount: { increment: Number(fa.amount) },
-              }
-            });
+            await creditMainAccount(tx, companyId, Number(fa.amount));
           }
           await tx.fundingAllocation.deleteMany({ where: { attendanceId: existing.id } });
         }
@@ -75,34 +70,20 @@ export class AttendanceService {
           },
         });
 
-        // Deduct wage from default Company Cash pool if status is PRESENT or HALF_DAY
+        // Wages come out of the one company balance. This used to look for a
+        // COMPANY_CASH pool and, when none existed, skip the deduction
+        // entirely — the attendance was recorded and the money was never
+        // taken, so payroll and the cash balance quietly disagreed.
         if (wage > 0 && (record.status === 'PRESENT' || record.status === 'HALF_DAY')) {
-          const companyCash = await tx.fundingSource.findFirst({
-            where: { companyId, type: 'COMPANY_CASH' }
-          });
-          if (companyCash) {
-            if (Number(companyCash.currentBalance) < wage) {
-              throw new BadRequestException(
-                `Insufficient balance in funding source "${companyCash.name}". Required: LKR ${wage.toLocaleString()}, Available: LKR ${Number(companyCash.currentBalance).toLocaleString()}`,
-              );
+          const mainAccount = await debitMainAccount(tx, companyId, wage, 'wage payment');
+
+          await tx.fundingAllocation.create({
+            data: {
+              fundingSourceId: mainAccount.id,
+              amount: wage,
+              attendanceId: attendance.id,
             }
-
-            await tx.fundingSource.update({
-              where: { id: companyCash.id },
-              data: {
-                currentBalance: { decrement: wage },
-                remainingAmount: { decrement: wage },
-              }
-            });
-
-            await tx.fundingAllocation.create({
-              data: {
-                fundingSourceId: companyCash.id,
-                amount: wage,
-                attendanceId: attendance.id,
-              }
-            });
-          }
+          });
         }
 
         results.push(attendance);

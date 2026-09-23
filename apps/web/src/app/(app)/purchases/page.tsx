@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { SkeletonList } from '@/components/ui/skeleton';
-import { FundingAllocationBuilder } from '@/components/ui/funding-allocation-builder';
+import { MainAccountPanel } from '@/components/ui/main-account-panel';
 import { cn } from '@/lib/utils';
 
 const purchaseSchema = z.object({
@@ -207,12 +207,7 @@ export default function PurchasesPage() {
               </div>
 
               <div className="pt-2">
-                <FundingAllocationBuilder
-                  totalAmount={Number(watch('totalAmount')) || 0}
-                  allocations={allocations}
-                  onChange={setAllocations}
-                  projectId={watch('projectId')}
-                />
+                <MainAccountPanel totalAmount={Number(watch('totalAmount')) || 0} />
               </div>
 
               <div className="flex justify-end gap-2 pt-4 border-t border-border/15">
