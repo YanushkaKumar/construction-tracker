@@ -9,6 +9,7 @@ import {
   Bell, BarChart2, Search, ChevronDown, Check,
   Sun, Moon, Plus, ChevronRight, AlertTriangle, Info,
   CheckCircle2, XCircle, Clock, Pin, PinOff, HardHatIcon, ShoppingCart, Component,
+  History,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
@@ -75,8 +76,10 @@ function getNavGroups(role: string): NavGroup[] {
     {
       label: 'System',
       items: [
-        { href: '/reports',       label: 'Reports',    icon: BarChart2 },
-        { href: '/settings',      label: 'Settings',   icon: Settings },
+        { href: '/reports',       label: 'Reports',      icon: BarChart2 },
+        // Owner-only: the endpoint behind it requires company:manage.
+        { href: '/audit',         label: 'Activity Log', icon: History },
+        { href: '/settings',      label: 'Settings',     icon: Settings },
       ],
     },
   ];

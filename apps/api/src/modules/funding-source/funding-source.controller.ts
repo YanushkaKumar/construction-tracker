@@ -2,7 +2,7 @@ import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards } f
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { FundingSourceService } from './funding-source.service';
-import { CompanyId, CurrentUser, RequirePermissions } from '../../common/decorators';
+import { CompanyId, RequirePermissions } from '../../common/decorators';
 import { RolesGuard } from '../../common/guards/roles.guard';
 
 @ApiTags('Funding Sources')
@@ -15,8 +15,8 @@ export class FundingSourceController {
   @Post()
   @ApiOperation({ summary: 'Create funding source with enterprise metadata' })
   @RequirePermissions('finance:manage')
-  create(@CompanyId() companyId: string, @CurrentUser('sub') userId: string, @Body() data: any) {
-    return this.service.create(companyId, data, userId);
+  create(@CompanyId() companyId: string, @Body() data: any) {
+    return this.service.create(companyId, data);
   }
 
   @Get()

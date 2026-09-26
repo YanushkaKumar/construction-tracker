@@ -2,7 +2,6 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../database/prisma.service';
 import { parseAmount } from '../../common/utils/money.util';
 import { creditMainAccount, debitMainAccount, getMainAccount } from '../../common/utils/main-account.util';
-import { AuditService } from '../audit/audit.service';
 
 // Source category groupings for the enterprise treasury
 const SOURCE_CATEGORIES = {
@@ -65,10 +64,9 @@ function getSourceCategory(type: string): string {
 export class FundingSourceService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly auditService: AuditService,
   ) {}
 
-  async create(companyId: string, data: any, userId?: string) {
+  async create(companyId: string, data: any) {
     const amount = parseAmount(data.amount, 'Funding amount', { allowZero: true });
     const sourceCategory = data.sourceCategory || getSourceCategory(data.type || 'COMPANY_CASH');
 
@@ -105,25 +103,8 @@ export class FundingSourceService {
       return created;
     });
 
-    // Audit log the fund source creation
-    if (userId) {
-      this.auditService.log({
-        companyId,
-        userId,
-        action: 'FUND_SOURCE_CREATED',
-        entityType: 'FundingSource',
-        entityId: source.id,
-        changes: {
-          type: data.type,
-          name: source.name,
-          amount,
-          sourceCategory,
-          referenceNo: data.referenceNo || null,
-          paymentMethod: data.paymentMethod || null,
-        },
-      });
-    }
-
+    // The global AuditInterceptor already records this create with the same
+    // fields; logging it here too put two rows in the trail for one action.
     return source;
   }
 
